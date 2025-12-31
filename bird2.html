@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bird — Template</title>
+  <style>
+    :root {
+      --bg: #c41e3a;
+      --gold: gold;
+      --white: #fff;
+      --green: #2b6b2b;
+      --green-hover: #1f4f1f;
+      --beige: #e8d9a7;
+      --gap: 10px;
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; background: var(--bg); color: var(--white); font-family: system-ui, sans-serif; }
+    .page { padding: 16px; }
+
+    /* Header (top-left) */
+    .header { display:flex; align-items:center; gap:8px; }
+    .header a { color: var(--gold); font-weight: 700; text-decoration: none; }
+    .header a:hover { text-decoration: underline; }
+    .delete-mode-btn { background: #8b0000; color: #fff; border: none; border-radius: 6px; padding: 4px 8px; font-weight: 600; cursor: pointer; font-size: 13px; }
+    .delete-mode-btn:hover { background: #a00000; }
+    .confirm-delete-btn { background: var(--green); color: #fff; border: none; border-radius: 6px; padding: 4px 8px; font-weight: 600; cursor: pointer; font-size: 13px; display: none; }
+    .confirm-delete-btn:hover { background: var(--green-hover); }
+    .delete-mode-active .btn-add { background: #8b0000; }
+
+    /* Columns layout */
+    .columns { display:flex; align-items:flex-start; gap: 14px; margin-top: 16px; }
+    .column { display:flex; flex-direction:column; gap: 8px; min-width: 220px; }
+    .item { background: rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 10px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .item-title { color: var(--white); text-decoration:none; font-size: 15px; cursor:pointer; }
+    .item-title.text-only { color: var(--beige); }
+    .item-symbol { font-weight: 900; cursor:pointer; }
+
+    .toolbar { display:flex; gap:6px; padding: 4px 0 0 0; }
+    .btn { border: none; border-radius: 6px; padding: 4px 8px; font-weight:600; cursor:pointer; font-size: 13px; }
+    .btn-add { background: var(--green); color: #fff; }
+    .btn-add:hover { background: var(--green-hover); }
+
+    .group-gap { margin-top: 25px; }
+
+    /* Modal */
+    #modal { display:none; position:fixed; inset:0; background: rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:9999; }
+    #modal-content { background:#222; border-radius:12px; padding:16px; width: 520px; max-width: 92%; color:#eee; }
+    #modal h3 { margin:0 0 8px 0; color: var(--gold); font-size: 16px; text-align:center; }
+    .inputs { display:flex; flex-direction:column; gap:8px; }
+    .inputs-row { display:flex; gap:8px; }
+    .inputs-row > * { flex:1; }
+    .inputs-row .small-input { flex:0 0 80px; }
+    .inputs-row .large-input { flex:1; }
+    input, textarea { width:100%; border:none; border-radius: 6px; padding:8px; font-size: 14px; }
+    input::placeholder, textarea::placeholder { color:#aaa; }
+    .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:8px; }
+    .btn-secondary { background:#444; color:#fff; }
+    .btn-primary { background: var(--gold); color:#222; }
+
+    /* Video modal */
+    #video-modal { display:none; position:fixed; inset:0; background: rgba(0,0,0,0.75); align-items:center; justify-content:center; z-index:10000; }
+    #video-modal-content { background:#000; border-radius:12px; padding:14px; width:90%; max-width:900px; display:flex; flex-direction:column; position:relative; }
+    #video-iframe { flex:1; min-height: 480px; border:none; border-radius:8px; }
+    #video-close { align-self:flex-end; margin-top:8px; }
+    #video-prompt { display:none; position:absolute; left:50%; transform:translateX(-50%); top:28%; background: rgba(0,0,0,0.65); color:#fff; padding:12px 16px; border-radius:10px; text-align:center; min-width:280px; }
+    #video-prompt .btn { margin-left:6px; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <a href="index.html" id="header-link">Bird</a>
+      <button class="delete-mode-btn" id="delete-mode-btn">✕</button>
+      <button class="confirm-delete-btn" id="confirm-delete-btn">+</button>
+    </div>
+
+    <div class="columns" id="columns"></div>
+
+    <!-- Modal for creating/editing item -->
+    <div id="modal">
+      <div id="modal-content">
+        <h3 id="modal-title">Edit Item</h3>
+        <div class="inputs">
+          <input type="text" id="inp-link" placeholder="Paste link (YouTube/Drive) or leave blank for plain text" />
+          <input type="text" id="inp-title" placeholder="Enter title or plain text" />
+          <div class="inputs-row">
+            <input type="number" class="small-input" id="inp-start" placeholder="Start (sec)" min="0" />
+            <input type="number" class="small-input" id="inp-end" placeholder="End (sec)" min="0" />
+            <input type="text" class="large-input" id="inp-sections" placeholder="Sections (e.g. 15,25 or 10:00-, 20:00$)" />
+          </div>
+          <textarea id="inp-notes" placeholder="Notes (optional)"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="btn-delete" style="margin-right: auto;">Delete</button>
+          <button class="btn btn-secondary" id="btn-cancel">Cancel</button>
+          <button class="btn btn-primary" id="btn-save">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Video Modal -->
+    <div id="video-modal">
+      <div id="video-modal-content">
+        <iframe id="video-iframe" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+        <div id="video-prompt">
+          <span id="video-prompt-text">Section ended.</span>
+          <button class="btn btn-primary" id="video-prompt-continue">Jump to next</button>
+          <button class="btn btn-secondary" id="video-prompt-cancel">Keep paused</button>
+        </div>
+        <button class="btn btn-secondary" id="video-close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    // Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import { getFirestore, collection, doc, setDoc, getDocs, getDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCdzIu5PwO5KiZmdFCNCOvJY1R6JHgkKjM",
+      authDomain: "birdfood-fda27.firebaseapp.com",
+      projectId: "birdfood-fda27",
+      storageBucket: "birdfood-fda27.firebasestorage.app",
+      messagingSenderId: "340792097507",
+      appId: "1:340792097507:web:f151f0076517cc2e0323d6"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const PAGE = "bird"; // index3
+
+    // DOM
+    const columnsDiv = document.getElementById("columns");
+    const modal = document.getElementById("modal");
+    const deleteModeBtn = document.getElementById("delete-mode-btn");
+    const confirmDeleteBtn = document.getElementById("confirm-delete-btn");
+    const modalTitle = document.getElementById("modal-title");
+    const inpLink = document.getElementById("inp-link");
+    const inpTitle = document.getElementById("inp-title");
+    const inpStart = document.getElementById("inp-start");
+    const inpEnd = document.getElementById("inp-end");
+    const inpSections = document.getElementById("inp-sections");
+    const inpNotes = document.getElementById("inp-notes");
+    const btnCancel = document.getElementById("btn-cancel");
+    const btnSave = document.getElementById("btn-save");
+    const btnDelete = document.getElementById("btn-delete");
+
+    const videoModal = document.getElementById("video-modal");
+    const videoIframe = document.getElementById("video-iframe");
+    const videoClose = document.getElementById("video-close");
+    const videoPrompt = document.getElementById("video-prompt");
+    const videoPromptText = document.getElementById("video-prompt-text");
+    const videoPromptContinue = document.getElementById("video-prompt-continue");
+    const videoPromptCancel = document.getElementById("video-prompt-cancel");
+
+    let videoPlayer = null;
+    let currentSections = [];
+    let currentSectionIndex = 0;
+    let isPaused = false;
+    let lastCheckedTime = -1;
+
+    // Delete mode
+    let deleteMode = false;
+    let selectedItems = new Set();
+    let itemButtons = new Map(); // Map of itemId -> button element
+
+    // Helpers
+    function extractYouTubeID(url) {
+      try {
+        const u = new URL(url);
+        if (u.hostname.includes("youtube.com")) return u.searchParams.get("v");
+        if (u.hostname.includes("youtu.be")) return u.pathname.slice(1);
+      } catch {}
+      return null;
+    }
+    function extractGoogleDriveID(url) {
+      try {
+        const u = new URL(url);
+        if (!u.hostname.includes("drive.google.com")) return null;
+        let m = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+        if (m) return m[1];
+        m = url.match(/id=([a-zA-Z0-9-_]+)/);
+        if (m) return m[1];
+      } catch {}
+      return null;
+    }
+    function timeToSeconds(str) {
+      const s = (str || "").trim();
+      if (!s) return 0;
+      if (/^\d+$/.test(s)) return parseInt(s, 10);
+      if (s.includes(":")) { const [m, sec] = s.split(":"); return parseInt(m,10)*60 + parseInt(sec,10); }
+      return 0;
+    }
+    function parseSections(sectionsString) {
+      const sections = [];
+      if (!sectionsString) return sections;
+      const parts = sectionsString.trim().split(",").map(p => p.trim()).filter(Boolean);
+      for (let i=0;i<parts.length;i++) {
+        const raw = parts[i];
+        const autoSkip = raw.endsWith("$");
+        const t = autoSkip ? raw.slice(0,-1).trim() : raw;
+        if (t.includes("-")) {
+          const [startStr, endStr] = t.split("-");
+          const startSec = startStr ? timeToSeconds(startStr) : 0;
+          const endSec = endStr && endStr.trim() ? timeToSeconds(endStr) : 999999;
+          if (i===0 && startSec>0) sections.push({start:0,end:startSec,autoSkip:false});
+          sections.push({start:startSec,end:endSec,autoSkip});
+        } else {
+          const mark = timeToSeconds(t);
+          if (i===0) { if (mark>0) sections.push({start:0,end:mark,autoSkip:false}); }
+          else { sections.push({start:mark,end:999999,autoSkip}); }
+        }
+      }
+      return sections;
+    }
+
+    // Data
+    async function loadPageItems() {
+      columnsDiv.innerHTML = "";
+      itemButtons.clear();
+      // Build columns from Firestore
+      const q = query(collection(db, "notes"), where("page","==", PAGE));
+      const snap = await getDocs(q);
+      const cols = new Map();
+      snap.forEach(d => {
+        const it = d.data(); it.id = d.id;
+        const col = it.col ?? 0;
+        if (!cols.has(col)) cols.set(col, []);
+        cols.get(col).push(it);
+      });
+      // sort each column by order
+      [...cols.keys()].forEach(k => cols.get(k).sort((a,b) => (a.order??0)-(b.order??0)));
+
+      // render columns
+      if (cols.size===0) {
+        // create a default column with a single template item
+        const colEl = createColumn(0);
+        colEl.appendChild(renderItem({ id: `tmp_${Date.now()}`, title:"!", isText:false, order:0, col:0 }, 0));
+        columnsDiv.appendChild(colEl);
+        return;
+      }
+      const maxColIdx = Math.max(...cols.keys());
+      [...cols.entries()].sort((a,b)=>a[0]-b[0]).forEach(([colIdx, items]) => {
+        const colEl = createColumn(colIdx);
+        items.forEach(it => colEl.appendChild(renderItem(it, maxColIdx)));
+        columnsDiv.appendChild(colEl);
+      });
+    }
+
+    function createColumn(colIdx) {
+      const col = document.createElement("div");
+      col.className = "column";
+      col.dataset.col = colIdx;
+      return col;
+    }
+
+    function renderItem(it, maxColIdx) {
+      const wrap = document.createElement("div");
+      wrap.className = "item" + (it.groupBefore?" group-gap":"");
+      wrap.dataset.id = it.id;
+      wrap.dataset.col = it.col ?? 0;
+      wrap.dataset.order = it.order ?? 0;
+
+      const titleEl = document.createElement("a");
+      titleEl.className = "item-title" + (it.isText?" text-only":"");
+      titleEl.textContent = it.title || "!";
+      titleEl.href = "#";
+
+      // Click behavior
+      titleEl.addEventListener("click", (e) => {
+        e.preventDefault();
+        if (!it.link && (!it.title || it.title === "!")) {
+          openEditModal(it);
+          return;
+        }
+        // Link item: YouTube/Drive open/embedded
+        if (it.link && (it.link.includes("youtube.com") || it.link.includes("youtu.be"))) {
+          const vid = extractYouTubeID(it.link);
+          if (vid) openVideoEmbed(vid, it.startTime||0, it.endTime||0, it.sections||"");
+        } else if (it.link) {
+          window.open(it.link, "_blank");
+        }
+      });
+
+      // Long-press to edit (1s)
+      let lpTo;
+      titleEl.addEventListener("mousedown", () => { lpTo = setTimeout(()=>openEditModal(it), 1000); });
+      ["mouseup","mouseleave"].forEach(ev => titleEl.addEventListener(ev, () => { clearTimeout(lpTo); }));
+
+      wrap.appendChild(titleEl);
+
+      const tb = document.createElement("div"); tb.className = "toolbar";
+      const btnBelow = document.createElement("button"); btnBelow.className = "btn btn-add"; btnBelow.textContent = "+";
+      itemButtons.set(it.id, btnBelow);
+
+      // Add below (short press = same group, long press = new group)
+      let belowTimer, isGroup = false;
+      btnBelow.addEventListener("mousedown", (e) => {
+        if (deleteMode) {
+          e.preventDefault();
+          return;
+        }
+        isGroup=false; belowTimer = setTimeout(()=>{ isGroup=true; }, 1000);
+      });
+      btnBelow.addEventListener("mouseup", async (e) => {
+        clearTimeout(belowTimer);
+        if (deleteMode) {
+          e.preventDefault();
+          e.stopPropagation();
+          // Toggle selection
+          if (selectedItems.has(it.id)) {
+            selectedItems.delete(it.id);
+            btnBelow.style.background = '';
+          } else {
+            selectedItems.add(it.id);
+            btnBelow.style.background = '#ff0000';
+          }
+          return;
+        }
+        await addItemBelow(it, isGroup);
+      });
+      btnBelow.addEventListener("mouseleave", () => { clearTimeout(belowTimer); });
+
+      tb.appendChild(btnBelow);
+
+      // Only add 'right' button for first item in rightmost column
+      if ((it.order ?? 0) === 0 && (it.col ?? 0) === maxColIdx) {
+        const btnRight = document.createElement("button"); btnRight.className = "btn btn-add"; btnRight.textContent = "+";
+        // Add right (new column next to current)
+        btnRight.addEventListener("click", async () => { await addItemRight(it); });
+        tb.appendChild(btnRight);
+      }
+
+      wrap.appendChild(tb);
+
+      return wrap;
+    }
+
+    async function addItemBelow(refItem, groupBefore) {
+      const colIdx = refItem.col ?? 0;
+      const refOrder = refItem.order ?? 0;
+      // Shift all items after this one down by 1
+      const q = query(collection(db, "notes"), where("page","==", PAGE));
+      const snap = await getDocs(q);
+      const itemsToUpdate = [];
+      snap.forEach(d => {
+        const it = d.data();
+        if ((it.col ?? 0) === colIdx && (it.order ?? 0) > refOrder) {
+          itemsToUpdate.push({ id: d.id, newOrder: (it.order ?? 0) + 1 });
+        }
+      });
+      // Update orders
+      for (const item of itemsToUpdate) {
+        await setDoc(doc(db, "notes", item.id), { order: item.newOrder }, { merge: true });
+      }
+      // Insert new item right after refItem
+      const id = `${PAGE}_${Date.now()}`;
+      const newItem = { id, page: PAGE, col: colIdx, order: refOrder + 1, title: "!", isText:false };
+      if (groupBefore) newItem.groupBefore = true;
+      await setDoc(doc(db, "notes", id), newItem);
+      await loadPageItems();
+    }
+    async function addItemRight(refItem) {
+      const colIdx = (refItem.col ?? 0) + 1;
+      const id = `${PAGE}_${Date.now()}`;
+      const newItem = { id, page: PAGE, col: colIdx, order: 0, title: "!", isText:false };
+      await setDoc(doc(db, "notes", id), newItem);
+      await loadPageItems();
+    }
+
+    // Modal editing
+    let editingItem = null;
+    function openEditModal(it) {
+      editingItem = it;
+      modalTitle.textContent = "Edit Item";
+      inpLink.value = it.link || "";
+      inpTitle.value = it.title && it.title !== "!" ? it.title : "";
+      inpStart.value = it.startTime || "";
+      inpEnd.value = it.endTime || "";
+      inpSections.value = it.sections || "";
+      inpNotes.value = it.text || "";
+      modal.style.display = "flex";
+      inpTitle.focus();
+    }
+    function closeEditModal() { modal.style.display = "none"; editingItem = null; }
+
+    btnCancel.addEventListener("click", closeEditModal);
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeEditModal(); closeVideo(); } });
+
+    btnSave.addEventListener("click", async () => {
+      if (!editingItem) return;
+      const link = inpLink.value.trim();
+      const title = inpTitle.value.trim();
+      const startTime = parseInt(inpStart.value) || 0;
+      const endTime = parseInt(inpEnd.value) || 0;
+      const sections = inpSections.value.trim();
+      const text = inpNotes.value.trim();
+
+      const update = { link, title: title || (link ? "(untitled)" : "!"), startTime, endTime, sections, text };
+      if (!link && title) update.isText = true; else update.isText = false;
+      await setDoc(doc(db, "notes", editingItem.id), update, { merge: true });
+      closeEditModal();
+      await loadPageItems();
+    });
+
+    btnDelete.addEventListener("click", async () => {
+      if (!editingItem) return;
+      await deleteDoc(doc(db, "notes", editingItem.id));
+      closeEditModal();
+      await loadPageItems();
+    });
+
+    // Video handling
+    function openVideoEmbed(videoID, startTime=0, endTime=0, sectionsStr="") {
+      let embedUrl = `https://www.youtube.com/embed/${videoID}?autoplay=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}`;
+      if (startTime>0) embedUrl += `&start=${Math.floor(startTime)}`;
+      videoIframe.src = embedUrl;
+      currentSections = parseSections(sectionsStr);
+      currentSectionIndex = 0; isPaused=false; lastCheckedTime=-1;
+      videoModal.style.display = "flex";
+      setTimeout(setupYouTubeListener, 600);
+    }
+    function setupYouTubeListener() {
+      if (window.YT===undefined) { const tag=document.createElement('script'); tag.src="https://www.youtube.com/iframe_api"; document.body.appendChild(tag); }
+      const iv = setInterval(()=>{
+        if (window.YT && window.YT.Player) { clearInterval(iv);
+          try { videoPlayer = new YT.Player(videoIframe, { events: { onReady:onPlayerReady, onStateChange:onPlayerStateChange } }); } catch {}
+        }
+      }, 100);
+    }
+    function onPlayerReady(e) {
+      try { e.target.unMute(); e.target.setVolume(100); e.target.playVideo(); } catch {}
+    }
+    function onPlayerStateChange(e) { if (e.data === window.YT.PlayerState.PLAYING) monitorPlayback(); }
+    function monitorPlayback() {
+      if (!videoPlayer || !videoPlayer.getCurrentTime || currentSections.length===0) { setTimeout(monitorPlayback,100); return; }
+      const t = videoPlayer.getCurrentTime();
+      
+      // Find which section we're currently in (handles manual seeking)
+      let foundSection = false;
+      for (let i = 0; i < currentSections.length; i++) {
+        const s = currentSections[i];
+        if (t >= s.start && t < s.end) {
+          currentSectionIndex = i;
+          foundSection = true;
+          break;
+        }
+      }
+      
+      const sec = currentSections[currentSectionIndex];
+      if (!sec) return;
+      
+      if (t>=sec.end && lastCheckedTime<sec.end) {
+        if (sec.autoSkip && currentSectionIndex<currentSections.length-1) {
+          currentSectionIndex++; const next = currentSections[currentSectionIndex]; videoPlayer.seekTo(next.start);
+        } else {
+          videoPlayer.pauseVideo(); isPaused=true; const nextIndex=Math.min(currentSectionIndex+1,currentSections.length-1); const next=currentSections[nextIndex]; if (next) showSectionPrompt(next.start, nextIndex);
+        }
+      }
+      if (isPaused && videoPlayer.getPlayerState()===window.YT.PlayerState.PLAYING) {
+        isPaused=false; if (currentSectionIndex<currentSections.length-1) { currentSectionIndex++; const next=currentSections[currentSectionIndex]; videoPlayer.seekTo(next.start); }
+      }
+      lastCheckedTime = t;
+      setTimeout(monitorPlayback, (videoPlayer.getPlayerState()===window.YT.PlayerState.PLAYING || (isPaused && currentSections.length>0)) ? 100 : 500);
+    }
+    function showSectionPrompt(nextStart, nextIndex) {
+      videoPromptText.textContent = `Section ended. Press Enter or click to jump to ${Math.floor(nextStart)}s`;
+      videoPrompt.dataset.nextStart = nextStart; videoPrompt.dataset.nextIndex = nextIndex; videoPrompt.style.display = 'block'; setTimeout(()=>{ try{ videoPromptContinue.focus(); }catch{} }, 20);
+      document.addEventListener('keydown', promptKeyHandler);
+    }
+    function hideSectionPrompt() { videoPrompt.style.display='none'; delete videoPrompt.dataset.nextStart; delete videoPrompt.dataset.nextIndex; document.removeEventListener('keydown', promptKeyHandler); }
+    function promptKeyHandler(e){ if(e.key==='Enter' && videoPrompt.style.display==='block'){ e.preventDefault(); videoPromptContinue.click(); } if(e.key==='Escape' && videoPrompt.style.display==='block'){ e.preventDefault(); videoPromptCancel.click(); } }
+
+    videoPromptContinue.addEventListener('click', ()=>{ const nextStart=parseFloat(videoPrompt.dataset.nextStart||0); const nextIndex=parseInt(videoPrompt.dataset.nextIndex||0,10); hideSectionPrompt(); if(videoPlayer){ currentSectionIndex=nextIndex; videoPlayer.seekTo(nextStart); try{videoPlayer.playVideo();}catch{} isPaused=false; } });
+    videoPromptCancel.addEventListener('click', hideSectionPrompt);
+
+    function closeVideo(){ videoModal.style.display='none'; videoIframe.src=''; hideSectionPrompt(); }
+    videoClose.addEventListener('click', closeVideo);
+
+    // Delete mode handlers
+    let deleteModeTimer;
+    deleteModeBtn.addEventListener('mousedown', () => {
+      deleteModeTimer = setTimeout(() => {
+        deleteMode = true;
+        selectedItems.clear();
+        confirmDeleteBtn.style.display = 'inline-block';
+        columnsDiv.classList.add('delete-mode-active');
+        console.log('Delete mode activated');
+      }, 1000);
+    });
+    deleteModeBtn.addEventListener('mouseup', () => { clearTimeout(deleteModeTimer); });
+    deleteModeBtn.addEventListener('mouseleave', () => { clearTimeout(deleteModeTimer); });
+
+    confirmDeleteBtn.addEventListener('click', async () => {
+      console.log('Deleting items:', Array.from(selectedItems));
+      // Delete all selected items
+      for (const itemId of selectedItems) {
+        await deleteDoc(doc(db, "notes", itemId));
+      }
+      // Exit delete mode
+      deleteMode = false;
+      selectedItems.clear();
+      confirmDeleteBtn.style.display = 'none';
+      columnsDiv.classList.remove('delete-mode-active');
+      await loadPageItems();
+    });
+
+    // Init
+    loadPageItems();
+  </script>
+</body>
+</html>
