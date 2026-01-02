@@ -517,6 +517,13 @@
       if (groupBefore) newItem.groupBefore = true;
       await setDoc(doc(db, "notes", id), newItem);
       await loadPageItems();
+      // Open modal for new item
+      const newDoc = await getDoc(doc(db, "notes", id));
+      if (newDoc.exists()) {
+        const newItemData = newDoc.data();
+        newItemData.id = newDoc.id;
+        openEditModal(newItemData);
+      }
     }
     async function addItemRight(refItem) {
       const colIdx = (refItem.col ?? 0) + 1;
