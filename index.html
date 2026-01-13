@@ -243,20 +243,20 @@
           
           // Add gap before this section if needed (but not before the first section)
           if (lastEnd >= 0 && startSec > lastEnd) {
-            sections.push({start: lastEnd, end: startSec, autoSkip: true});
+            sections.push({start: lastEnd, end: startSec, autoSkip: true, isGap: true});
           }
           
-          sections.push({start: startSec, end: endSec, autoSkip});
+          sections.push({start: startSec, end: endSec, autoSkip, isGap: false});
           lastEnd = endSec;
         } else {
           const mark = timeToSeconds(t);
           
           // Add gap before this marker if needed (but not before the first section)
           if (lastEnd >= 0 && mark > lastEnd) {
-            sections.push({start: lastEnd, end: mark, autoSkip: true});
+            sections.push({start: lastEnd, end: mark, autoSkip: true, isGap: true});
           }
           
-          sections.push({start: mark, end: 999999, autoSkip});
+          sections.push({start: mark, end: 999999, autoSkip, isGap: false});
           lastEnd = 999999;
         }
       }
@@ -736,7 +736,7 @@
           let next = currentSections[currentSectionIndex];
           console.log("Skipping to next section:", next);
           // Keep skipping through consecutive auto-skip gap sections
-          while (next && next.autoSkip && currentSectionIndex < currentSections.length - 1) {
+          while (next && next.isGap && currentSectionIndex < currentSections.length - 1) {
             const nextNext = currentSections[currentSectionIndex + 1];
             // Check if this is a gap section (ends where next begins)
             if (nextNext && Math.abs(next.end - nextNext.start) < 1) {
@@ -757,7 +757,7 @@
           let nextIndex = currentSectionIndex + 1;
           let next = currentSections[nextIndex];
           // Skip through auto-skip gap sections to find the real next section
-          while (next && next.autoSkip && nextIndex < currentSections.length - 1) {
+          while (next && next.isGap && nextIndex < currentSections.length - 1) {
             const nextNext = currentSections[nextIndex + 1];
             if (nextNext && Math.abs(next.end - nextNext.start) < 1) {
               console.log("Prompt: Skipping through gap section:", next);
