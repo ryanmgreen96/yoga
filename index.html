@@ -27,6 +27,10 @@
     .confirm-delete-btn { background: var(--green); color: #fff; border: none; border-radius: 6px; padding: 4px 8px; font-weight: 600; cursor: pointer; font-size: 13px; display: none; }
     .confirm-delete-btn:hover { background: var(--green-hover); }
     .delete-mode-active .btn-add { background: #8b0000; }
+    .arrow-btn { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-weight: 600; cursor: pointer; font-size: 16px; }
+    .arrow-btn:hover { background: #1d4ed8; }
+    .btn-add.move-selected { background: #eab308; box-shadow: 0 0 0 2px #fef08a; }
+    .inline-add-btn.move-selected { background: #eab308; box-shadow: 0 0 0 2px #fef08a; }
 
     /* Columns layout */
     .columns { display:flex; align-items:flex-start; gap: 14px; margin-top: 16px; }
@@ -95,6 +99,10 @@
       <a href="bird2.html" id="header-link">Adrian</a>
       <button class="delete-mode-btn" id="delete-mode-btn">✕</button>
       <button class="confirm-delete-btn" id="confirm-delete-btn">+</button>
+      <button class="arrow-btn" id="arrow-up" title="Move Up">↑</button>
+      <button class="arrow-btn" id="arrow-down" title="Move Down">↓</button>
+      <button class="arrow-btn" id="arrow-left" title="Move Left">←</button>
+      <button class="arrow-btn" id="arrow-right" title="Move Right">→</button>
     </div>
 
     <div class="columns" id="columns"></div>
@@ -155,6 +163,10 @@
     const modal = document.getElementById("modal");
     const deleteModeBtn = document.getElementById("delete-mode-btn");
     const confirmDeleteBtn = document.getElementById("confirm-delete-btn");
+    const arrowUp = document.getElementById("arrow-up");
+    const arrowDown = document.getElementById("arrow-down");
+    const arrowLeft = document.getElementById("arrow-left");
+    const arrowRight = document.getElementById("arrow-right");
     const modalTitle = document.getElementById("modal-title");
     const inpLink = document.getElementById("inp-link");
     const inpTitle = document.getElementById("inp-title");
@@ -191,6 +203,9 @@
     let deleteMode = false;
     let selectedItems = new Set();
     let itemButtons = new Map(); // Map of itemId -> button element
+
+    // Move - selected item
+    let selectedMoveItem = null;
 
     // Helpers
     function extractYouTubeID(url) {
@@ -450,17 +465,41 @@
       const btnBelow = document.createElement("button"); btnBelow.className = "btn btn-add"; btnBelow.textContent = "+";
       itemButtons.set(it.id, btnBelow);
 
-      // Add below (short press = same group, long press = new group)
-      let belowTimer, isGroup = false;
+      // Add below (short press = add item, long press = select for move)
+      let belowTimer, isLongPress = false;
       btnBelow.addEventListener("mousedown", (e) => {
         if (deleteMode) {
           e.preventDefault();
           return;
         }
-        isGroup=false; belowTimer = setTimeout(()=>{ isGroup=true; }, 1000);
+        isLongPress = false;
+        belowTimer = setTimeout(() => {
+          isLongPress = true;
+          e.preventDefault();
+          e.stopPropagation();
+          // Toggle selection for moving
+          if (selectedMoveItem === it.id) {
+            // Deselect
+            selectedMoveItem = null;
+            btnBelow.classList.remove('move-selected');
+            console.log('Item deselected for moving');
+          } else {
+            // Deselect previous
+            if (selectedMoveItem) {
+              const prevBtn = itemButtons.get(selectedMoveItem);
+              if (prevBtn) prevBtn.classList.remove('move-selected');
+            }
+            // Select this item
+            selectedMoveItem = it.id;
+            btnBelow.classList.add('move-selected');
+            console.log('Item selected for moving:', it.id);
+          }
+        }, 1000);
       });
       btnBelow.addEventListener("mouseup", async (e) => {
+        const wasLongPress = isLongPress;
         clearTimeout(belowTimer);
+        
         if (deleteMode) {
           e.preventDefault();
           e.stopPropagation();
@@ -474,9 +513,21 @@
           }
           return;
         }
-        await addItemBelow(it, isGroup);
+        
+        // If it was a long press, don't add item
+        if (wasLongPress) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+        
+        // Short press - add item below in same group
+        await addItemBelow(it, false);
       });
-      btnBelow.addEventListener("mouseleave", () => { clearTimeout(belowTimer); });
+      btnBelow.addEventListener("mouseleave", () => { 
+        clearTimeout(belowTimer);
+        isLongPress = false;
+      });
 
       tb.appendChild(btnBelow);
 
@@ -847,6 +898,84 @@
       columnsDiv.classList.remove('delete-mode-active');
       await loadPageItems();
     });
+
+    // Arrow button handlers
+    arrowUp.addEventListener('click', () => moveItem('up'));
+    arrowDown.addEventListener('click', () => moveItem('down'));
+    arrowLeft.addEventListener('click', () => moveItem('left'));
+    arrowRight.addEventListener('click', () => moveItem('right'));
+
+    async function moveItem(direction) {
+      if (!selectedMoveItem) {
+        console.log('No item selected for moving');
+        return;
+      }
+
+      const itemId = selectedMoveItem;
+      const docRef = doc(db, "notes", itemId);
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) return;
+
+      const itemData = docSnap.data();
+      const currentCol = itemData.col ?? 0;
+      const currentOrder = itemData.order ?? 0;
+
+      // Get all items
+      const q = query(collection(db, "notes"), where("page", "==", PAGE));
+      const snap = await getDocs(q);
+      const allItems = [];
+      snap.forEach(d => {
+        const it = d.data();
+        it.id = d.id;
+        allItems.push(it);
+      });
+
+      if (direction === 'up') {
+        // Move up within the same column
+        const colItems = allItems.filter(it => (it.col ?? 0) === currentCol).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        const currentIndex = colItems.findIndex(it => it.id === itemId);
+        if (currentIndex > 0) {
+          // Swap order with previous item
+          const prevItem = colItems[currentIndex - 1];
+          await setDoc(doc(db, "notes", itemId), { order: prevItem.order ?? 0 }, { merge: true });
+          await setDoc(doc(db, "notes", prevItem.id), { order: currentOrder }, { merge: true });
+        }
+      } else if (direction === 'down') {
+        // Move down within the same column
+        const colItems = allItems.filter(it => (it.col ?? 0) === currentCol).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        const currentIndex = colItems.findIndex(it => it.id === itemId);
+        if (currentIndex < colItems.length - 1) {
+          // Swap order with next item
+          const nextItem = colItems[currentIndex + 1];
+          await setDoc(doc(db, "notes", itemId), { order: nextItem.order ?? 0 }, { merge: true });
+          await setDoc(doc(db, "notes", nextItem.id), { order: currentOrder }, { merge: true });
+        }
+      } else if (direction === 'left') {
+        // Move to top of left column
+        if (currentCol > 0) {
+          const targetCol = currentCol - 1;
+          const colItems = allItems.filter(it => (it.col ?? 0) === targetCol);
+          const minOrder = colItems.length > 0 ? Math.min(...colItems.map(it => it.order ?? 0)) : 0;
+          await setDoc(doc(db, "notes", itemId), { col: targetCol, order: minOrder - 1 }, { merge: true });
+        }
+      } else if (direction === 'right') {
+        // Move to top of right column
+        const targetCol = currentCol + 1;
+        const colItems = allItems.filter(it => (it.col ?? 0) === targetCol);
+        const minOrder = colItems.length > 0 ? Math.min(...colItems.map(it => it.order ?? 0)) : 0;
+        await setDoc(doc(db, "notes", itemId), { col: targetCol, order: minOrder - 1 }, { merge: true });
+      }
+
+      await loadPageItems();
+      
+      // Reapply selection highlight after reload
+      if (selectedMoveItem) {
+        const btn = itemButtons.get(selectedMoveItem);
+        if (btn) {
+          btn.classList.add('move-selected');
+        }
+      }
+    }
 
     // Init
     loadPageItems();
