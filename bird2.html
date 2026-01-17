@@ -27,19 +27,44 @@
     .confirm-delete-btn { background: var(--green); color: #fff; border: none; border-radius: 6px; padding: 4px 8px; font-weight: 600; cursor: pointer; font-size: 13px; display: none; }
     .confirm-delete-btn:hover { background: var(--green-hover); }
     .delete-mode-active .btn-add { background: #8b0000; }
+    .arrow-btn { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-weight: 600; cursor: pointer; font-size: 16px; }
+    .arrow-btn:hover { background: #1d4ed8; }
+    .btn-add.move-selected { background: #eab308; box-shadow: 0 0 0 2px #fef08a; }
+    .inline-add-btn.move-selected { background: #eab308; box-shadow: 0 0 0 2px #fef08a; }
 
     /* Columns layout */
     .columns { display:flex; align-items:flex-start; gap: 14px; margin-top: 16px; }
     .column { display:flex; flex-direction:column; gap: 8px; min-width: 220px; }
-    .item { background: rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 10px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    
+    /* Mobile layout */
+    @media (max-width: 700px) {
+      .columns { 
+        display: grid; 
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 14px; 
+      }
+      .column { 
+        min-width: unset; 
+        width: 100%; 
+      }
+    }
+    .item { background: rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 10px; display:flex; flex-direction: column; gap:6px; }
+    .item-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; }
+    .item-content { display: flex; align-items: center; gap: 8px; flex: 1; }
+    .item-notes { color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word; margin-top: 2px; }
     .item-title { color: var(--white); text-decoration:none; font-size: 15px; cursor:pointer; }
     .item-title.text-only { color: var(--beige); }
     .item-symbol { font-weight: 900; cursor:pointer; }
+    .inline-add-btn { background: var(--green); color: #fff; border: none; border-radius: 4px; padding: 2px 6px; font-weight: 600; cursor: pointer; font-size: 12px; opacity: 0; transition: opacity 0.2s; }
+    .inline-add-btn:hover { background: var(--green-hover); }
+    .item:hover .inline-add-btn { opacity: 1; }
 
     .toolbar { display:flex; gap:6px; padding: 4px 0 0 0; }
     .btn { border: none; border-radius: 6px; padding: 4px 8px; font-weight:600; cursor:pointer; font-size: 13px; }
     .btn-add { background: var(--green); color: #fff; }
     .btn-add:hover { background: var(--green-hover); }
+    .split-separator { color: rgba(255, 255, 255, 0.7); margin: 0 4px; font-weight: 900; cursor: pointer; font-size: 16px; }
+    .split-separator:hover { color: rgba(255, 255, 255, 0.9); }
 
     .group-gap { margin-top: 25px; }
 
@@ -53,6 +78,7 @@
     .inputs-row .small-input { flex:0 0 80px; }
     .inputs-row .large-input { flex:1; }
     input, textarea { width:100%; border:none; border-radius: 6px; padding:8px; font-size: 14px; }
+    textarea { min-height: 120px; resize: vertical; font-family: system-ui, sans-serif; }
     input::placeholder, textarea::placeholder { color:#aaa; }
     .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:8px; }
     .btn-secondary { background:#444; color:#fff; }
@@ -73,6 +99,10 @@
       <a href="index.html" id="header-link">Bird</a>
       <button class="delete-mode-btn" id="delete-mode-btn">✕</button>
       <button class="confirm-delete-btn" id="confirm-delete-btn">+</button>
+      <button class="arrow-btn" id="arrow-up" title="Move Up">↑</button>
+      <button class="arrow-btn" id="arrow-down" title="Move Down">↓</button>
+      <button class="arrow-btn" id="arrow-left" title="Move Left">←</button>
+      <button class="arrow-btn" id="arrow-right" title="Move Right">→</button>
     </div>
 
     <div class="columns" id="columns"></div>
@@ -84,11 +114,8 @@
         <div class="inputs">
           <input type="text" id="inp-link" placeholder="Paste link (YouTube/Drive) or leave blank for plain text" />
           <input type="text" id="inp-title" placeholder="Enter title or plain text" />
-          <div class="inputs-row">
-            <input type="number" class="small-input" id="inp-start" placeholder="Start (sec)" min="0" />
-            <input type="number" class="small-input" id="inp-end" placeholder="End (sec)" min="0" />
-            <input type="text" class="large-input" id="inp-sections" placeholder="Sections (e.g. 15,25 or 10:00-, 20:00$)" />
-          </div>
+          <input type="text" id="inp-sections" placeholder="Sections (e.g. 30-4:30$ or 0:30-4:30$, 10:00)" />
+          <input type="text" id="inp-description" placeholder="Description (optional)" />
           <textarea id="inp-notes" placeholder="Notes (optional)"></textarea>
         </div>
         <div class="modal-actions">
@@ -114,7 +141,7 @@
   </div>
 
   <script type="module">
-    // Firebase
+    // Firebase, deleteField
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
     import { getFirestore, collection, doc, setDoc, getDocs, getDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
@@ -136,11 +163,14 @@
     const modal = document.getElementById("modal");
     const deleteModeBtn = document.getElementById("delete-mode-btn");
     const confirmDeleteBtn = document.getElementById("confirm-delete-btn");
+    const arrowUp = document.getElementById("arrow-up");
+    const arrowDown = document.getElementById("arrow-down");
+    const arrowLeft = document.getElementById("arrow-left");
+    const arrowRight = document.getElementById("arrow-right");
     const modalTitle = document.getElementById("modal-title");
     const inpLink = document.getElementById("inp-link");
     const inpTitle = document.getElementById("inp-title");
-    const inpStart = document.getElementById("inp-start");
-    const inpEnd = document.getElementById("inp-end");
+    const inpDescription = document.getElementById("inp-description");
     const inpSections = document.getElementById("inp-sections");
     const inpNotes = document.getElementById("inp-notes");
     const btnCancel = document.getElementById("btn-cancel");
@@ -160,11 +190,22 @@
     let currentSectionIndex = 0;
     let isPaused = false;
     let lastCheckedTime = -1;
+    let currentVideoID = null;
+    let currentStartTime = 0;
+
+    // Auto-resize textarea
+    inpNotes.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.max(120, this.scrollHeight) + 'px';
+    });
 
     // Delete mode
     let deleteMode = false;
     let selectedItems = new Set();
     let itemButtons = new Map(); // Map of itemId -> button element
+
+    // Move - selected item
+    let selectedMoveItem = null;
 
     // Helpers
     function extractYouTubeID(url) {
@@ -193,24 +234,45 @@
       if (s.includes(":")) { const [m, sec] = s.split(":"); return parseInt(m,10)*60 + parseInt(sec,10); }
       return 0;
     }
+    function secondsToTime(sec) {
+      if (!sec || sec === 0) return "";
+      const minutes = Math.floor(sec / 60);
+      const seconds = sec % 60;
+      return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+    }
     function parseSections(sectionsString) {
       const sections = [];
       if (!sectionsString) return sections;
       const parts = sectionsString.trim().split(",").map(p => p.trim()).filter(Boolean);
+      let lastEnd = -1; // -1 means no previous section yet
+      
       for (let i=0;i<parts.length;i++) {
         const raw = parts[i];
         const autoSkip = raw.endsWith("$");
         const t = autoSkip ? raw.slice(0,-1).trim() : raw;
+        
         if (t.includes("-")) {
           const [startStr, endStr] = t.split("-");
           const startSec = startStr ? timeToSeconds(startStr) : 0;
           const endSec = endStr && endStr.trim() ? timeToSeconds(endStr) : 999999;
-          if (i===0 && startSec>0) sections.push({start:0,end:startSec,autoSkip:false});
-          sections.push({start:startSec,end:endSec,autoSkip});
+          
+          // Add gap before this section if needed (but not before the first section)
+          if (lastEnd >= 0 && startSec > lastEnd) {
+            sections.push({start: lastEnd, end: startSec, autoSkip: true, isGap: true});
+          }
+          
+          sections.push({start: startSec, end: endSec, autoSkip, isGap: false});
+          lastEnd = endSec;
         } else {
           const mark = timeToSeconds(t);
-          if (i===0) { if (mark>0) sections.push({start:0,end:mark,autoSkip:false}); }
-          else { sections.push({start:mark,end:999999,autoSkip}); }
+          
+          // Add gap before this marker if needed (but not before the first section)
+          if (lastEnd >= 0 && mark > lastEnd) {
+            sections.push({start: lastEnd, end: mark, autoSkip: true, isGap: true});
+          }
+          
+          sections.push({start: mark, end: 999999, autoSkip, isGap: false});
+          lastEnd = 999999;
         }
       }
       return sections;
@@ -218,6 +280,7 @@
 
     // Data
     async function loadPageItems() {
+      console.log("Loading page items for:", PAGE);
       columnsDiv.innerHTML = "";
       itemButtons.clear();
       // Build columns from Firestore
@@ -233,12 +296,16 @@
       // sort each column by order
       [...cols.keys()].forEach(k => cols.get(k).sort((a,b) => (a.order??0)-(b.order??0)));
 
+      console.log("Found columns:", cols.size);
+      
       // render columns
       if (cols.size===0) {
+        console.log("No columns found, creating starter item");
         // create a default column with a single template item
         const colEl = createColumn(0);
         colEl.appendChild(renderItem({ id: `tmp_${Date.now()}`, title:"!", isText:false, order:0, col:0 }, 0));
         columnsDiv.appendChild(colEl);
+        console.log("Starter item created");
         return;
       }
       const maxColIdx = Math.max(...cols.keys());
@@ -263,14 +330,122 @@
       wrap.dataset.col = it.col ?? 0;
       wrap.dataset.order = it.order ?? 0;
 
+      const itemContent = document.createElement("div");
+      itemContent.className = "item-content";
+
       const titleEl = document.createElement("a");
       titleEl.className = "item-title" + (it.isText?" text-only":"");
-      titleEl.textContent = it.title || "!";
       titleEl.href = "#";
+      
+      // Check if item has a second title (title2 field)
+      const titleText = it.title || "!";
+      if (it.title2 !== undefined) {
+        // Item has split titles
+        const firstPart = document.createElement('span');
+        firstPart.textContent = titleText;
+        firstPart.style.cursor = 'pointer';
+        firstPart.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          // Open first part link
+          if (it.link && (it.link.includes("youtube.com") || it.link.includes("youtu.be"))) {
+            const vid = extractYouTubeID(it.link);
+            if (vid) openVideoEmbed(vid, 0, 0, it.sections||"");
+          } else if (it.link) {
+            window.open(it.link, "_blank");
+          }
+        });
+        
+        // Long-press on first part to edit
+        let lpTo1;
+        firstPart.addEventListener("mousedown", (e) => { 
+          e.stopPropagation();
+          lpTo1 = setTimeout(()=>openEditModal(it, false), 1000); 
+        });
+        ["mouseup","mouseleave"].forEach(ev => firstPart.addEventListener(ev, () => { clearTimeout(lpTo1); }));
+        
+        const separator = document.createElement('span');
+        separator.className = 'split-separator';
+        separator.textContent = '/';
+        
+        const secondPart = document.createElement('span');
+        secondPart.textContent = it.title2 || '!';
+        secondPart.style.cursor = 'pointer';
+        secondPart.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          // Open edit modal for second part if it's '!', otherwise open link
+          if (!it.title2 || it.title2 === '!') {
+            openEditModal(it, true); // true = editing second part
+          } else if (it.link2 && (it.link2.includes("youtube.com") || it.link2.includes("youtu.be"))) {
+            const vid = extractYouTubeID(it.link2);
+            if (vid) openVideoEmbed(vid, 0, 0, it.sections2||"");
+          } else if (it.link2) {
+            window.open(it.link2, "_blank");
+          }
+        });
+        
+        // Long-press on second part to edit
+        let lpTo2;
+        secondPart.addEventListener("mousedown", (e) => { 
+          e.stopPropagation();
+          lpTo2 = setTimeout(()=>openEditModal(it, true), 1000); 
+        });
+        ["mouseup","mouseleave"].forEach(ev => secondPart.addEventListener(ev, () => { clearTimeout(lpTo2); }));
+        
+        titleEl.appendChild(firstPart);
+        titleEl.appendChild(separator);
+        titleEl.appendChild(secondPart);
+      } else {
+        titleEl.textContent = titleText;
+      }
+
+      // Inline add button (only show if title doesn't have title2)
+      const inlineAddBtn = document.createElement("button");
+      inlineAddBtn.className = "inline-add-btn";
+      inlineAddBtn.textContent = "+";
+      if (it.title2 !== undefined) {
+        inlineAddBtn.style.display = 'none';
+      }
+      inlineAddBtn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (deleteMode) return;
+        
+        if (it.title2 === undefined) {
+          // Add second title field and duplicate original fields
+          await setDoc(doc(db, "notes", it.id), { 
+            title2: "!",
+            link2: it.link || "",
+            sections2: it.sections || ""
+            // description and text are already shared
+          }, { merge: true });
+          // Reload and open modal
+          await loadPageItems();
+          // Get updated item data and open modal for second part
+          const updatedDoc = await getDoc(doc(db, "notes", it.id));
+          if (updatedDoc.exists()) {
+            const updatedItem = updatedDoc.data();
+            updatedItem.id = updatedDoc.id;
+            openEditModal(updatedItem, true); // true = editing second part
+          }
+        }
+      });
 
       // Click behavior
+      let lpTo, isTitleLongPress = false;
       titleEl.addEventListener("click", (e) => {
         e.preventDefault();
+        
+        // If it was a long press, don't trigger click
+        if (isTitleLongPress) {
+          isTitleLongPress = false;
+          return;
+        }
+        
+        // If has title2, clicking is handled by individual parts
+        if (it.title2 !== undefined) return;
+        
         if (!it.link && (!it.title || it.title === "!")) {
           openEditModal(it);
           return;
@@ -278,34 +453,75 @@
         // Link item: YouTube/Drive open/embedded
         if (it.link && (it.link.includes("youtube.com") || it.link.includes("youtu.be"))) {
           const vid = extractYouTubeID(it.link);
-          if (vid) openVideoEmbed(vid, it.startTime||0, it.endTime||0, it.sections||"");
+          if (vid) openVideoEmbed(vid, 0, 0, it.sections||"");
         } else if (it.link) {
           window.open(it.link, "_blank");
         }
       });
 
-      // Long-press to edit (1s)
-      let lpTo;
-      titleEl.addEventListener("mousedown", () => { lpTo = setTimeout(()=>openEditModal(it), 1000); });
-      ["mouseup","mouseleave"].forEach(ev => titleEl.addEventListener(ev, () => { clearTimeout(lpTo); }));
+      // Long-press to edit (1s) - only for first part
+      titleEl.addEventListener("mousedown", (e) => { 
+        if (it.title2 !== undefined) return; // Don't trigger if has title2
+        isTitleLongPress = false;
+        lpTo = setTimeout(()=> {
+          isTitleLongPress = true;
+          openEditModal(it);
+          // Reset flag after a short delay to catch the click event
+          setTimeout(() => { isTitleLongPress = false; }, 100);
+        }, 1000); 
+      });
+      ["mouseup","mouseleave"].forEach(ev => titleEl.addEventListener(ev, () => { 
+        clearTimeout(lpTo);
+        // Reset flag when releasing if long press didn't trigger
+        setTimeout(() => { isTitleLongPress = false; }, 50);
+      }));
 
-      wrap.appendChild(titleEl);
+      itemContent.appendChild(titleEl);
+      itemContent.appendChild(inlineAddBtn);
+      
+      const itemRow = document.createElement("div");
+      itemRow.className = "item-row";
+      itemRow.appendChild(itemContent);
 
       const tb = document.createElement("div"); tb.className = "toolbar";
       const btnBelow = document.createElement("button"); btnBelow.className = "btn btn-add"; btnBelow.textContent = "+";
       itemButtons.set(it.id, btnBelow);
 
-      // Add below (short press = same group, long press = new group)
-      let belowTimer, isGroup = false;
+      // Add below (short press = add item, long press = select for move)
+      let belowTimer, isBtnLongPress = false;
       btnBelow.addEventListener("mousedown", (e) => {
         if (deleteMode) {
           e.preventDefault();
           return;
         }
-        isGroup=false; belowTimer = setTimeout(()=>{ isGroup=true; }, 1000);
+        isBtnLongPress = false;
+        belowTimer = setTimeout(() => {
+          isBtnLongPress = true;
+          e.preventDefault();
+          e.stopPropagation();
+          // Toggle selection for moving
+          if (selectedMoveItem === it.id) {
+            // Deselect
+            selectedMoveItem = null;
+            btnBelow.classList.remove('move-selected');
+            console.log('Item deselected for moving');
+          } else {
+            // Deselect previous
+            if (selectedMoveItem) {
+              const prevBtn = itemButtons.get(selectedMoveItem);
+              if (prevBtn) prevBtn.classList.remove('move-selected');
+            }
+            // Select this item
+            selectedMoveItem = it.id;
+            btnBelow.classList.add('move-selected');
+            console.log('Item selected for moving:', it.id);
+          }
+        }, 1000);
       });
       btnBelow.addEventListener("mouseup", async (e) => {
+        const wasLongPress = isBtnLongPress;
         clearTimeout(belowTimer);
+        
         if (deleteMode) {
           e.preventDefault();
           e.stopPropagation();
@@ -319,9 +535,21 @@
           }
           return;
         }
-        await addItemBelow(it, isGroup);
+        
+        // If it was a long press, don't add item
+        if (wasLongPress) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+        
+        // Short press - add item below in same group
+        await addItemBelow(it, false);
       });
-      btnBelow.addEventListener("mouseleave", () => { clearTimeout(belowTimer); });
+      btnBelow.addEventListener("mouseleave", () => { 
+        clearTimeout(belowTimer);
+        isBtnLongPress = false;
+      });
 
       tb.appendChild(btnBelow);
 
@@ -333,7 +561,8 @@
         tb.appendChild(btnRight);
       }
 
-      wrap.appendChild(tb);
+      itemRow.appendChild(tb);
+      wrap.appendChild(itemRow);
 
       return wrap;
     }
@@ -361,6 +590,13 @@
       if (groupBefore) newItem.groupBefore = true;
       await setDoc(doc(db, "notes", id), newItem);
       await loadPageItems();
+      // Open modal for new item
+      const newDoc = await getDoc(doc(db, "notes", id));
+      if (newDoc.exists()) {
+        const newItemData = newDoc.data();
+        newItemData.id = newDoc.id;
+        openEditModal(newItemData);
+      }
     }
     async function addItemRight(refItem) {
       const colIdx = (refItem.col ?? 0) + 1;
@@ -372,19 +608,38 @@
 
     // Modal editing
     let editingItem = null;
-    function openEditModal(it) {
+    let editingSecondPart = false;
+    function openEditModal(it, isSecondPart = false) {
       editingItem = it;
-      modalTitle.textContent = "Edit Item";
-      inpLink.value = it.link || "";
-      inpTitle.value = it.title && it.title !== "!" ? it.title : "";
-      inpStart.value = it.startTime || "";
-      inpEnd.value = it.endTime || "";
-      inpSections.value = it.sections || "";
-      inpNotes.value = it.text || "";
+      editingSecondPart = isSecondPart;
+      modalTitle.textContent = isSecondPart ? "Edit Second Title" : "Edit Item";
+      
+      if (isSecondPart) {
+        // Editing second part
+        inpLink.value = it.link2 || "";
+        inpTitle.value = it.title2 && it.title2 !== "!" ? it.title2 : "";
+        inpDescription.value = it.description || ""; // Shared description field
+        inpSections.value = it.sections2 || "";
+        inpNotes.value = it.text || ""; // Shared notes field
+      } else {
+        // Editing first part
+        inpLink.value = it.link || "";
+        inpTitle.value = it.title && it.title !== "!" ? it.title : "";
+        inpDescription.value = it.description || ""; // Shared description field
+        inpSections.value = it.sections || "";
+        inpNotes.value = it.text || ""; // Shared notes field
+      }
+      
       modal.style.display = "flex";
       inpTitle.focus();
+      
+      // Auto-resize textarea
+      setTimeout(() => {
+        inpNotes.style.height = 'auto';
+        inpNotes.style.height = Math.max(120, inpNotes.scrollHeight) + 'px';
+      }, 0);
     }
-    function closeEditModal() { modal.style.display = "none"; editingItem = null; }
+    function closeEditModal() { modal.style.display = "none"; editingItem = null; editingSecondPart = false; }
 
     btnCancel.addEventListener("click", closeEditModal);
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeEditModal(); closeVideo(); } });
@@ -393,13 +648,39 @@
       if (!editingItem) return;
       const link = inpLink.value.trim();
       const title = inpTitle.value.trim();
-      const startTime = parseInt(inpStart.value) || 0;
-      const endTime = parseInt(inpEnd.value) || 0;
+      const description = inpDescription.value.trim();
       const sections = inpSections.value.trim();
       const text = inpNotes.value.trim();
 
-      const update = { link, title: title || (link ? "(untitled)" : "!"), startTime, endTime, sections, text };
-      if (!link && title) update.isText = true; else update.isText = false;
+      let update;
+      if (editingSecondPart) {
+        // Save to second part fields
+        update = { 
+          link2: link, 
+          title2: title || (link ? "(untitled)" : "!"),
+          description: description, // Shared description field
+          sections2: sections, 
+          text: text // Shared notes field
+        };
+      } else {
+        // Save to first part fields
+        update = { 
+          link, 
+          title: title || (link ? "(untitled)" : "!"),
+          description: description, // Shared description field
+          sections, 
+          text // Shared notes field
+        };
+        if (!link && title) update.isText = true; else update.isText = false;
+      }
+      
+      // If it's a temp item, add required fields
+      if (editingItem.id.startsWith('tmp_')) {
+        update.page = PAGE;
+        update.col = editingItem.col ?? 0;
+        update.order = editingItem.order ?? 0;
+      }
+      
       await setDoc(doc(db, "notes", editingItem.id), update, { merge: true });
       closeEditModal();
       await loadPageItems();
@@ -407,58 +688,178 @@
 
     btnDelete.addEventListener("click", async () => {
       if (!editingItem) return;
-      await deleteDoc(doc(db, "notes", editingItem.id));
+      
+      if (editingSecondPart) {
+        // Remove only the second title fields (keep shared text and description)
+        await setDoc(doc(db, "notes", editingItem.id), { 
+          title2: deleteField(),
+          link2: deleteField(),
+          sections2: deleteField()
+        }, { merge: true });
+      } else {
+        // Delete entire item
+        await deleteDoc(doc(db, "notes", editingItem.id));
+      }
+      
       closeEditModal();
       await loadPageItems();
     });
 
     // Video handling
     function openVideoEmbed(videoID, startTime=0, endTime=0, sectionsStr="") {
-      let embedUrl = `https://www.youtube.com/embed/${videoID}?autoplay=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}`;
-      if (startTime>0) embedUrl += `&start=${Math.floor(startTime)}`;
-      videoIframe.src = embedUrl;
       currentSections = parseSections(sectionsStr);
+      console.log("Parsed sections:", currentSections);
+      const actualStartTime = currentSections.length > 0 ? currentSections[0].start : startTime;
+      
+      currentVideoID = videoID;
+      currentStartTime = actualStartTime;
       currentSectionIndex = 0; isPaused=false; lastCheckedTime=-1;
       videoModal.style.display = "flex";
-      setTimeout(setupYouTubeListener, 600);
+      
+      setTimeout(setupYouTubeListener, 100);
     }
     function setupYouTubeListener() {
-      if (window.YT===undefined) { const tag=document.createElement('script'); tag.src="https://www.youtube.com/iframe_api"; document.body.appendChild(tag); }
+      console.log("Setting up YouTube listener...");
+      if (window.YT===undefined) { 
+        const tag=document.createElement('script'); 
+        tag.src="https://www.youtube.com/iframe_api"; 
+        document.body.appendChild(tag); 
+      }
       const iv = setInterval(()=>{
-        if (window.YT && window.YT.Player) { clearInterval(iv);
-          try { videoPlayer = new YT.Player(videoIframe, { events: { onReady:onPlayerReady, onStateChange:onPlayerStateChange } }); } catch {}
+        if (window.YT && window.YT.Player) { 
+          clearInterval(iv);
+          console.log("YouTube API ready, creating player...");
+          try { 
+            // Destroy existing player if it exists
+            if (videoPlayer && videoPlayer.destroy) {
+              videoPlayer.destroy();
+            }
+            
+            // Remove old iframe and create new one
+            const oldIframe = document.getElementById('video-iframe');
+            if (oldIframe) {
+              oldIframe.remove();
+            }
+            
+            // Create new iframe element
+            const newIframe = document.createElement('div');
+            newIframe.id = 'video-iframe';
+            const container = document.getElementById('video-modal-content');
+            container.insertBefore(newIframe, container.firstChild);
+            
+            videoPlayer = new YT.Player('video-iframe', { 
+              height: '480',
+              width: '100%',
+              videoId: currentVideoID,
+              playerVars: {
+                autoplay: 1,
+                start: Math.floor(currentStartTime),
+                enablejsapi: 1
+              },
+              events: { 
+                onReady: onPlayerReady, 
+                onStateChange: onPlayerStateChange 
+              } 
+            }); 
+          } catch(e) { 
+            console.error("Error creating player:", e); 
+          }
         }
       }, 100);
     }
     function onPlayerReady(e) {
-      try { e.target.unMute(); e.target.setVolume(100); e.target.playVideo(); } catch {}
+      console.log("Player ready!");
+      try { e.target.unMute(); e.target.setVolume(50); e.target.playVideo(); } catch(e) { console.error("Error in onPlayerReady:", e); }
     }
-    function onPlayerStateChange(e) { if (e.data === window.YT.PlayerState.PLAYING) monitorPlayback(); }
+    function onPlayerStateChange(e) { 
+      console.log("Player state changed:", e.data);
+      if (e.data === window.YT.PlayerState.PLAYING) monitorPlayback(); 
+    }
     function monitorPlayback() {
-      if (!videoPlayer || !videoPlayer.getCurrentTime || currentSections.length===0) { setTimeout(monitorPlayback,100); return; }
+      // Stop monitoring if video modal is closed
+      if (videoModal.style.display === 'none') {
+        console.log("Video closed, stopping monitor");
+        return;
+      }
+      
+      if (!videoPlayer || !videoPlayer.getCurrentTime) { 
+        console.log("Player not ready yet...");
+        setTimeout(monitorPlayback,100); 
+        return; 
+      }
+      
+      if (currentSections.length===0) { 
+        console.log("No sections, stopping monitor");
+        setTimeout(monitorPlayback,500); 
+        return; 
+      }
+      
       const t = videoPlayer.getCurrentTime();
-      
-      // Find which section we're currently in (handles manual seeking)
-      let foundSection = false;
-      for (let i = 0; i < currentSections.length; i++) {
-        const s = currentSections[i];
-        if (t >= s.start && t < s.end) {
-          currentSectionIndex = i;
-          foundSection = true;
-          break;
-        }
-      }
-      
       const sec = currentSections[currentSectionIndex];
-      if (!sec) return;
       
+      if (!sec) {
+        console.log("No current section found");
+        return;
+      }
+      
+      // Log current state every second
+      if (Math.floor(t) !== Math.floor(lastCheckedTime)) {
+        console.log(`Time: ${t.toFixed(1)}s, Section ${currentSectionIndex}: ${sec.start}-${sec.end}, autoSkip: ${sec.autoSkip}`);
+      }
+      
+      // Check if we've reached the end of current section FIRST
       if (t>=sec.end && lastCheckedTime<sec.end) {
+        console.log(`Reached end of section at ${t}s. Section:`, sec, `Next index:`, currentSectionIndex + 1);
         if (sec.autoSkip && currentSectionIndex<currentSections.length-1) {
-          currentSectionIndex++; const next = currentSections[currentSectionIndex]; videoPlayer.seekTo(next.start);
-        } else {
-          videoPlayer.pauseVideo(); isPaused=true; const nextIndex=Math.min(currentSectionIndex+1,currentSections.length-1); const next=currentSections[nextIndex]; if (next) showSectionPrompt(next.start, nextIndex);
+          // Skip to next section
+          currentSectionIndex++;
+          let next = currentSections[currentSectionIndex];
+          console.log("Skipping to next section:", next);
+          // Keep skipping through consecutive auto-skip gap sections
+          while (next && next.isGap && currentSectionIndex < currentSections.length - 1) {
+            const nextNext = currentSections[currentSectionIndex + 1];
+            // Check if this is a gap section (ends where next begins)
+            if (nextNext && Math.abs(next.end - nextNext.start) < 1) {
+              console.log("Skipping through gap section:", next);
+              currentSectionIndex++;
+              next = currentSections[currentSectionIndex];
+            } else {
+              break;
+            }
+          }
+          console.log("Final seek to:", next.start);
+          videoPlayer.seekTo(next.start);
+          lastCheckedTime = next.start;
+        } else if (currentSectionIndex<currentSections.length-1) {
+          // Pause and prompt, but find the actual playable section (skip gaps)
+          videoPlayer.pauseVideo(); 
+          isPaused=true; 
+          let nextIndex = currentSectionIndex + 1;
+          let next = currentSections[nextIndex];
+          // Skip through auto-skip gap sections to find the real next section
+          while (next && next.isGap && nextIndex < currentSections.length - 1) {
+            const nextNext = currentSections[nextIndex + 1];
+            if (nextNext && Math.abs(next.end - nextNext.start) < 1) {
+              console.log("Prompt: Skipping through gap section:", next);
+              nextIndex++;
+              next = currentSections[nextIndex];
+            } else {
+              break;
+            }
+          }
+          if (next) showSectionPrompt(next.start, nextIndex);
+        }
+      } else {
+        // Update section index if we've moved to a different section (for manual seeking)
+        for (let i = 0; i < currentSections.length; i++) {
+          const s = currentSections[i];
+          if (t >= s.start && t < s.end && i !== currentSectionIndex) {
+            currentSectionIndex = i;
+            break;
+          }
         }
       }
+      
       if (isPaused && videoPlayer.getPlayerState()===window.YT.PlayerState.PLAYING) {
         isPaused=false; if (currentSectionIndex<currentSections.length-1) { currentSectionIndex++; const next=currentSections[currentSectionIndex]; videoPlayer.seekTo(next.start); }
       }
@@ -473,10 +874,30 @@
     function hideSectionPrompt() { videoPrompt.style.display='none'; delete videoPrompt.dataset.nextStart; delete videoPrompt.dataset.nextIndex; document.removeEventListener('keydown', promptKeyHandler); }
     function promptKeyHandler(e){ if(e.key==='Enter' && videoPrompt.style.display==='block'){ e.preventDefault(); videoPromptContinue.click(); } if(e.key==='Escape' && videoPrompt.style.display==='block'){ e.preventDefault(); videoPromptCancel.click(); } }
 
-    videoPromptContinue.addEventListener('click', ()=>{ const nextStart=parseFloat(videoPrompt.dataset.nextStart||0); const nextIndex=parseInt(videoPrompt.dataset.nextIndex||0,10); hideSectionPrompt(); if(videoPlayer){ currentSectionIndex=nextIndex; videoPlayer.seekTo(nextStart); try{videoPlayer.playVideo();}catch{} isPaused=false; } });
+    videoPromptContinue.addEventListener('click', ()=>{ 
+      const nextStart=parseFloat(videoPrompt.dataset.nextStart||0); 
+      const nextIndex=parseInt(videoPrompt.dataset.nextIndex||0,10); 
+      console.log("Prompt continue clicked. Jump to:", nextStart, "Section:", nextIndex);
+      hideSectionPrompt(); 
+      if(videoPlayer){ 
+        currentSectionIndex=nextIndex; 
+        videoPlayer.seekTo(nextStart); 
+        try{
+          videoPlayer.playVideo();
+        }catch{} 
+        isPaused=false; 
+      } 
+    });
     videoPromptCancel.addEventListener('click', hideSectionPrompt);
 
-    function closeVideo(){ videoModal.style.display='none'; videoIframe.src=''; hideSectionPrompt(); }
+    function closeVideo(){ 
+      videoModal.style.display='none'; 
+      if (videoPlayer && videoPlayer.destroy) {
+        videoPlayer.destroy();
+        videoPlayer = null;
+      }
+      hideSectionPrompt(); 
+    }
     videoClose.addEventListener('click', closeVideo);
 
     // Delete mode handlers
@@ -506,6 +927,84 @@
       columnsDiv.classList.remove('delete-mode-active');
       await loadPageItems();
     });
+
+    // Arrow button handlers
+    arrowUp.addEventListener('click', () => moveItem('up'));
+    arrowDown.addEventListener('click', () => moveItem('down'));
+    arrowLeft.addEventListener('click', () => moveItem('left'));
+    arrowRight.addEventListener('click', () => moveItem('right'));
+
+    async function moveItem(direction) {
+      if (!selectedMoveItem) {
+        console.log('No item selected for moving');
+        return;
+      }
+
+      const itemId = selectedMoveItem;
+      const docRef = doc(db, "notes", itemId);
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) return;
+
+      const itemData = docSnap.data();
+      const currentCol = itemData.col ?? 0;
+      const currentOrder = itemData.order ?? 0;
+
+      // Get all items
+      const q = query(collection(db, "notes"), where("page", "==", PAGE));
+      const snap = await getDocs(q);
+      const allItems = [];
+      snap.forEach(d => {
+        const it = d.data();
+        it.id = d.id;
+        allItems.push(it);
+      });
+
+      if (direction === 'up') {
+        // Move up within the same column
+        const colItems = allItems.filter(it => (it.col ?? 0) === currentCol).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        const currentIndex = colItems.findIndex(it => it.id === itemId);
+        if (currentIndex > 0) {
+          // Swap order with previous item
+          const prevItem = colItems[currentIndex - 1];
+          await setDoc(doc(db, "notes", itemId), { order: prevItem.order ?? 0 }, { merge: true });
+          await setDoc(doc(db, "notes", prevItem.id), { order: currentOrder }, { merge: true });
+        }
+      } else if (direction === 'down') {
+        // Move down within the same column
+        const colItems = allItems.filter(it => (it.col ?? 0) === currentCol).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        const currentIndex = colItems.findIndex(it => it.id === itemId);
+        if (currentIndex < colItems.length - 1) {
+          // Swap order with next item
+          const nextItem = colItems[currentIndex + 1];
+          await setDoc(doc(db, "notes", itemId), { order: nextItem.order ?? 0 }, { merge: true });
+          await setDoc(doc(db, "notes", nextItem.id), { order: currentOrder }, { merge: true });
+        }
+      } else if (direction === 'left') {
+        // Move to top of left column
+        if (currentCol > 0) {
+          const targetCol = currentCol - 1;
+          const colItems = allItems.filter(it => (it.col ?? 0) === targetCol);
+          const minOrder = colItems.length > 0 ? Math.min(...colItems.map(it => it.order ?? 0)) : 0;
+          await setDoc(doc(db, "notes", itemId), { col: targetCol, order: minOrder - 1 }, { merge: true });
+        }
+      } else if (direction === 'right') {
+        // Move to top of right column
+        const targetCol = currentCol + 1;
+        const colItems = allItems.filter(it => (it.col ?? 0) === targetCol);
+        const minOrder = colItems.length > 0 ? Math.min(...colItems.map(it => it.order ?? 0)) : 0;
+        await setDoc(doc(db, "notes", itemId), { col: targetCol, order: minOrder - 1 }, { merge: true });
+      }
+
+      await loadPageItems();
+      
+      // Reapply selection highlight after reload
+      if (selectedMoveItem) {
+        const btn = itemButtons.get(selectedMoveItem);
+        if (btn) {
+          btn.classList.add('move-selected');
+        }
+      }
+    }
 
     // Init
     loadPageItems();
