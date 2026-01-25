@@ -555,7 +555,10 @@
 
       // Only add 'right' button for first item in rightmost column
       if ((it.order ?? 0) === 0 && (it.col ?? 0) === maxColIdx) {
-        const btnRight = document.createElement("button"); btnRight.className = "btn btn-add"; btnRight.textContent = "+";
+        const btnRight = document.createElement("button");
+        btnRight.className = "btn btn-add";
+        btnRight.textContent = "+";
+        btnRight.title = "Add item in new right column";
         // Add right (new column next to current)
         btnRight.addEventListener("click", async () => { await addItemRight(it); });
         tb.appendChild(btnRight);
