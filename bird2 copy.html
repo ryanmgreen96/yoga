@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bird — Template</title>
+  <style>
+    :root {
+      --bg: #c41e3a;
+      --gold: gold;
+      --white: #fff;
+      --green: #2b6b2b;
+      --green-hover: #1f4f1f;
+      --beige: #e8d9a7;
+      --gap: 10px;
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; background: var(--bg); color: var(--white); font-family: system-ui, sans-serif; }
+    .page { padding: 16px; }
+
+    /* Header (top-left) */
+    .header { display:flex; align-items:center; gap:8px; flex-wrap: wrap; }
+    .current-page-title { color: var(--gold); font-weight: 800; font-size: 18px; min-width: 90px; }
+    .page-tabs { display:flex; align-items:center; gap:8px; flex-wrap: wrap; margin-left: 8px; }
+    .page-tab { color: var(--gold); background: transparent; border: 1px solid rgba(255,215,0,0.45); border-radius: 6px; padding: 3px 8px; font-weight: 700; cursor: pointer; }
+    .page-tab:hover { background: rgba(255,215,0,0.12); }
+    .page-tab.active { background: rgba(255,215,0,0.2); border-color: var(--gold); }
+    .header a { color: var(--gold); font-weight: 700; text-decoration: none; }
+    .header a:hover { text-decoration: underline; }
+    .delete-mode-btn { background: #8b0000; color: #fff; border: none; border-radius: 6px; padding: 4px 8px; font-weight: 600; cursor: pointer; font-size: 13px; }
+    .delete-mode-btn:hover { background: #a00000; }
+    .confirm-delete-btn { background: var(--green); color: #fff; border: none; border-radius: 6px; padding: 4px 8px; font-weight: 600; cursor: pointer; font-size: 13px; display: none; }
+    .confirm-delete-btn:hover { background: var(--green-hover); }
+    .delete-mode-active .btn-add { background: #8b0000; }
+    .arrow-btn { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-weight: 600; cursor: pointer; font-size: 16px; }
+    .arrow-btn:hover { background: #1d4ed8; }
+    .item.move-selected { background: #eab308; box-shadow: 0 0 0 2px #fef08a; }
+
+    /* Columns layout */
+    .columns { display:flex; align-items:flex-start; gap: 14px; margin-top: 16px; }
+    .column { display:flex; flex-direction:column; align-items: flex-start; gap: 8px; min-width: 0; width: fit-content; }
+    .column-header { display: flex; align-items: center; gap: 6px; width: 208px; }
+    .column-title-slot { flex: 1; min-width: 0; }
+    .column-title-display { width: 100%; text-align: center; color: #e8d9a7; font-family: Georgia, "Times New Roman", serif; font-size: 18px; line-height: 1.2; min-height: 28px; padding: 2px 6px; user-select: none; cursor: default; }
+    .column-title-display:empty::before { content: " "; }
+    .column-title-edit { width: 100%; background: rgba(255,255,255,0.12); color: #e8d9a7; border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 4px 8px; text-align: center; font-family: Georgia, "Times New Roman", serif; font-size: 18px; }
+    .column-title-edit::placeholder { color: rgba(232,217,167,0.75); }
+    .add-column-btn { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 4px 8px; font-weight: 700; cursor: pointer; font-size: 15px; line-height: 1; }
+    .add-column-btn:hover { background: #1d4ed8; }
+    
+    /* Mobile layout */
+    @media (max-width: 700px) {
+      .columns { 
+        display: grid; 
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 14px; 
+      }
+      .column { 
+        min-width: unset; 
+        width: 100%; 
+      }
+    }
+    .item { background: rgba(255,255,255,0.08); border-radius: 5px; padding: 1px 4px; display:flex; flex-direction: column; gap:0; border: 1px solid rgba(255,255,255,0.1); }
+    .item-title { color: var(--white); text-decoration:none; font-size: 15px; cursor:pointer; margin: 0; display: block; line-height: 1.15; }
+    .item-title.text-only { color: var(--beige); }
+    .thumbnail-crop { width: 208px; height: 125px; margin-top: 1px; border-radius: 4px; overflow: hidden; }
+    .item-thumbnail { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; transform: scale(1.12); transform-origin: center; }
+    .column-add-btn { padding: 4px 10px; }
+
+    .toolbar { display:flex; gap:6px; padding: 4px 0 0 0; }
+    .btn { border: none; border-radius: 6px; padding: 4px 8px; font-weight:600; cursor:pointer; font-size: 13px; }
+    .btn-add { background: var(--green); color: #fff; }
+    .btn-add:hover { background: var(--green-hover); }
+    .split-separator { color: rgba(255, 255, 255, 0.7); margin: 0 4px; font-weight: 900; cursor: pointer; font-size: 16px; }
+    .split-separator:hover { color: rgba(255, 255, 255, 0.9); }
+
+    .group-gap { margin-top: 25px; }
+
+    /* Modal */
+    #modal { display:none; position:fixed; inset:0; background: rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:9999; }
+    #modal-content { background:#222; border-radius:12px; padding:16px; width: 520px; max-width: 92%; color:#eee; }
+    #modal h3 { margin:0 0 8px 0; color: var(--gold); font-size: 16px; text-align:center; }
+    .inputs { display:flex; flex-direction:column; gap:8px; }
+    .inputs-row { display:flex; gap:8px; }
+    .inputs-row > * { flex:1; }
+    .inputs-row .small-input { flex:0 0 80px; }
+    .inputs-row .large-input { flex:1; }
+    input, textarea { width:100%; border:none; border-radius: 6px; padding:8px; font-size: 14px; }
+    textarea { min-height: 120px; resize: vertical; font-family: system-ui, sans-serif; }
+    input::placeholder, textarea::placeholder { color:#aaa; }
+    .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:8px; }
+    .btn-secondary { background:#444; color:#fff; }
+    .btn-primary { background: var(--gold); color:#222; }
+
+    /* Video modal */
+    #video-modal { display:none; position:fixed; inset:0; background: rgba(0,0,0,0.75); align-items:center; justify-content:center; z-index:10000; }
+    #video-modal-content { background:#000; border-radius:12px; padding:14px; width:90%; max-width:900px; display:flex; flex-direction:column; position:relative; }
+    #video-iframe { flex:1; min-height: 480px; border:none; border-radius:8px; }
+    #video-close { align-self:flex-end; margin-top:8px; }
+    #video-prompt { display:none; position:absolute; left:50%; transform:translateX(-50%); top:28%; background: rgba(0,0,0,0.65); color:#fff; padding:12px 16px; border-radius:10px; text-align:center; min-width:280px; }
+    #video-prompt .btn { margin-left:6px; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <div id="current-page-title" class="current-page-title"></div>
+      <div id="page-tabs" class="page-tabs"></div>
+      <button id="add-page-btn" class="btn btn-add">Add Page</button>
+      <button class="delete-mode-btn" id="delete-mode-btn">✕</button>
+      <button class="confirm-delete-btn" id="confirm-delete-btn">+</button>
+      <button class="arrow-btn" id="arrow-up" title="Move Up">↑</button>
+      <button class="arrow-btn" id="arrow-down" title="Move Down">↓</button>
+      <button class="arrow-btn" id="arrow-left" title="Move Left">←</button>
+      <button class="arrow-btn" id="arrow-right" title="Move Right">→</button>
+    </div>
+
+    <div class="columns" id="columns"></div>
+
+    <!-- Modal for creating/editing item -->
+    <div id="modal">
+      <div id="modal-content">
+        <h3 id="modal-title">Edit Item</h3>
+        <div class="inputs">
+          <input type="text" id="inp-link" placeholder="Paste link (YouTube/Drive) or leave blank for plain text" />
+          <input type="text" id="inp-title" placeholder="Enter title or plain text" />
+          <input type="number" id="inp-thumb-frame" placeholder="Thumbnail frame (0-3 for YouTube)" min="0" max="3" step="1" />
+          <input type="text" id="inp-preview-image" placeholder="Preview image URL (optional, overrides thumbnail)" />
+          <input type="text" id="inp-sections" placeholder="Sections (e.g. 30-4:30$ or 0:30-4:30$, 10:00)" />
+          <input type="text" id="inp-description" placeholder="Description (optional)" />
+          <textarea id="inp-notes" placeholder="Notes (optional)"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="btn-delete" style="margin-right: auto;">Delete</button>
+          <button class="btn btn-secondary" id="btn-cancel">Cancel</button>
+          <button class="btn btn-primary" id="btn-save">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Video Modal -->
+    <div id="video-modal">
+      <div id="video-modal-content">
+        <iframe id="video-iframe" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+        <div id="video-prompt">
+          <span id="video-prompt-text">Section ended.</span>
+          <button class="btn btn-primary" id="video-prompt-continue">Jump to next</button>
+          <button class="btn btn-secondary" id="video-prompt-cancel">Keep paused</button>
+        </div>
+        <button class="btn btn-secondary" id="video-close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    // Firebase, deleteField
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import { getFirestore, collection, doc, setDoc, getDocs, getDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCdzIu5PwO5KiZmdFCNCOvJY1R6JHgkKjM",
+      authDomain: "birdfood-fda27.firebaseapp.com",
+      projectId: "birdfood-fda27",
+      storageBucket: "birdfood-fda27.firebasestorage.app",
+      messagingSenderId: "340792097507",
+      appId: "1:340792097507:web:f151f0076517cc2e0323d6"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const SITE_KEY = (urlParams.get("siteKey") || "").trim();
+    const PAGES_COLLECTION = SITE_KEY ? `${SITE_KEY}_pages` : "pages";
+    const NOTES_COLLECTION = SITE_KEY ? `${SITE_KEY}_notes` : "notes";
+    const COLUMN_META_COLLECTION = SITE_KEY ? `${SITE_KEY}_columnMeta` : "columnMeta";
+    let PAGE = (urlParams.get("page") || (SITE_KEY ? "home" : "bird")).trim() || (SITE_KEY ? "home" : "bird");
+
+    // DOM
+    const columnsDiv = document.getElementById("columns");
+    const currentPageTitle = document.getElementById("current-page-title");
+    const pageTabs = document.getElementById("page-tabs");
+    const addPageBtn = document.getElementById("add-page-btn");
+    const modal = document.getElementById("modal");
+    const deleteModeBtn = document.getElementById("delete-mode-btn");
+    const confirmDeleteBtn = document.getElementById("confirm-delete-btn");
+    const arrowUp = document.getElementById("arrow-up");
+    const arrowDown = document.getElementById("arrow-down");
+    const arrowLeft = document.getElementById("arrow-left");
+    const arrowRight = document.getElementById("arrow-right");
+    const modalTitle = document.getElementById("modal-title");
+    const inpLink = document.getElementById("inp-link");
+    const inpTitle = document.getElementById("inp-title");
+    const inpThumbFrame = document.getElementById("inp-thumb-frame");
+    const inpPreviewImage = document.getElementById("inp-preview-image");
+    const inpDescription = document.getElementById("inp-description");
+    const inpSections = document.getElementById("inp-sections");
+    const inpNotes = document.getElementById("inp-notes");
+    const btnCancel = document.getElementById("btn-cancel");
+    const btnSave = document.getElementById("btn-save");
+    const btnDelete = document.getElementById("btn-delete");
+
+    const videoModal = document.getElementById("video-modal");
+    const videoIframe = document.getElementById("video-iframe");
+    const videoClose = document.getElementById("video-close");
+    const videoPrompt = document.getElementById("video-prompt");
+    const videoPromptText = document.getElementById("video-prompt-text");
+    const videoPromptContinue = document.getElementById("video-prompt-continue");
+    const videoPromptCancel = document.getElementById("video-prompt-cancel");
+
+    let videoPlayer = null;
+    let currentSections = [];
+    let currentSectionIndex = 0;
+    let isPaused = false;
+    let lastCheckedTime = -1;
+    let currentVideoID = null;
+    let currentStartTime = 0;
+
+    // Auto-resize textarea
+    inpNotes.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.max(120, this.scrollHeight) + 'px';
+    });
+
+    // Delete mode
+    let deleteMode = false;
+    let selectedItems = new Set();
+    let itemButtons = new Map(); // Map of itemId -> button element
+
+    // Move - selected item
+    let selectedMoveItem = null;
+
+    // Helpers
+    function extractYouTubeID(url) {
+      try {
+        const u = new URL(url);
+        if (u.hostname.includes("youtube.com")) return u.searchParams.get("v");
+        if (u.hostname.includes("youtu.be")) return u.pathname.slice(1);
+      } catch {}
+      return null;
+    }
+    function extractGoogleDriveID(url) {
+      try {
+        const u = new URL(url);
+        if (!u.hostname.includes("drive.google.com")) return null;
+        let m = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+        if (m) return m[1];
+        m = url.match(/id=([a-zA-Z0-9-_]+)/);
+        if (m) return m[1];
+      } catch {}
+      return null;
+    }
+    function getThumbnailUrl(link, thumbFrame, previewImage) {
+      const customPreview = (previewImage || "").trim();
+      if (customPreview) return customPreview;
+      if (!link) return null;
+      const ytId = extractYouTubeID(link);
+      if (ytId) {
+        let frame = Number.isInteger(thumbFrame) ? thumbFrame : parseInt(thumbFrame, 10);
+        if (!Number.isInteger(frame) || frame < 0 || frame > 3) frame = 0;
+        // Add query param so switching frames always triggers a fresh image request.
+        return `https://img.youtube.com/vi/${ytId}/${frame}.jpg?frame=${frame}`;
+      }
+      const gdId = extractGoogleDriveID(link);
+      if (gdId) return `https://drive.google.com/thumbnail?id=${gdId}`;
+      return null;
+    }
+    function timeToSeconds(str) {
+      const s = (str || "").trim();
+      if (!s) return 0;
+      if (/^\d+$/.test(s)) return parseInt(s, 10);
+      if (s.includes(":")) { const [m, sec] = s.split(":"); return parseInt(m,10)*60 + parseInt(sec,10); }
+      return 0;
+    }
+    function secondsToTime(sec) {
+      if (!sec || sec === 0) return "";
+      const minutes = Math.floor(sec / 60);
+      const seconds = sec % 60;
+      return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+    }
+    function parseSections(sectionsString) {
+      const sections = [];
+      if (!sectionsString) return sections;
+      const parts = sectionsString.trim().split(",").map(p => p.trim()).filter(Boolean);
+      let lastEnd = -1; // -1 means no previous section yet
+      
+      for (let i=0;i<parts.length;i++) {
+        const raw = parts[i];
+        const autoSkip = raw.endsWith("$");
+        const t = autoSkip ? raw.slice(0,-1).trim() : raw;
+        
+        if (t.includes("-")) {
+          const [startStr, endStr] = t.split("-");
+          const startSec = startStr ? timeToSeconds(startStr) : 0;
+          const endSec = endStr && endStr.trim() ? timeToSeconds(endStr) : 999999;
+          
+          // Add gap before this section if needed (but not before the first section)
+          if (lastEnd >= 0 && startSec > lastEnd) {
+            sections.push({start: lastEnd, end: startSec, autoSkip: true, isGap: true});
+          }
+          
+          sections.push({start: startSec, end: endSec, autoSkip, isGap: false});
+          lastEnd = endSec;
+        } else {
+          const mark = timeToSeconds(t);
+          
+          // Add gap before this marker if needed (but not before the first section)
+          if (lastEnd >= 0 && mark > lastEnd) {
+            sections.push({start: lastEnd, end: mark, autoSkip: true, isGap: true});
+          }
+          
+          sections.push({start: mark, end: 999999, autoSkip, isGap: false});
+          lastEnd = 999999;
+        }
+      }
+      return sections;
+    }
+
+    // Data
+    function updatePageTitleUI() {
+      currentPageTitle.textContent = PAGE;
+      document.title = PAGE.charAt(0).toUpperCase() + PAGE.slice(1) + " — Template";
+    }
+
+    async function renamePage(oldName, newName) {
+      const trimmedNew = (newName || "").trim();
+      if (!trimmedNew || trimmedNew === oldName) return;
+
+      // Create/update new page record, then remove old page record.
+      await setDoc(doc(db, PAGES_COLLECTION, trimmedNew), { name: trimmedNew }, { merge: true });
+      await deleteDoc(doc(db, PAGES_COLLECTION, oldName));
+
+      // Move all notes to the renamed page.
+      const notesQ = query(collection(db, NOTES_COLLECTION), where("page", "==", oldName));
+      const notesSnap = await getDocs(notesQ);
+      for (const d of notesSnap.docs) {
+        await setDoc(doc(db, NOTES_COLLECTION, d.id), { page: trimmedNew }, { merge: true });
+      }
+
+      // Move all column metadata to the renamed page.
+      const metaQ = query(collection(db, COLUMN_META_COLLECTION), where("page", "==", oldName));
+      const metaSnap = await getDocs(metaQ);
+      const metaRows = metaSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      for (const row of metaRows) {
+        const colIdx = Number(row.col ?? 0);
+        const newId = `${trimmedNew}_${colIdx}`;
+        await setDoc(doc(db, COLUMN_META_COLLECTION, newId), { page: trimmedNew, col: colIdx, title: row.title || "" }, { merge: true });
+        if (row.id !== newId) await deleteDoc(doc(db, COLUMN_META_COLLECTION, row.id));
+      }
+
+      PAGE = trimmedNew;
+      updatePageTitleUI();
+      await loadPages();
+      await loadPageItems();
+    }
+
+    async function deletePage(pageName) {
+      const allPagesSnap = await getDocs(collection(db, PAGES_COLLECTION));
+      const pageNames = [];
+      allPagesSnap.forEach((d) => {
+        const name = d.data().name;
+        if (name) pageNames.push(name);
+      });
+      if (pageNames.length <= 1) {
+        alert("You need at least one page.");
+        return;
+      }
+
+      const notesQ = query(collection(db, NOTES_COLLECTION), where("page", "==", pageName));
+      const metaQ = query(collection(db, COLUMN_META_COLLECTION), where("page", "==", pageName));
+      const [notesSnap, metaSnap] = await Promise.all([getDocs(notesQ), getDocs(metaQ)]);
+      for (const d of notesSnap.docs) {
+        await deleteDoc(doc(db, NOTES_COLLECTION, d.id));
+      }
+      for (const d of metaSnap.docs) {
+        await deleteDoc(doc(db, COLUMN_META_COLLECTION, d.id));
+      }
+      await deleteDoc(doc(db, PAGES_COLLECTION, pageName));
+
+      const remaining = pageNames.filter((n) => n !== pageName).sort((a, b) => a.localeCompare(b));
+      PAGE = remaining[0] || (SITE_KEY ? "home" : "bird");
+      updatePageTitleUI();
+      await loadPages();
+      await loadPageItems();
+    }
+
+    function attachPageTitleLongPress(el, pageName) {
+      let pressTimer = null;
+      const onPress = () => {
+        pressTimer = setTimeout(async () => {
+          if (deleteMode) {
+            await deletePage(pageName);
+            return;
+          }
+          const renamed = prompt("Rename page:", pageName);
+          if (renamed === null) return;
+          await renamePage(pageName, renamed);
+        }, 700);
+      };
+      const clearPress = () => {
+        if (pressTimer) clearTimeout(pressTimer);
+      };
+      el.addEventListener("mousedown", onPress);
+      ["mouseup", "mouseleave"].forEach((ev) => el.addEventListener(ev, clearPress));
+      el.addEventListener("touchstart", onPress, { passive: true });
+      ["touchend", "touchcancel"].forEach((ev) => el.addEventListener(ev, clearPress));
+    }
+
+    function bindCurrentPageTitleLongPress() {
+      if (currentPageTitle.dataset.longpressBound === "1") return;
+      currentPageTitle.dataset.longpressBound = "1";
+      let pressTimer = null;
+      const onPress = () => {
+        pressTimer = setTimeout(async () => {
+          const pageName = PAGE;
+          if (deleteMode) {
+            await deletePage(pageName);
+            return;
+          }
+          const renamed = prompt("Rename page:", pageName);
+          if (renamed === null) return;
+          await renamePage(pageName, renamed);
+        }, 700);
+      };
+      const clearPress = () => {
+        if (pressTimer) clearTimeout(pressTimer);
+      };
+      currentPageTitle.addEventListener("mousedown", onPress);
+      ["mouseup", "mouseleave"].forEach((ev) => currentPageTitle.addEventListener(ev, clearPress));
+      currentPageTitle.addEventListener("touchstart", onPress, { passive: true });
+      ["touchend", "touchcancel"].forEach((ev) => currentPageTitle.addEventListener(ev, clearPress));
+    }
+
+    async function switchPage(pageName) {
+      PAGE = pageName;
+      updatePageTitleUI();
+      await loadPages();
+      await loadPageItems();
+    }
+
+    async function copySelectedItemToPage(targetPage) {
+      if (!selectedMoveItem) return false;
+      if (targetPage === PAGE) return false;
+      if (String(selectedMoveItem).startsWith("tmp_")) return false;
+
+      const sourceRef = doc(db, NOTES_COLLECTION, selectedMoveItem);
+      const sourceSnap = await getDoc(sourceRef);
+      if (!sourceSnap.exists()) return false;
+
+      const sourceItem = sourceSnap.data();
+      const targetNotesQ = query(collection(db, NOTES_COLLECTION), where("page", "==", targetPage));
+      const targetNotesSnap = await getDocs(targetNotesQ);
+      let minOrderInCol0 = 0;
+      targetNotesSnap.forEach((d) => {
+        const it = d.data();
+        if ((it.col ?? 0) === 0) {
+          minOrderInCol0 = Math.min(minOrderInCol0, it.order ?? 0);
+        }
+      });
+
+      const newId = `${targetPage}_${Date.now()}`;
+      const copiedItem = {
+        ...sourceItem,
+        page: targetPage,
+        col: 0,
+        order: minOrderInCol0 - 1
+      };
+      delete copiedItem.id;
+      await setDoc(doc(db, NOTES_COLLECTION, newId), copiedItem);
+      selectedMoveItem = newId;
+      await switchPage(targetPage);
+      return true;
+    }
+
+    async function loadPages() {
+      const snap = await getDocs(collection(db, PAGES_COLLECTION));
+      if (snap.empty) {
+        if (SITE_KEY) {
+          // Initialize isolated site with one blank page
+          await setDoc(doc(db, PAGES_COLLECTION, PAGE), { name: PAGE });
+        } else {
+          // Initialize default shared pages
+          await setDoc(doc(db, PAGES_COLLECTION, "adrian"), { name: "adrian" });
+          await setDoc(doc(db, PAGES_COLLECTION, "bird"), { name: "bird" });
+          PAGE = "bird";
+        }
+        return loadPages();
+      }
+      const pageNames = [];
+      snap.forEach(d => {
+        const name = d.data().name;
+        if (name) pageNames.push(name);
+      });
+      pageNames.sort((a, b) => a.localeCompare(b));
+      if (!pageNames.includes(PAGE)) {
+        PAGE = pageNames[0];
+      }
+
+      pageTabs.innerHTML = "";
+      pageNames.forEach((name) => {
+        const tab = document.createElement("button");
+        tab.className = "page-tab" + (name === PAGE ? " active" : "");
+        tab.textContent = name;
+        tab.addEventListener("click", async () => {
+          if (name === PAGE) return;
+          if (selectedMoveItem) {
+            const copied = await copySelectedItemToPage(name);
+            if (copied) return;
+          }
+          await switchPage(name);
+        });
+        attachPageTitleLongPress(tab, name);
+        pageTabs.appendChild(tab);
+      });
+
+      updatePageTitleUI();
+    }
+
+    async function loadPageItems() {
+      console.log("Loading page items for:", PAGE);
+      columnsDiv.innerHTML = "";
+      itemButtons.clear();
+      // Build columns from Firestore
+      const q = query(collection(db, NOTES_COLLECTION), where("page","==", PAGE));
+      const metaQ = query(collection(db, COLUMN_META_COLLECTION), where("page","==", PAGE));
+      const [snap, metaSnap] = await Promise.all([getDocs(q), getDocs(metaQ)]);
+      const cols = new Map();
+      const colTitles = new Map();
+      metaSnap.forEach(d => {
+        const meta = d.data();
+        const colIdx = Number(meta.col ?? 0);
+        colTitles.set(colIdx, meta.title || "");
+      });
+      snap.forEach(d => {
+        const it = d.data(); it.id = d.id;
+        const col = it.col ?? 0;
+        if (!cols.has(col)) cols.set(col, []);
+        cols.get(col).push(it);
+      });
+      // sort each column by order
+      [...cols.keys()].forEach(k => cols.get(k).sort((a,b) => (a.order??0)-(b.order??0)));
+
+      console.log("Found columns:", cols.size);
+      
+      // render columns
+      if (cols.size===0) {
+        console.log("No columns found, creating default column");
+        const colEl = createColumn(0, 0, colTitles.get(0) || "");
+        if (!SITE_KEY) {
+          // Keep legacy behavior on the shared dataset.
+          colEl.appendChild(renderItem({ id: `tmp_${Date.now()}`, title:"!", isText:false, order:0, col:0 }));
+        }
+        columnsDiv.appendChild(colEl);
+        console.log("Default column created");
+        return;
+      }
+      const allColIdx = new Set([...cols.keys(), ...colTitles.keys()]);
+      const maxColIdx = Math.max(...allColIdx);
+      for (let colIdx = 0; colIdx <= maxColIdx; colIdx++) {
+        const items = cols.get(colIdx) || [];
+        const colEl = createColumn(colIdx, maxColIdx, colTitles.get(colIdx) || "");
+        items.forEach(it => colEl.appendChild(renderItem(it)));
+        columnsDiv.appendChild(colEl);
+      }
+    }
+
+    function createColumn(colIdx, maxColIdx, columnTitle = "") {
+      const col = document.createElement("div");
+      col.className = "column";
+      col.dataset.col = colIdx;
+
+      const columnHeader = document.createElement("div");
+      columnHeader.className = "column-header";
+
+      const titleSlot = document.createElement("div");
+      titleSlot.className = "column-title-slot";
+      let currentTitle = (columnTitle || "").trim();
+      let titleLongPressTimeout = null;
+
+      const showDisplay = () => {
+        const titleDisplay = document.createElement("div");
+        titleDisplay.className = "column-title-display";
+        titleDisplay.textContent = currentTitle;
+        titleDisplay.addEventListener("mousedown", () => {
+          titleLongPressTimeout = setTimeout(showInput, 700);
+        });
+        ["mouseup", "mouseleave"].forEach((ev) => titleDisplay.addEventListener(ev, () => {
+          clearTimeout(titleLongPressTimeout);
+        }));
+        titleSlot.replaceChildren(titleDisplay);
+      };
+
+      const showInput = () => {
+        const titleInput = document.createElement("input");
+        titleInput.type = "text";
+        titleInput.className = "column-title-edit";
+        titleInput.placeholder = "Column title";
+        titleInput.value = currentTitle;
+        titleSlot.replaceChildren(titleInput);
+        titleInput.focus();
+        titleInput.select();
+
+        const saveAndRender = async (nextValue, keepInputWhenEmpty = true) => {
+          currentTitle = (nextValue || "").trim();
+          await saveColumnTitle(colIdx, currentTitle);
+          if (currentTitle || !keepInputWhenEmpty) showDisplay();
+          else showInput();
+        };
+
+        titleInput.addEventListener("keydown", async (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            await saveAndRender(titleInput.value);
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            if (currentTitle) showDisplay();
+            else showInput();
+          }
+        });
+        titleInput.addEventListener("blur", async () => {
+          await saveAndRender(titleInput.value);
+        });
+      };
+
+      if (currentTitle) showDisplay();
+      else showInput();
+
+      columnHeader.appendChild(titleSlot);
+
+      // Add + button on same line as title
+      const addBtn = document.createElement("button");
+      addBtn.className = "btn btn-add column-add-btn";
+      addBtn.textContent = "+";
+      addBtn.title = deleteMode ? "Delete this column" : "Add new item";
+      addBtn.addEventListener("click", async () => {
+        if (deleteMode) {
+          await deleteColumn(colIdx);
+          return;
+        }
+        // Find the last item in this column to add below it
+        const items = Array.from(col.querySelectorAll('.item'));
+        let refItem = null;
+        if (items.length > 0) {
+          const lastItem = items[items.length - 1];
+          refItem = {
+            id: lastItem.dataset.id,
+            col: parseInt(lastItem.dataset.col),
+            order: parseInt(lastItem.dataset.order)
+          };
+        } else {
+          // Empty column, add as first item
+          refItem = { col: colIdx, order: -1 };
+        }
+        await addItemBelow(refItem, false);
+      });
+      columnHeader.appendChild(addBtn);
+
+      if (colIdx === maxColIdx) {
+        const addColumnBtn = document.createElement("button");
+        addColumnBtn.className = "add-column-btn";
+        addColumnBtn.textContent = "→";
+        addColumnBtn.title = deleteMode ? "Delete this column" : "Add column to the right";
+        addColumnBtn.addEventListener("click", async () => {
+          if (deleteMode) await deleteColumn(colIdx);
+          else await addColumnRight(colIdx);
+        });
+        columnHeader.appendChild(addColumnBtn);
+      }
+
+      col.appendChild(columnHeader);
+
+      return col;
+    }
+
+    async function saveColumnTitle(colIdx, title) {
+      const id = `${PAGE}_${colIdx}`;
+      await setDoc(doc(db, COLUMN_META_COLLECTION, id), { page: PAGE, col: colIdx, title }, { merge: true });
+    }
+
+    async function addColumnRight(currentColIdx) {
+      const newColIdx = currentColIdx + 1;
+      await saveColumnTitle(newColIdx, "");
+      await loadPageItems();
+    }
+
+    async function deleteColumn(colIdx) {
+      const notesQ = query(collection(db, NOTES_COLLECTION), where("page", "==", PAGE));
+      const metaQ = query(collection(db, COLUMN_META_COLLECTION), where("page", "==", PAGE));
+      const [notesSnap, metaSnap] = await Promise.all([getDocs(notesQ), getDocs(metaQ)]);
+
+      // Notes: delete target column, shift columns on the right left by one.
+      for (const d of notesSnap.docs) {
+        const it = d.data();
+        const itemCol = it.col ?? 0;
+        if (itemCol === colIdx) {
+          await deleteDoc(doc(db, NOTES_COLLECTION, d.id));
+        } else if (itemCol > colIdx) {
+          await setDoc(doc(db, NOTES_COLLECTION, d.id), { col: itemCol - 1 }, { merge: true });
+        }
+      }
+
+      // Column metadata: remove target, re-key shifted columns.
+      const metaRows = metaSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      for (const row of metaRows) {
+        const metaCol = Number(row.col ?? 0);
+        if (metaCol === colIdx) {
+          await deleteDoc(doc(db, COLUMN_META_COLLECTION, row.id));
+        }
+      }
+      for (const row of metaRows) {
+        const metaCol = Number(row.col ?? 0);
+        if (metaCol > colIdx) {
+          const newCol = metaCol - 1;
+          const newId = `${PAGE}_${newCol}`;
+          await setDoc(doc(db, COLUMN_META_COLLECTION, newId), { page: PAGE, col: newCol, title: row.title || "" }, { merge: true });
+          if (row.id !== newId) {
+            await deleteDoc(doc(db, COLUMN_META_COLLECTION, row.id));
+          }
+        }
+      }
+
+      await loadPageItems();
+    }
+
+    function clearMoveSelection() {
+      if (!selectedMoveItem) return;
+      const selectedEl = document.querySelector(`[data-id="${selectedMoveItem}"]`);
+      if (selectedEl) selectedEl.classList.remove("move-selected");
+      selectedMoveItem = null;
+    }
+
+    function renderItem(it) {
+      const wrap = document.createElement("div");
+      wrap.className = "item" + (it.groupBefore?" group-gap":"");
+      if (selectedMoveItem === it.id) {
+        wrap.classList.add("move-selected");
+      }
+      wrap.dataset.id = it.id;
+      wrap.dataset.col = it.col ?? 0;
+      wrap.dataset.order = it.order ?? 0;
+
+      const itemContent = document.createElement("div");
+      itemContent.className = "item-content";
+
+      const titleEl = document.createElement("a");
+      titleEl.className = "item-title" + (it.isText?" text-only":"");
+      titleEl.href = "#";
+      
+      // Check if item has a second title (title2 field)
+      const titleText = it.title || "!";
+      if (it.title2 !== undefined) {
+        // Item has split titles
+        const firstPart = document.createElement('span');
+        firstPart.textContent = titleText;
+        firstPart.style.cursor = 'pointer';
+        firstPart.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          // Open first part link
+          if (it.link && (it.link.includes("youtube.com") || it.link.includes("youtu.be"))) {
+            const vid = extractYouTubeID(it.link);
+            if (vid) openVideoEmbed(vid, 0, 0, it.sections||"");
+          } else if (it.link) {
+            window.open(it.link, "_blank");
+          }
+        });
+        
+        // Long-press on first part to edit
+        let lpTo1;
+        firstPart.addEventListener("mousedown", (e) => { 
+          e.stopPropagation();
+          lpTo1 = setTimeout(()=>openEditModal(it, false), 1000); 
+        });
+        ["mouseup","mouseleave"].forEach(ev => firstPart.addEventListener(ev, () => { clearTimeout(lpTo1); }));
+        
+        const separator = document.createElement('span');
+        separator.className = 'split-separator';
+        separator.textContent = '/';
+        
+        const secondPart = document.createElement('span');
+        secondPart.textContent = it.title2 || '!';
+        secondPart.style.cursor = 'pointer';
+        secondPart.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          // Open edit modal for second part if it's '!', otherwise open link
+          if (!it.title2 || it.title2 === '!') {
+            openEditModal(it, true); // true = editing second part
+          } else if (it.link2 && (it.link2.includes("youtube.com") || it.link2.includes("youtu.be"))) {
+            const vid = extractYouTubeID(it.link2);
+            if (vid) openVideoEmbed(vid, 0, 0, it.sections2||"");
+          } else if (it.link2) {
+            window.open(it.link2, "_blank");
+          }
+        });
+        
+        // Long-press on second part to edit
+        let lpTo2;
+        secondPart.addEventListener("mousedown", (e) => { 
+          e.stopPropagation();
+          lpTo2 = setTimeout(()=>openEditModal(it, true), 1000); 
+        });
+        ["mouseup","mouseleave"].forEach(ev => secondPart.addEventListener(ev, () => { clearTimeout(lpTo2); }));
+        
+        titleEl.appendChild(firstPart);
+        titleEl.appendChild(separator);
+        titleEl.appendChild(secondPart);
+      } else {
+        titleEl.textContent = titleText;
+        // Long-pressing the title should edit, not select/move the whole item.
+        let titleLpTo;
+        let isTitleLongPress = false;
+        titleEl.addEventListener("mousedown", (e) => {
+          e.stopPropagation();
+          isTitleLongPress = false;
+          titleLpTo = setTimeout(() => {
+            isTitleLongPress = true;
+            openEditModal(it, false);
+            setTimeout(() => { isTitleLongPress = false; }, 100);
+          }, 1000);
+        });
+        ["mouseup","mouseleave"].forEach(ev => titleEl.addEventListener(ev, () => {
+          clearTimeout(titleLpTo);
+        }));
+        titleEl.addEventListener("click", (e) => {
+          if (isTitleLongPress) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        });
+      }
+
+      wrap.appendChild(titleEl);
+
+      // Add thumbnail if link exists
+      const thumbUrl = getThumbnailUrl(it.link, it.thumbFrame, it.previewImage);
+      if (thumbUrl) {
+        const thumbWrap = document.createElement("div");
+        thumbWrap.className = "thumbnail-crop";
+        const img = document.createElement("img");
+        img.src = thumbUrl;
+        img.className = "item-thumbnail";
+        img.alt = "Thumbnail";
+        thumbWrap.appendChild(img);
+        wrap.appendChild(thumbWrap);
+      }
+
+      // Click behavior for the whole item
+      let lpTo;
+      let suppressClickUntil = 0;
+      wrap.addEventListener("click", (e) => {
+        e.preventDefault();
+
+        if (Date.now() < suppressClickUntil) {
+          return;
+        }
+        
+        if (deleteMode) {
+          // Toggle selection for deletion
+          if (selectedItems.has(it.id)) {
+            selectedItems.delete(it.id);
+            wrap.style.background = '';
+          } else {
+            selectedItems.add(it.id);
+            wrap.style.background = '#ff0000';
+          }
+          return;
+        }
+        
+        // If has title2, clicking is handled by individual parts
+        if (it.title2 !== undefined) return;
+        
+        if (!it.link && (!it.title || it.title === "!")) {
+          openEditModal(it);
+          return;
+        }
+        // Link item: YouTube/Drive open/embedded
+        if (it.link && (it.link.includes("youtube.com") || it.link.includes("youtu.be"))) {
+          const vid = extractYouTubeID(it.link);
+          if (vid) openVideoEmbed(vid, 0, 0, it.sections||"");
+        } else if (it.link) {
+          window.open(it.link, "_blank");
+        }
+      });
+
+      // Double click to edit
+      wrap.addEventListener("dblclick", (e) => {
+        e.preventDefault();
+        if (deleteMode) return;
+        openEditModal(it);
+      });
+
+      // Long-press to select for move (1s)
+      wrap.addEventListener("mousedown", (e) => { 
+        if (deleteMode) return;
+        if (it.title2 !== undefined) return; // Don't trigger if has title2
+        lpTo = setTimeout(()=> {
+          suppressClickUntil = Date.now() + 600;
+          // Long press only selects for moving (never deselects current one)
+          if (selectedMoveItem !== it.id) {
+            // Deselect previous visual selection
+            if (selectedMoveItem) {
+              const prevWrap = document.querySelector(`[data-id="${selectedMoveItem}"]`);
+              if (prevWrap) prevWrap.classList.remove("move-selected");
+            }
+            // Select this item
+            selectedMoveItem = it.id;
+            wrap.classList.add("move-selected");
+            console.log("Item selected for moving:", it.id);
+          }
+        }, 1000); 
+      });
+      ["mouseup","mouseleave"].forEach(ev => wrap.addEventListener(ev, () => { 
+        clearTimeout(lpTo);
+      }));
+
+      return wrap;
+    }
+
+    async function addItemBelow(refItem, groupBefore) {
+      const colIdx = refItem.col ?? 0;
+      const refOrder = refItem.order ?? 0;
+      // Shift all items after this one down by 1
+      const q = query(collection(db, NOTES_COLLECTION), where("page","==", PAGE));
+      const snap = await getDocs(q);
+      const itemsToUpdate = [];
+      snap.forEach(d => {
+        const it = d.data();
+        if ((it.col ?? 0) === colIdx && (it.order ?? 0) > refOrder) {
+          itemsToUpdate.push({ id: d.id, newOrder: (it.order ?? 0) + 1 });
+        }
+      });
+      // Update orders
+      for (const item of itemsToUpdate) {
+        await setDoc(doc(db, NOTES_COLLECTION, item.id), { order: item.newOrder }, { merge: true });
+      }
+      // Insert new item right after refItem
+      const id = `${PAGE}_${Date.now()}`;
+      const newItem = { id, page: PAGE, col: colIdx, order: refOrder + 1, title: "!", isText:false };
+      if (groupBefore) newItem.groupBefore = true;
+      await setDoc(doc(db, NOTES_COLLECTION, id), newItem);
+      await loadPageItems();
+      // Open modal for new item
+      const newDoc = await getDoc(doc(db, NOTES_COLLECTION, id));
+      if (newDoc.exists()) {
+        const newItemData = newDoc.data();
+        newItemData.id = newDoc.id;
+        openEditModal(newItemData);
+      }
+    }
+    async function addItemRight(refItem) {
+      const colIdx = (refItem.col ?? 0) + 1;
+      const id = `${PAGE}_${Date.now()}`;
+      const newItem = { id, page: PAGE, col: colIdx, order: 0, title: "!", isText:false };
+      await setDoc(doc(db, NOTES_COLLECTION, id), newItem);
+      await loadPageItems();
+    }
+
+    // Modal editing
+    let editingItem = null;
+    let editingSecondPart = false;
+    function openEditModal(it, isSecondPart = false) {
+      editingItem = it;
+      editingSecondPart = isSecondPart;
+      modalTitle.textContent = isSecondPart ? "Edit Second Title" : "Edit Item";
+      
+      if (isSecondPart) {
+        // Editing second part
+        inpLink.value = it.link2 || "";
+        inpTitle.value = it.title2 && it.title2 !== "!" ? it.title2 : "";
+        inpThumbFrame.value = "";
+        inpPreviewImage.value = "";
+        inpDescription.value = it.description || ""; // Shared description field
+        inpSections.value = it.sections2 || "";
+        inpNotes.value = it.text || ""; // Shared notes field
+      } else {
+        // Editing first part
+        inpLink.value = it.link || "";
+        inpTitle.value = it.title && it.title !== "!" ? it.title : "";
+        inpThumbFrame.value = Number.isInteger(it.thumbFrame) ? String(it.thumbFrame) : "";
+        inpPreviewImage.value = it.previewImage || "";
+        inpDescription.value = it.description || ""; // Shared description field
+        inpSections.value = it.sections || "";
+        inpNotes.value = it.text || ""; // Shared notes field
+      }
+      
+      modal.style.display = "flex";
+      inpTitle.focus();
+      
+      // Auto-resize textarea
+      setTimeout(() => {
+        inpNotes.style.height = 'auto';
+        inpNotes.style.height = Math.max(120, inpNotes.scrollHeight) + 'px';
+      }, 0);
+    }
+    function closeEditModal() { modal.style.display = "none"; editingItem = null; editingSecondPart = false; }
+
+    btnCancel.addEventListener("click", closeEditModal);
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeEditModal(); closeVideo(); } });
+
+    btnSave.addEventListener("click", async () => {
+      if (!editingItem) return;
+      const link = inpLink.value.trim();
+      const title = inpTitle.value.trim();
+      let thumbFrameRaw = inpThumbFrame.value.trim();
+      let thumbFrame = parseInt(thumbFrameRaw, 10);
+      const hasThumbFrame = Number.isInteger(thumbFrame) && thumbFrame >= 0 && thumbFrame <= 3;
+      const previewImage = inpPreviewImage.value.trim();
+      const description = inpDescription.value.trim();
+      const sections = inpSections.value.trim();
+      const text = inpNotes.value.trim();
+
+      let update;
+      if (editingSecondPart) {
+        // Save to second part fields
+        update = { 
+          link2: link, 
+          title2: title || (link ? "(untitled)" : "!"),
+          description: description, // Shared description field
+          sections2: sections, 
+          text: text // Shared notes field
+        };
+      } else {
+        // Save to first part fields
+        update = { 
+          link, 
+          title: title || (link ? "(untitled)" : "!"),
+          previewImage,
+          description: description, // Shared description field
+          sections, 
+          text // Shared notes field
+        };
+        if (hasThumbFrame) update.thumbFrame = thumbFrame;
+        else update.thumbFrame = 0;
+        if (!link && title) update.isText = true; else update.isText = false;
+      }
+      
+      // If it's a temp item, add required fields
+      if (editingItem.id.startsWith('tmp_')) {
+        update.page = PAGE;
+        update.col = editingItem.col ?? 0;
+        update.order = editingItem.order ?? 0;
+      }
+      
+      await setDoc(doc(db, NOTES_COLLECTION, editingItem.id), update, { merge: true });
+      closeEditModal();
+      await loadPageItems();
+    });
+
+    btnDelete.addEventListener("click", async () => {
+      if (!editingItem) return;
+      
+      if (editingSecondPart) {
+        // Remove only the second title fields (keep shared text and description)
+        await setDoc(doc(db, NOTES_COLLECTION, editingItem.id), { 
+          title2: deleteField(),
+          link2: deleteField(),
+          sections2: deleteField()
+        }, { merge: true });
+      } else {
+        // Delete entire item
+        await deleteDoc(doc(db, NOTES_COLLECTION, editingItem.id));
+      }
+      
+      closeEditModal();
+      await loadPageItems();
+    });
+
+    // Video handling
+    function openVideoEmbed(videoID, startTime=0, endTime=0, sectionsStr="") {
+      currentSections = parseSections(sectionsStr);
+      console.log("Parsed sections:", currentSections);
+      const actualStartTime = currentSections.length > 0 ? currentSections[0].start : startTime;
+      
+      currentVideoID = videoID;
+      currentStartTime = actualStartTime;
+      currentSectionIndex = 0; isPaused=false; lastCheckedTime=-1;
+      videoModal.style.display = "flex";
+      
+      setTimeout(setupYouTubeListener, 100);
+    }
+    function setupYouTubeListener() {
+      console.log("Setting up YouTube listener...");
+      if (window.YT===undefined) { 
+        const tag=document.createElement('script'); 
+        tag.src="https://www.youtube.com/iframe_api"; 
+        document.body.appendChild(tag); 
+      }
+      const iv = setInterval(()=>{
+        if (window.YT && window.YT.Player) { 
+          clearInterval(iv);
+          console.log("YouTube API ready, creating player...");
+          try { 
+            // Destroy existing player if it exists
+            if (videoPlayer && videoPlayer.destroy) {
+              videoPlayer.destroy();
+            }
+            
+            // Remove old iframe and create new one
+            const oldIframe = document.getElementById('video-iframe');
+            if (oldIframe) {
+              oldIframe.remove();
+            }
+            
+            // Create new iframe element
+            const newIframe = document.createElement('div');
+            newIframe.id = 'video-iframe';
+            const container = document.getElementById('video-modal-content');
+            container.insertBefore(newIframe, container.firstChild);
+            
+            videoPlayer = new YT.Player('video-iframe', { 
+              height: '480',
+              width: '100%',
+              videoId: currentVideoID,
+              playerVars: {
+                autoplay: 1,
+                start: Math.floor(currentStartTime),
+                enablejsapi: 1
+              },
+              events: { 
+                onReady: onPlayerReady, 
+                onStateChange: onPlayerStateChange 
+              } 
+            }); 
+          } catch(e) { 
+            console.error("Error creating player:", e); 
+          }
+        }
+      }, 100);
+    }
+    function onPlayerReady(e) {
+      console.log("Player ready!");
+      try { e.target.unMute(); e.target.setVolume(50); e.target.playVideo(); } catch(e) { console.error("Error in onPlayerReady:", e); }
+    }
+    function onPlayerStateChange(e) { 
+      console.log("Player state changed:", e.data);
+      if (e.data === window.YT.PlayerState.PLAYING) monitorPlayback(); 
+    }
+    function monitorPlayback() {
+      // Stop monitoring if video modal is closed
+      if (videoModal.style.display === 'none') {
+        console.log("Video closed, stopping monitor");
+        return;
+      }
+      
+      if (!videoPlayer || !videoPlayer.getCurrentTime) { 
+        console.log("Player not ready yet...");
+        setTimeout(monitorPlayback,100); 
+        return; 
+      }
+      
+      if (currentSections.length===0) { 
+        console.log("No sections, stopping monitor");
+        setTimeout(monitorPlayback,500); 
+        return; 
+      }
+      
+      const t = videoPlayer.getCurrentTime();
+      const sec = currentSections[currentSectionIndex];
+      
+      if (!sec) {
+        console.log("No current section found");
+        return;
+      }
+      
+      // Log current state every second
+      if (Math.floor(t) !== Math.floor(lastCheckedTime)) {
+        console.log(`Time: ${t.toFixed(1)}s, Section ${currentSectionIndex}: ${sec.start}-${sec.end}, autoSkip: ${sec.autoSkip}`);
+      }
+      
+      // Check if we've reached the end of current section FIRST
+      if (t>=sec.end && lastCheckedTime<sec.end) {
+        console.log(`Reached end of section at ${t}s. Section:`, sec, `Next index:`, currentSectionIndex + 1);
+        if (sec.autoSkip && currentSectionIndex<currentSections.length-1) {
+          // Skip to next section
+          currentSectionIndex++;
+          let next = currentSections[currentSectionIndex];
+          console.log("Skipping to next section:", next);
+          // Keep skipping through consecutive auto-skip gap sections
+          while (next && next.isGap && currentSectionIndex < currentSections.length - 1) {
+            const nextNext = currentSections[currentSectionIndex + 1];
+            // Check if this is a gap section (ends where next begins)
+            if (nextNext && Math.abs(next.end - nextNext.start) < 1) {
+              console.log("Skipping through gap section:", next);
+              currentSectionIndex++;
+              next = currentSections[currentSectionIndex];
+            } else {
+              break;
+            }
+          }
+          console.log("Final seek to:", next.start);
+          videoPlayer.seekTo(next.start);
+          lastCheckedTime = next.start;
+        } else if (currentSectionIndex<currentSections.length-1) {
+          // Pause and prompt, but find the actual playable section (skip gaps)
+          videoPlayer.pauseVideo(); 
+          isPaused=true; 
+          let nextIndex = currentSectionIndex + 1;
+          let next = currentSections[nextIndex];
+          // Skip through auto-skip gap sections to find the real next section
+          while (next && next.isGap && nextIndex < currentSections.length - 1) {
+            const nextNext = currentSections[nextIndex + 1];
+            if (nextNext && Math.abs(next.end - nextNext.start) < 1) {
+              console.log("Prompt: Skipping through gap section:", next);
+              nextIndex++;
+              next = currentSections[nextIndex];
+            } else {
+              break;
+            }
+          }
+          if (next) showSectionPrompt(next.start, nextIndex);
+        }
+      } else {
+        // Update section index if we've moved to a different section (for manual seeking)
+        for (let i = 0; i < currentSections.length; i++) {
+          const s = currentSections[i];
+          if (t >= s.start && t < s.end && i !== currentSectionIndex) {
+            currentSectionIndex = i;
+            break;
+          }
+        }
+      }
+      
+      if (isPaused && videoPlayer.getPlayerState()===window.YT.PlayerState.PLAYING) {
+        isPaused=false; if (currentSectionIndex<currentSections.length-1) { currentSectionIndex++; const next=currentSections[currentSectionIndex]; videoPlayer.seekTo(next.start); }
+      }
+      lastCheckedTime = t;
+      setTimeout(monitorPlayback, (videoPlayer.getPlayerState()===window.YT.PlayerState.PLAYING || (isPaused && currentSections.length>0)) ? 100 : 500);
+    }
+    function showSectionPrompt(nextStart, nextIndex) {
+      videoPromptText.textContent = `Section ended. Press Enter or click to jump to ${Math.floor(nextStart)}s`;
+      videoPrompt.dataset.nextStart = nextStart; videoPrompt.dataset.nextIndex = nextIndex; videoPrompt.style.display = 'block'; setTimeout(()=>{ try{ videoPromptContinue.focus(); }catch{} }, 20);
+      document.addEventListener('keydown', promptKeyHandler);
+    }
+    function hideSectionPrompt() { videoPrompt.style.display='none'; delete videoPrompt.dataset.nextStart; delete videoPrompt.dataset.nextIndex; document.removeEventListener('keydown', promptKeyHandler); }
+    function promptKeyHandler(e){ if(e.key==='Enter' && videoPrompt.style.display==='block'){ e.preventDefault(); videoPromptContinue.click(); } if(e.key==='Escape' && videoPrompt.style.display==='block'){ e.preventDefault(); videoPromptCancel.click(); } }
+
+    videoPromptContinue.addEventListener('click', ()=>{ 
+      const nextStart=parseFloat(videoPrompt.dataset.nextStart||0); 
+      const nextIndex=parseInt(videoPrompt.dataset.nextIndex||0,10); 
+      console.log("Prompt continue clicked. Jump to:", nextStart, "Section:", nextIndex);
+      hideSectionPrompt(); 
+      if(videoPlayer){ 
+        currentSectionIndex=nextIndex; 
+        videoPlayer.seekTo(nextStart); 
+        try{
+          videoPlayer.playVideo();
+        }catch{} 
+        isPaused=false; 
+      } 
+    });
+    videoPromptCancel.addEventListener('click', hideSectionPrompt);
+
+    function closeVideo(){ 
+      videoModal.style.display='none'; 
+      if (videoPlayer && videoPlayer.destroy) {
+        videoPlayer.destroy();
+        videoPlayer = null;
+      }
+      hideSectionPrompt(); 
+    }
+    videoClose.addEventListener('click', closeVideo);
+
+    // Delete mode handlers
+    let deleteModeTimer;
+    deleteModeBtn.addEventListener('mousedown', () => {
+      deleteModeTimer = setTimeout(() => {
+        if (deleteMode) {
+          // Long-press X again cancels delete mode.
+          deleteMode = false;
+          selectedItems.clear();
+          confirmDeleteBtn.style.display = 'none';
+          columnsDiv.classList.remove('delete-mode-active');
+          loadPageItems();
+          console.log('Delete mode cancelled');
+          return;
+        }
+        deleteMode = true;
+        selectedItems.clear();
+        confirmDeleteBtn.style.display = 'inline-block';
+        columnsDiv.classList.add('delete-mode-active');
+        console.log('Delete mode activated');
+      }, 1000);
+    });
+    deleteModeBtn.addEventListener('mouseup', () => { clearTimeout(deleteModeTimer); });
+    deleteModeBtn.addEventListener('mouseleave', () => { clearTimeout(deleteModeTimer); });
+
+    confirmDeleteBtn.addEventListener('click', async () => {
+      console.log('Deleting items:', Array.from(selectedItems));
+      // Delete all selected items
+      for (const itemId of selectedItems) {
+        await deleteDoc(doc(db, NOTES_COLLECTION, itemId));
+      }
+      // Exit delete mode
+      deleteMode = false;
+      selectedItems.clear();
+      confirmDeleteBtn.style.display = 'none';
+      columnsDiv.classList.remove('delete-mode-active');
+      await loadPageItems();
+    });
+
+    // Arrow button handlers
+    arrowUp.addEventListener('click', () => moveItem('up'));
+    arrowDown.addEventListener('click', () => moveItem('down'));
+    arrowLeft.addEventListener('click', () => moveItem('left'));
+    arrowRight.addEventListener('click', () => moveItem('right'));
+    columnsDiv.addEventListener("click", (e) => {
+      if (e.target === columnsDiv) {
+        clearMoveSelection();
+      }
+    });
+
+    async function moveItem(direction) {
+      if (!selectedMoveItem) {
+        console.log('No item selected for moving');
+        return;
+      }
+
+      const itemId = selectedMoveItem;
+      const docRef = doc(db, NOTES_COLLECTION, itemId);
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) return;
+
+      const itemData = docSnap.data();
+      const currentCol = itemData.col ?? 0;
+      const currentOrder = itemData.order ?? 0;
+
+      // Get all items
+      const q = query(collection(db, NOTES_COLLECTION), where("page", "==", PAGE));
+      const snap = await getDocs(q);
+      const allItems = [];
+      snap.forEach(d => {
+        const it = d.data();
+        it.id = d.id;
+        allItems.push(it);
+      });
+
+      if (direction === 'up') {
+        // Move up within the same column
+        const colItems = allItems.filter(it => (it.col ?? 0) === currentCol).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        const currentIndex = colItems.findIndex(it => it.id === itemId);
+        if (currentIndex > 0) {
+          // Swap order with previous item
+          const prevItem = colItems[currentIndex - 1];
+          await setDoc(doc(db, NOTES_COLLECTION, itemId), { order: prevItem.order ?? 0 }, { merge: true });
+          await setDoc(doc(db, NOTES_COLLECTION, prevItem.id), { order: currentOrder }, { merge: true });
+        }
+      } else if (direction === 'down') {
+        // Move down within the same column
+        const colItems = allItems.filter(it => (it.col ?? 0) === currentCol).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        const currentIndex = colItems.findIndex(it => it.id === itemId);
+        if (currentIndex < colItems.length - 1) {
+          // Swap order with next item
+          const nextItem = colItems[currentIndex + 1];
+          await setDoc(doc(db, NOTES_COLLECTION, itemId), { order: nextItem.order ?? 0 }, { merge: true });
+          await setDoc(doc(db, NOTES_COLLECTION, nextItem.id), { order: currentOrder }, { merge: true });
+        }
+      } else if (direction === 'left') {
+        // Move to top of left column
+        if (currentCol > 0) {
+          const targetCol = currentCol - 1;
+          const colItems = allItems.filter(it => (it.col ?? 0) === targetCol);
+          const minOrder = colItems.length > 0 ? Math.min(...colItems.map(it => it.order ?? 0)) : 0;
+          await setDoc(doc(db, NOTES_COLLECTION, itemId), { col: targetCol, order: minOrder - 1 }, { merge: true });
+        }
+      } else if (direction === 'right') {
+        // Move to top of right column
+        const targetCol = currentCol + 1;
+        const colItems = allItems.filter(it => (it.col ?? 0) === targetCol);
+        const minOrder = colItems.length > 0 ? Math.min(...colItems.map(it => it.order ?? 0)) : 0;
+        await setDoc(doc(db, NOTES_COLLECTION, itemId), { col: targetCol, order: minOrder - 1 }, { merge: true });
+      }
+
+      await loadPageItems();
+    }
+
+    // Page add handler
+    addPageBtn.addEventListener("click", async () => {
+      const name = prompt("Enter new page name:");
+      if (name && name.trim()) {
+        const pageName = name.trim();
+        await setDoc(doc(db, PAGES_COLLECTION, pageName), { name: pageName });
+        await switchPage(pageName);
+      }
+    });
+
+    bindCurrentPageTitleLongPress();
+
+    // Init
+    updatePageTitleUI();
+    loadPages().then(() => loadPageItems());
+  </script>
+</body>
+</html>
