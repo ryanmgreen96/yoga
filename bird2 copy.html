@@ -228,6 +228,122 @@
 
     // Move - selected item
     let selectedMoveItem = null;
+    let activeTitleEdit = null;
+    let pendingArrowTitleEdit = null;
+    let suppressTitleBlurCommit = false;
+
+    function clearActiveTitleEdit() {
+      activeTitleEdit = null;
+    }
+
+    function setPendingArrowTitleEdit() {
+      suppressTitleBlurCommit = true;
+      pendingArrowTitleEdit = activeTitleEdit ? { ...activeTitleEdit } : null;
+    }
+
+    function consumeArrowTitleEditContext() {
+      const ctx = activeTitleEdit || pendingArrowTitleEdit;
+      pendingArrowTitleEdit = null;
+      return ctx;
+    }
+
+    function getOrderedPages(pageRows) {
+      const sortedByName = [...pageRows].sort((a, b) => a.name.localeCompare(b.name));
+      return sortedByName
+        .map((row, idx) => ({ ...row, normalizedOrder: Number.isFinite(row.order) ? row.order : 100000 + idx }))
+        .sort((a, b) => (a.normalizedOrder - b.normalizedOrder) || a.name.localeCompare(b.name));
+    }
+
+    async function movePage(pageName, direction) {
+      const snap = await getDocs(collection(db, PAGES_COLLECTION));
+      const rows = [];
+      snap.forEach((d) => {
+        const data = d.data();
+        const name = (data.name || d.id || "").trim();
+        if (!name) return;
+        const parsedOrder = Number(data.order);
+        rows.push({ id: d.id, name, order: Number.isFinite(parsedOrder) ? parsedOrder : null });
+      });
+      const ordered = getOrderedPages(rows);
+      const idx = ordered.findIndex((r) => r.name === pageName);
+      if (idx < 0) return;
+      const targetIdx = idx + direction;
+      if (targetIdx < 0 || targetIdx >= ordered.length) return;
+
+      const current = ordered[idx];
+      const target = ordered[targetIdx];
+      await setDoc(doc(db, PAGES_COLLECTION, current.name), { order: target.normalizedOrder }, { merge: true });
+      await setDoc(doc(db, PAGES_COLLECTION, target.name), { order: current.normalizedOrder }, { merge: true });
+
+      if (activeTitleEdit && activeTitleEdit.type === "page") {
+        activeTitleEdit.pageName = pageName;
+      }
+      await loadPages();
+    }
+
+    function startPageTitleInlineEdit(hostEl, pageName) {
+      if (!hostEl) return;
+      activeTitleEdit = { type: "page", pageName };
+      hostEl.dataset.editing = "1";
+
+      const originalText = pageName;
+      const input = document.createElement("input");
+      input.type = "text";
+      input.className = "column-title-edit";
+      input.value = originalText;
+      input.placeholder = "Page title";
+
+      const restoreDisplay = () => {
+        hostEl.dataset.editing = "0";
+        if (hostEl === currentPageTitle) {
+          updatePageTitleUI();
+        } else {
+          hostEl.textContent = pageName;
+        }
+      };
+
+      const commit = async () => {
+        const nextValue = (input.value || "").trim();
+        if (!nextValue) {
+          restoreDisplay();
+          clearActiveTitleEdit();
+          return;
+        }
+        if (nextValue === pageName) {
+          restoreDisplay();
+          clearActiveTitleEdit();
+          return;
+        }
+        await renamePage(pageName, nextValue);
+        clearActiveTitleEdit();
+      };
+
+      const cancel = () => {
+        restoreDisplay();
+        clearActiveTitleEdit();
+      };
+
+      input.addEventListener("keydown", async (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          await commit();
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          cancel();
+        }
+      });
+      input.addEventListener("blur", async () => {
+        if (suppressTitleBlurCommit) {
+          suppressTitleBlurCommit = false;
+          return;
+        }
+        await commit();
+      });
+
+      hostEl.replaceChildren(input);
+      input.focus();
+      input.select();
+    }
 
     // Helpers
     function extractYouTubeID(url) {
@@ -325,8 +441,11 @@
       const trimmedNew = (newName || "").trim();
       if (!trimmedNew || trimmedNew === oldName) return;
 
+      const oldPageSnap = await getDoc(doc(db, PAGES_COLLECTION, oldName));
+      const existingOrder = oldPageSnap.exists() ? Number(oldPageSnap.data().order) : null;
+
       // Create/update new page record, then remove old page record.
-      await setDoc(doc(db, PAGES_COLLECTION, trimmedNew), { name: trimmedNew }, { merge: true });
+      await setDoc(doc(db, PAGES_COLLECTION, trimmedNew), { name: trimmedNew, ...(Number.isFinite(existingOrder) ? { order: existingOrder } : {}) }, { merge: true });
       await deleteDoc(doc(db, PAGES_COLLECTION, oldName));
 
       // Move all notes to the renamed page.
@@ -348,6 +467,9 @@
       }
 
       PAGE = trimmedNew;
+      if (activeTitleEdit && activeTitleEdit.type === "page") {
+        activeTitleEdit.pageName = trimmedNew;
+      }
       updatePageTitleUI();
       await loadPages();
       await loadPageItems();
@@ -391,9 +513,7 @@
             await deletePage(pageName);
             return;
           }
-          const renamed = prompt("Rename page:", pageName);
-          if (renamed === null) return;
-          await renamePage(pageName, renamed);
+          startPageTitleInlineEdit(el, pageName);
         }, 700);
       };
       const clearPress = () => {
@@ -416,9 +536,7 @@
             await deletePage(pageName);
             return;
           }
-          const renamed = prompt("Rename page:", pageName);
-          if (renamed === null) return;
-          await renamePage(pageName, renamed);
+          startPageTitleInlineEdit(currentPageTitle, pageName);
         }, 700);
       };
       const clearPress = () => {
@@ -476,21 +594,25 @@
       if (snap.empty) {
         if (SITE_KEY) {
           // Initialize isolated site with one blank page
-          await setDoc(doc(db, PAGES_COLLECTION, PAGE), { name: PAGE });
+          await setDoc(doc(db, PAGES_COLLECTION, PAGE), { name: PAGE, order: 0 });
         } else {
           // Initialize default shared pages
-          await setDoc(doc(db, PAGES_COLLECTION, "adrian"), { name: "adrian" });
-          await setDoc(doc(db, PAGES_COLLECTION, "bird"), { name: "bird" });
+          await setDoc(doc(db, PAGES_COLLECTION, "adrian"), { name: "adrian", order: 0 });
+          await setDoc(doc(db, PAGES_COLLECTION, "bird"), { name: "bird", order: 1 });
           PAGE = "bird";
         }
         return loadPages();
       }
-      const pageNames = [];
+      const pageRows = [];
       snap.forEach(d => {
-        const name = d.data().name;
-        if (name) pageNames.push(name);
+        const data = d.data();
+        const name = (data.name || d.id || "").trim();
+        if (!name) return;
+        const parsedOrder = Number(data.order);
+        pageRows.push({ id: d.id, name, order: Number.isFinite(parsedOrder) ? parsedOrder : null });
       });
-      pageNames.sort((a, b) => a.localeCompare(b));
+      const orderedPages = getOrderedPages(pageRows);
+      const pageNames = orderedPages.map((r) => r.name);
       if (!pageNames.includes(PAGE)) {
         PAGE = pageNames[0];
       }
@@ -501,6 +623,7 @@
         tab.className = "page-tab" + (name === PAGE ? " active" : "");
         tab.textContent = name;
         tab.addEventListener("click", async () => {
+          if (tab.dataset.editing === "1") return;
           if (name === PAGE) return;
           if (selectedMoveItem) {
             const copied = await copySelectedItemToPage(name);
@@ -513,6 +636,16 @@
       });
 
       updatePageTitleUI();
+
+      if (activeTitleEdit && activeTitleEdit.type === "page") {
+        const activePageName = activeTitleEdit.pageName;
+        const editHost = activePageName === PAGE
+          ? currentPageTitle
+          : Array.from(pageTabs.children).find((el) => el.textContent === activePageName);
+        if (editHost && editHost.dataset.editing !== "1") {
+          startPageTitleInlineEdit(editHost, activePageName);
+        }
+      }
     }
 
     async function loadPageItems() {
@@ -590,6 +723,7 @@
       };
 
       const showInput = () => {
+        activeTitleEdit = { type: "column", colIdx };
         const titleInput = document.createElement("input");
         titleInput.type = "text";
         titleInput.className = "column-title-edit";
@@ -602,6 +736,7 @@
         const saveAndRender = async (nextValue, keepInputWhenEmpty = true) => {
           currentTitle = (nextValue || "").trim();
           await saveColumnTitle(colIdx, currentTitle);
+          clearActiveTitleEdit();
           if (currentTitle || !keepInputWhenEmpty) showDisplay();
           else showInput();
         };
@@ -612,17 +747,27 @@
             await saveAndRender(titleInput.value);
           } else if (e.key === "Escape") {
             e.preventDefault();
+            clearActiveTitleEdit();
             if (currentTitle) showDisplay();
             else showInput();
           }
         });
         titleInput.addEventListener("blur", async () => {
+          if (suppressTitleBlurCommit) {
+            suppressTitleBlurCommit = false;
+            return;
+          }
           await saveAndRender(titleInput.value);
         });
       };
 
-      if (currentTitle) showDisplay();
-      else showInput();
+      if (activeTitleEdit && activeTitleEdit.type === "column" && activeTitleEdit.colIdx === colIdx) {
+        showInput();
+      } else if (currentTitle) {
+        showDisplay();
+      } else {
+        showInput();
+      }
 
       columnHeader.appendChild(titleSlot);
 
@@ -679,6 +824,42 @@
     async function addColumnRight(currentColIdx) {
       const newColIdx = currentColIdx + 1;
       await saveColumnTitle(newColIdx, "");
+      await loadPageItems();
+    }
+
+    async function moveColumn(colIdx, direction) {
+      const targetCol = colIdx + direction;
+      if (targetCol < 0) return;
+
+      const notesQ = query(collection(db, NOTES_COLLECTION), where("page", "==", PAGE));
+      const metaQ = query(collection(db, COLUMN_META_COLLECTION), where("page", "==", PAGE));
+      const [notesSnap, metaSnap] = await Promise.all([getDocs(notesQ), getDocs(metaQ)]);
+
+      const maxColInNotes = notesSnap.docs.reduce((max, d) => Math.max(max, Number(d.data().col ?? 0)), 0);
+      const maxColInMeta = metaSnap.docs.reduce((max, d) => Math.max(max, Number(d.data().col ?? 0)), 0);
+      const maxCol = Math.max(maxColInNotes, maxColInMeta);
+      if (targetCol > maxCol) return;
+
+      for (const d of notesSnap.docs) {
+        const itemCol = Number(d.data().col ?? 0);
+        if (itemCol === colIdx) {
+          await setDoc(doc(db, NOTES_COLLECTION, d.id), { col: targetCol }, { merge: true });
+        } else if (itemCol === targetCol) {
+          await setDoc(doc(db, NOTES_COLLECTION, d.id), { col: colIdx }, { merge: true });
+        }
+      }
+
+      const titleByCol = new Map();
+      metaSnap.forEach((d) => {
+        const data = d.data();
+        titleByCol.set(Number(data.col ?? 0), data.title || "");
+      });
+      const currentTitle = titleByCol.get(colIdx) || "";
+      const targetTitle = titleByCol.get(targetCol) || "";
+      await saveColumnTitle(colIdx, targetTitle);
+      await saveColumnTitle(targetCol, currentTitle);
+
+      activeTitleEdit = { type: "column", colIdx: targetCol };
       await loadPageItems();
     }
 
@@ -1301,8 +1482,32 @@
     // Arrow button handlers
     arrowUp.addEventListener('click', () => moveItem('up'));
     arrowDown.addEventListener('click', () => moveItem('down'));
-    arrowLeft.addEventListener('click', () => moveItem('left'));
-    arrowRight.addEventListener('click', () => moveItem('right'));
+    arrowLeft.addEventListener('mousedown', setPendingArrowTitleEdit);
+    arrowLeft.addEventListener('click', async () => {
+      const titleCtx = consumeArrowTitleEditContext();
+      if (titleCtx?.type === 'column') {
+        await moveColumn(titleCtx.colIdx, -1);
+        return;
+      }
+      if (titleCtx?.type === 'page') {
+        await movePage(titleCtx.pageName, -1);
+        return;
+      }
+      await moveItem('left');
+    });
+    arrowRight.addEventListener('mousedown', setPendingArrowTitleEdit);
+    arrowRight.addEventListener('click', async () => {
+      const titleCtx = consumeArrowTitleEditContext();
+      if (titleCtx?.type === 'column') {
+        await moveColumn(titleCtx.colIdx, 1);
+        return;
+      }
+      if (titleCtx?.type === 'page') {
+        await movePage(titleCtx.pageName, 1);
+        return;
+      }
+      await moveItem('right');
+    });
     columnsDiv.addEventListener("click", (e) => {
       if (e.target === columnsDiv) {
         clearMoveSelection();
@@ -1378,7 +1583,18 @@
       const name = prompt("Enter new page name:");
       if (name && name.trim()) {
         const pageName = name.trim();
-        await setDoc(doc(db, PAGES_COLLECTION, pageName), { name: pageName });
+        const pagesSnap = await getDocs(collection(db, PAGES_COLLECTION));
+        const rows = [];
+        pagesSnap.forEach((d) => {
+          const data = d.data();
+          const rawName = (data.name || d.id || "").trim();
+          if (!rawName) return;
+          const parsedOrder = Number(data.order);
+          rows.push({ name: rawName, order: Number.isFinite(parsedOrder) ? parsedOrder : null });
+        });
+        const ordered = getOrderedPages(rows);
+        const nextOrder = ordered.length ? ordered[ordered.length - 1].normalizedOrder + 1 : 0;
+        await setDoc(doc(db, PAGES_COLLECTION, pageName), { name: pageName, order: nextOrder }, { merge: true });
         await switchPage(pageName);
       }
     });
