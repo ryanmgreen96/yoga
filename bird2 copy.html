@@ -61,6 +61,7 @@
       }
     }
     .item { background: rgba(255,255,255,0.08); border-radius: 5px; padding: 1px 4px; display:flex; flex-direction: column; gap:0; border: 1px solid rgba(255,255,255,0.1); }
+    .item-checkbox { width: 18px; height: 18px; margin-right: 6px; cursor: pointer; }
     .item-title { color: var(--white); text-decoration:none; font-size: 15px; cursor:pointer; margin: 0; display: block; line-height: 1.15; }
     .item-title.text-only { color: var(--beige); }
     .thumbnail-crop { width: 208px; height: 125px; margin-top: 1px; border-radius: 4px; overflow: hidden; }
@@ -107,12 +108,14 @@
       <div id="current-page-title" class="current-page-title"></div>
       <div id="page-tabs" class="page-tabs"></div>
       <button id="add-page-btn" class="btn btn-add">Add Page</button>
+      <button id="check-mode-btn" class="btn btn-add">N</button>
       <button class="delete-mode-btn" id="delete-mode-btn">✕</button>
       <button class="confirm-delete-btn" id="confirm-delete-btn">+</button>
       <button class="arrow-btn" id="arrow-up" title="Move Up">↑</button>
       <button class="arrow-btn" id="arrow-down" title="Move Down">↓</button>
       <button class="arrow-btn" id="arrow-left" title="Move Left">←</button>
       <button class="arrow-btn" id="arrow-right" title="Move Right">→</button>
+      <button class="arrow-btn" id="reset-now-btn" title="Reset Now">R</button>
     </div>
 
     <div class="columns" id="columns"></div>
@@ -180,6 +183,8 @@
     const currentPageTitle = document.getElementById("current-page-title");
     const pageTabs = document.getElementById("page-tabs");
     const addPageBtn = document.getElementById("add-page-btn");
+    const checkModeBtn = document.getElementById("check-mode-btn");
+    const resetNowBtn = document.getElementById("reset-now-btn");
     const modal = document.getElementById("modal");
     const deleteModeBtn = document.getElementById("delete-mode-btn");
     const confirmDeleteBtn = document.getElementById("confirm-delete-btn");
@@ -225,6 +230,10 @@
     let deleteMode = false;
     let selectedItems = new Set();
     let itemButtons = new Map(); // Map of itemId -> button element
+
+    // Check mode
+    let checkMode = false;
+    let checkedItems = new Set();
 
     // Move - selected item
     let selectedMoveItem = null;
@@ -551,6 +560,7 @@
     async function switchPage(pageName) {
       PAGE = pageName;
       updatePageTitleUI();
+      updateCheckModeUI();
       await loadPages();
       await loadPageItems();
     }
@@ -611,6 +621,12 @@
         const parsedOrder = Number(data.order);
         pageRows.push({ id: d.id, name, order: Number.isFinite(parsedOrder) ? parsedOrder : null });
       });
+      // Ensure 'Now' page exists
+      const nowExists = pageRows.some(r => r.name === 'Now');
+      if (!nowExists) {
+        await setDoc(doc(db, PAGES_COLLECTION, 'Now'), { name: 'Now', order: -1 });
+        pageRows.push({ id: 'Now', name: 'Now', order: -1 });
+      }
       const orderedPages = getOrderedPages(pageRows);
       const pageNames = orderedPages.map((r) => r.name);
       if (!pageNames.includes(PAGE)) {
@@ -919,8 +935,29 @@
       wrap.dataset.col = it.col ?? 0;
       wrap.dataset.order = it.order ?? 0;
 
-      const itemContent = document.createElement("div");
-      itemContent.className = "item-content";
+      // Add checkbox if in check mode
+      let checkbox = null;
+      if (checkMode) {
+        checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "item-checkbox";
+        checkbox.checked = checkedItems.has(it.id);
+        checkbox.addEventListener("click", (e) => {
+          e.stopPropagation();
+        });
+        checkbox.addEventListener("change", (e) => {
+          if (checkbox.checked) {
+            checkedItems.add(it.id);
+          } else {
+            checkedItems.delete(it.id);
+          }
+        });
+      }
+
+      const titleRow = document.createElement("div");
+      titleRow.style.display = "flex";
+      titleRow.style.alignItems = "center";
+      if (checkbox) titleRow.appendChild(checkbox);
 
       const titleEl = document.createElement("a");
       titleEl.className = "item-title" + (it.isText?" text-only":"");
@@ -1010,7 +1047,8 @@
         });
       }
 
-      wrap.appendChild(titleEl);
+      titleRow.appendChild(titleEl);
+      wrap.appendChild(titleRow);
 
       // Add thumbnail if link exists
       const thumbUrl = getThumbnailUrl(it.link, it.thumbFrame, it.previewImage);
@@ -1030,6 +1068,8 @@
       let suppressClickUntil = 0;
       wrap.addEventListener("click", (e) => {
         e.preventDefault();
+
+        if (checkMode) return;
 
         if (Date.now() < suppressClickUntil) {
           return;
@@ -1066,13 +1106,13 @@
       // Double click to edit
       wrap.addEventListener("dblclick", (e) => {
         e.preventDefault();
-        if (deleteMode) return;
+        if (deleteMode || checkMode) return;
         openEditModal(it);
       });
 
       // Long-press to select for move (1s)
       wrap.addEventListener("mousedown", (e) => { 
-        if (deleteMode) return;
+        if (deleteMode || checkMode) return;
         if (it.title2 !== undefined) return; // Don't trigger if has title2
         lpTo = setTimeout(()=> {
           suppressClickUntil = Date.now() + 600;
@@ -1465,6 +1505,11 @@
     deleteModeBtn.addEventListener('mouseup', () => { clearTimeout(deleteModeTimer); });
     deleteModeBtn.addEventListener('mouseleave', () => { clearTimeout(deleteModeTimer); });
 
+    function updateCheckModeUI() {
+      checkModeBtn.style.outline = checkMode ? '2px solid #fff' : 'none';
+      resetNowBtn.style.display = PAGE === 'Now' ? 'inline-block' : 'none';
+    }
+
     confirmDeleteBtn.addEventListener('click', async () => {
       console.log('Deleting items:', Array.from(selectedItems));
       // Delete all selected items
@@ -1479,11 +1524,46 @@
       await loadPageItems();
     });
 
+    // Check mode
+    checkModeBtn.addEventListener('click', async () => {
+      if (checkMode) {
+        // Exit check mode, move checked items to Now
+        for (const itemId of checkedItems) {
+          await setDoc(doc(db, NOTES_COLLECTION, itemId), { page: 'Now' }, { merge: true });
+        }
+        checkedItems.clear();
+        checkMode = false;
+        updateCheckModeUI();
+        await loadPageItems();
+      } else {
+        // Enter check mode
+        checkMode = true;
+        updateCheckModeUI();
+        await loadPageItems();
+      }
+    });
+
+    // Reset Now button
+    resetNowBtn.addEventListener('click', async () => {
+      if (PAGE === 'Now') {
+        const q = query(collection(db, NOTES_COLLECTION), where("page", "==", "Now"));
+        const snap = await getDocs(q);
+        for (const d of snap.docs) {
+          await deleteDoc(doc(db, NOTES_COLLECTION, d.id));
+        }
+        await loadPageItems();
+      }
+    });
+
     // Arrow button handlers
     arrowUp.addEventListener('click', () => moveItem('up'));
     arrowDown.addEventListener('click', () => moveItem('down'));
     arrowLeft.addEventListener('mousedown', setPendingArrowTitleEdit);
     arrowLeft.addEventListener('click', async () => {
+      if (selectedMoveItem) {
+        await moveItem('left');
+        return;
+      }
       const titleCtx = consumeArrowTitleEditContext();
       if (titleCtx?.type === 'column') {
         await moveColumn(titleCtx.colIdx, -1);
@@ -1497,6 +1577,10 @@
     });
     arrowRight.addEventListener('mousedown', setPendingArrowTitleEdit);
     arrowRight.addEventListener('click', async () => {
+      if (selectedMoveItem) {
+        await moveItem('right');
+        return;
+      }
       const titleCtx = consumeArrowTitleEditContext();
       if (titleCtx?.type === 'column') {
         await moveColumn(titleCtx.colIdx, 1);
@@ -1603,6 +1687,7 @@
 
     // Init
     updatePageTitleUI();
+    updateCheckModeUI();
     loadPages().then(() => loadPageItems());
   </script>
 </body>
