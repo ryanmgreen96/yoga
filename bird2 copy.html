@@ -210,7 +210,27 @@
     const NOTES_COLLECTION = SITE_KEY ? `${SITE_KEY}_notes` : "notes";
     const COLUMN_META_COLLECTION = SITE_KEY ? `${SITE_KEY}_columnMeta` : "columnMeta";
     const LISTS_COLLECTION = SITE_KEY ? `${SITE_KEY}_lists` : "lists";
-    let PAGE = (urlParams.get("page") || (SITE_KEY ? "home" : "bird")).trim() || (SITE_KEY ? "home" : "bird");
+    const LAST_PAGE_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_lastPage` : "lastPage";
+    const storedLastPage = !urlParams.has("page") ? safeLocalStorageGet(LAST_PAGE_STORAGE_KEY) : null;
+    let PAGE = (urlParams.get("page") || (storedLastPage || (SITE_KEY ? "home" : "bird"))).trim() || (SITE_KEY ? "home" : "bird");
+
+    function safeLocalStorageGet(key) {
+      try {
+        return localStorage.getItem(key);
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function safeLocalStorageSet(key, value) {
+      try {
+        localStorage.setItem(key, value);
+      } catch (error) {
+        // ignore localStorage failures
+      }
+    }
+
+    safeLocalStorageSet(LAST_PAGE_STORAGE_KEY, PAGE);
 
     // DOM
     const columnsDiv = document.getElementById("columns");
@@ -593,6 +613,7 @@
 
     async function switchPage(pageName) {
       PAGE = pageName;
+      safeLocalStorageSet(LAST_PAGE_STORAGE_KEY, PAGE);
       updatePageTitleUI();
       updateCheckModeUI();
       await loadPages();
