@@ -32,40 +32,48 @@
     .confirm-delete-btn { background: var(--green); color: #fff; border: none; border-radius: 6px; padding: 4px 8px; font-weight: 600; cursor: pointer; font-size: 13px; display: none; }
     .confirm-delete-btn:hover { background: var(--green-hover); }
     .delete-mode-active .btn-add { background: #8b0000; }
+    .delete-mode-btn.active { box-shadow: 0 0 0 2px #fef08a; background: #b30000; }
     .arrow-btn { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-weight: 600; cursor: pointer; font-size: 16px; }
     .arrow-btn:hover { background: #1d4ed8; }
     .item.move-selected { background: #eab308; box-shadow: 0 0 0 2px #fef08a; }
 
-    /* Columns layout */
-    .columns { display:flex; align-items:flex-start; gap: 14px; margin-top: 16px; }
-    .column { display:flex; flex-direction:column; align-items: flex-start; gap: 8px; min-width: 0; width: fit-content; }
-    .column-header { display: flex; align-items: center; gap: 6px; width: 208px; }
+    /* Rows layout */
+    .columns { display:flex; flex-direction: column; gap: 20px; margin-top: 16px; }
+    .column { display:flex; flex-direction:row; align-items: flex-start; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
+    .column-header { display: none; }
     .column-title-slot { flex: 1; min-width: 0; }
     .column-title-display { width: 100%; text-align: center; color: #e8d9a7; font-family: Georgia, "Times New Roman", serif; font-size: 18px; line-height: 1.2; min-height: 28px; padding: 2px 6px; user-select: none; cursor: default; }
     .column-title-display:empty::before { content: " "; }
     .column-title-edit { width: 100%; background: rgba(255,255,255,0.12); color: #e8d9a7; border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 4px 8px; text-align: center; font-family: Georgia, "Times New Roman", serif; font-size: 18px; }
     .column-title-edit::placeholder { color: rgba(232,217,167,0.75); }
-    .add-column-btn { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 4px 8px; font-weight: 700; cursor: pointer; font-size: 15px; line-height: 1; }
+    .add-column-btn { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 6px 12px; font-weight: 700; cursor: pointer; font-size: 18px; line-height: 1; align-self: flex-start; margin-top: 4px; }
     .add-column-btn:hover { background: #1d4ed8; }
+    .add-row-btn { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 8px 16px; font-weight: 700; cursor: pointer; font-size: 16px; margin-top: 12px; }
+    .add-row-btn:hover { background: #1d4ed8; }
     
     /* Mobile layout */
     @media (max-width: 700px) {
       .columns { 
-        display: grid; 
-        grid-template-columns: repeat(2, 1fr); 
-        gap: 14px; 
+        display: flex;
+        flex-direction: column;
+        gap: 20px; 
       }
       .column { 
-        min-width: unset; 
-        width: 100%; 
+        flex-direction: row;
+        flex-wrap: wrap;
       }
     }
     .item { background: rgba(255,255,255,0.08); border-radius: 5px; padding: 1px 4px; display:flex; flex-direction: column; gap:0; border: 1px solid rgba(255,255,255,0.1); }
-    .item-checkbox { width: 18px; height: 18px; margin-right: 6px; cursor: pointer; }
-    .item-title { color: var(--white); text-decoration:none; font-size: 15px; cursor:pointer; margin: 0; display: block; line-height: 1.15; }
+    .item-checkbox { width: 17px; height: 17px; margin-right: 6px; cursor: pointer; }
+    .item-title { color: var(--white); text-decoration:none; font-size: 14px; cursor:pointer; margin: 0; display: block; line-height: 1.15; }
     .item-title.text-only { color: var(--beige); }
-    .thumbnail-crop { width: 208px; height: 125px; margin-top: 1px; border-radius: 4px; overflow: hidden; }
-    .item-thumbnail { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; transform: scale(1.12); transform-origin: center; }
+    .thumbnail-crop { width: 163px; height: 98px; margin-top: 1px; border-radius: 4px; overflow: hidden; }
+    .item-thumbnail { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; transform: scale(1.288); transform-origin: center; }
+    /* List link style */
+    .list-link { color: var(--beige); text-decoration: none; font-weight: 700; }
+    .list-link:hover { text-decoration: underline; color: var(--gold); }
+    /* Make add buttons not full width and center them */
+    .add-row-btn, .add-column-btn { width: auto; align-self: center; }
     .column-add-btn { padding: 4px 10px; }
 
     .toolbar { display:flex; gap:6px; padding: 4px 0 0 0; }
@@ -100,6 +108,15 @@
     #video-close { align-self:flex-end; margin-top:8px; }
     #video-prompt { display:none; position:absolute; left:50%; transform:translateX(-50%); top:28%; background: rgba(0,0,0,0.65); color:#fff; padding:12px 16px; border-radius:10px; text-align:center; min-width:280px; }
     #video-prompt .btn { margin-left:6px; }
+    /* Lists overlay */
+    #lists-overlay { display:none; position:fixed; inset:0; background: rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:10001; }
+    #lists-overlay-content { background:#222; border-radius:12px; padding:16px; width: 520px; max-width: 92%; color:#eee; max-height: 80vh; overflow:auto; }
+    #lists-overlay h3 { margin:0 0 8px 0; color: var(--gold); font-size: 16px; text-align:center; }
+    .lists-grid { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+    .lists-row { display:flex; align-items:center; gap:8px; }
+    .lists-row input[type="checkbox"] { width:16px; height:16px; }
+    .new-list-row { display:flex; gap:8px; margin-top:12px; }
+    .lists-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }
   </style>
 </head>
 <body>
@@ -140,8 +157,24 @@
         </div>
       </div>
     </div>
+    
+      <!-- Lists Overlay -->
+      <div id="lists-overlay">
+        <div id="lists-overlay-content">
+          <h3>Add Item To Lists</h3>
+          <div class="lists-grid" id="lists-grid"></div>
+          <div class="new-list-row">
+            <input type="text" id="new-list-name" placeholder="New list name" />
+            <button class="btn btn-primary" id="btn-create-list">Create</button>
+          </div>
+          <div class="lists-actions">
+            <button class="btn btn-secondary" id="btn-lists-cancel">Cancel</button>
+            <button class="btn btn-primary" id="btn-lists-save">Save</button>
+          </div>
+        </div>
+      </div>
 
-    <!-- Video Modal -->
+      <!-- Video Modal -->
     <div id="video-modal">
       <div id="video-modal-content">
         <iframe id="video-iframe" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
@@ -176,7 +209,28 @@
     const PAGES_COLLECTION = SITE_KEY ? `${SITE_KEY}_pages` : "pages";
     const NOTES_COLLECTION = SITE_KEY ? `${SITE_KEY}_notes` : "notes";
     const COLUMN_META_COLLECTION = SITE_KEY ? `${SITE_KEY}_columnMeta` : "columnMeta";
-    let PAGE = (urlParams.get("page") || (SITE_KEY ? "home" : "bird")).trim() || (SITE_KEY ? "home" : "bird");
+    const LISTS_COLLECTION = SITE_KEY ? `${SITE_KEY}_lists` : "lists";
+    const LAST_PAGE_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_lastPage` : "lastPage";
+    const storedLastPage = !urlParams.has("page") ? safeLocalStorageGet(LAST_PAGE_STORAGE_KEY) : null;
+    let PAGE = (urlParams.get("page") || (storedLastPage || (SITE_KEY ? "home" : "bird"))).trim() || (SITE_KEY ? "home" : "bird");
+
+    function safeLocalStorageGet(key) {
+      try {
+        return localStorage.getItem(key);
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function safeLocalStorageSet(key, value) {
+      try {
+        localStorage.setItem(key, value);
+      } catch (error) {
+        // ignore localStorage failures
+      }
+    }
+
+    safeLocalStorageSet(LAST_PAGE_STORAGE_KEY, PAGE);
 
     // DOM
     const columnsDiv = document.getElementById("columns");
@@ -559,6 +613,7 @@
 
     async function switchPage(pageName) {
       PAGE = pageName;
+      safeLocalStorageSet(LAST_PAGE_STORAGE_KEY, PAGE);
       updatePageTitleUI();
       updateCheckModeUI();
       await loadPages();
@@ -621,14 +676,12 @@
         const parsedOrder = Number(data.order);
         pageRows.push({ id: d.id, name, order: Number.isFinite(parsedOrder) ? parsedOrder : null });
       });
-      // Ensure 'Now' page exists
-      const nowExists = pageRows.some(r => r.name === 'Now');
-      if (!nowExists) {
-        await setDoc(doc(db, PAGES_COLLECTION, 'Now'), { name: 'Now', order: -1 });
-        pageRows.push({ id: 'Now', name: 'Now', order: -1 });
-      }
+      // Add a virtual 'Lists' page to the UI (does not require a DB page row)
       const orderedPages = getOrderedPages(pageRows);
-      const pageNames = orderedPages.map((r) => r.name);
+      let pageNames = orderedPages.map((r) => r.name);
+      // Remove legacy 'Now' page from UI and replace with 'Lists'
+      pageNames = pageNames.filter(n => n !== 'Now');
+      if (!pageNames.includes('Lists')) pageNames.push('Lists');
       if (!pageNames.includes(PAGE)) {
         PAGE = pageNames[0];
       }
@@ -666,50 +719,194 @@
 
     async function loadPageItems() {
       console.log("Loading page items for:", PAGE);
+      if (PAGE === 'Lists') {
+        await loadListsPage();
+        return;
+      }
       columnsDiv.innerHTML = "";
       itemButtons.clear();
-      // Build columns from Firestore
+      // Build rows from Firestore
       const q = query(collection(db, NOTES_COLLECTION), where("page","==", PAGE));
       const metaQ = query(collection(db, COLUMN_META_COLLECTION), where("page","==", PAGE));
       const [snap, metaSnap] = await Promise.all([getDocs(q), getDocs(metaQ)]);
-      const cols = new Map();
-      const colTitles = new Map();
+      const rows = new Map();
+      const rowTitles = new Map();
       metaSnap.forEach(d => {
         const meta = d.data();
-        const colIdx = Number(meta.col ?? 0);
-        colTitles.set(colIdx, meta.title || "");
+        const rowIdx = Number(meta.col ?? 0);
+        rowTitles.set(rowIdx, meta.title || "");
       });
       snap.forEach(d => {
         const it = d.data(); it.id = d.id;
-        const col = it.col ?? 0;
-        if (!cols.has(col)) cols.set(col, []);
-        cols.get(col).push(it);
+        const row = it.col ?? 0;
+        if (!rows.has(row)) rows.set(row, []);
+        rows.get(row).push(it);
       });
-      // sort each column by order
-      [...cols.keys()].forEach(k => cols.get(k).sort((a,b) => (a.order??0)-(b.order??0)));
+      // sort each row by order (left to right)
+      [...rows.keys()].forEach(k => rows.get(k).sort((a,b) => (a.order??0)-(b.order??0)));
 
-      console.log("Found columns:", cols.size);
+      console.log("Found rows:", rows.size);
       
-      // render columns
-      if (cols.size===0) {
-        console.log("No columns found, creating default column");
-        const colEl = createColumn(0, 0, colTitles.get(0) || "");
+      // render rows
+      if (rows.size===0) {
+        console.log("No rows found, creating default row");
+        const { col: rowEl, addBtn } = createColumn(0, 0, rowTitles.get(0) || "");
+        rowEl.appendChild(addBtn);
         if (!SITE_KEY) {
           // Keep legacy behavior on the shared dataset.
-          colEl.appendChild(renderItem({ id: `tmp_${Date.now()}`, title:"!", isText:false, order:0, col:0 }));
+          rowEl.insertBefore(renderItem({ id: `tmp_${Date.now()}`, title:"!", isText:false, order:0, col:0 }), addBtn);
         }
-        columnsDiv.appendChild(colEl);
-        console.log("Default column created");
+        columnsDiv.appendChild(rowEl);
+        // Add row addition button
+        const addRowBtn = document.createElement("button");
+        addRowBtn.className = "btn btn-add add-row-btn";
+        addRowBtn.textContent = "+ Add Row";
+        addRowBtn.addEventListener("click", async () => {
+          await addColumnRight(0);
+        });
+        columnsDiv.appendChild(addRowBtn);
+        console.log("Default row created");
         return;
       }
-      const allColIdx = new Set([...cols.keys(), ...colTitles.keys()]);
-      const maxColIdx = Math.max(...allColIdx);
-      for (let colIdx = 0; colIdx <= maxColIdx; colIdx++) {
-        const items = cols.get(colIdx) || [];
-        const colEl = createColumn(colIdx, maxColIdx, colTitles.get(colIdx) || "");
-        items.forEach(it => colEl.appendChild(renderItem(it)));
-        columnsDiv.appendChild(colEl);
+      const allRowIdx = new Set([...rows.keys(), ...rowTitles.keys()]);
+      const maxRowIdx = Math.max(...allRowIdx);
+      for (let rowIdx = 0; rowIdx <= maxRowIdx; rowIdx++) {
+        const items = rows.get(rowIdx) || [];
+        const { col: rowEl, addBtn } = createColumn(rowIdx, maxRowIdx, rowTitles.get(rowIdx) || "");
+        rowEl.appendChild(addBtn);
+        items.forEach(it => {
+          const itemEl = renderItem(it);
+          rowEl.insertBefore(itemEl, addBtn);
+        });
+        columnsDiv.appendChild(rowEl);
       }
+
+      // Add button to add new row at the bottom
+      const addRowBtn = document.createElement("button");
+      addRowBtn.className = "btn btn-add add-row-btn";
+      addRowBtn.textContent = "+ Add Row";
+      addRowBtn.addEventListener("click", async () => {
+        await addColumnRight(maxRowIdx);
+      });
+      columnsDiv.appendChild(addRowBtn);
+    }
+
+    // ===== Lists management =====
+    async function getLists() {
+      const snap = await getDocs(collection(db, LISTS_COLLECTION));
+      return snap.docs.map(d => ({ id: d.id, ...(d.data()||{}) }));
+    }
+
+    async function loadListsPage() {
+      columnsDiv.innerHTML = '';
+      const lists = await getLists();
+      // central column
+      const col = document.createElement('div');
+      col.className = 'column';
+      col.style.flexDirection = 'column';
+      col.style.alignItems = 'center';
+      col.style.gap = '12px';
+      lists.forEach(list => {
+        const card = document.createElement('div');
+        card.className = 'item';
+        card.style.width = '360px';
+        const a = document.createElement('a');
+        a.href = '#';
+        a.className = 'list-link';
+        a.textContent = list.name + (Array.isArray(list.items) ? ` (${list.items.length})` : ' (0)');
+        a.addEventListener('click', async (e) => {
+          e.preventDefault();
+          if (!Array.isArray(list.items) || list.items.length===0) return;
+          const randId = list.items[Math.floor(Math.random()*list.items.length)];
+          const docSnap = await getDoc(doc(db, NOTES_COLLECTION, randId));
+          if (docSnap.exists()) {
+            const it = docSnap.data();
+            if (it.link && (it.link.includes('youtube.com')||it.link.includes('youtu.be'))) {
+              const vid = extractYouTubeID(it.link);
+              if (vid) openVideoEmbed(vid,0,0,it.sections||'');
+            } else if (it.link) {
+              window.open(it.link, '_blank');
+            }
+          }
+        });
+        card.appendChild(a);
+        col.appendChild(card);
+      });
+
+      // add-list button
+      const addListBtn = document.createElement('button');
+      addListBtn.className = 'btn btn-add add-row-btn';
+      addListBtn.textContent = '+ Add List';
+      addListBtn.addEventListener('click', async () => {
+        const name = prompt('New list name');
+        if (!name) return;
+        const id = name.replace(/\s+/g,'_');
+        await setDoc(doc(db, LISTS_COLLECTION, id), { name, items: [] }, { merge: true });
+        await loadListsPage();
+      });
+
+      columnsDiv.appendChild(col);
+      columnsDiv.appendChild(addListBtn);
+    }
+
+    function openListsOverlayForItem(itemId) {
+      const overlay = document.getElementById('lists-overlay');
+      const grid = document.getElementById('lists-grid');
+      const newListInput = document.getElementById('new-list-name');
+      const createBtn = document.getElementById('btn-create-list');
+      const cancelBtn = document.getElementById('btn-lists-cancel');
+      const saveBtn = document.getElementById('btn-lists-save');
+
+      grid.innerHTML = '';
+      newListInput.value = '';
+
+      getLists().then(async (lists) => {
+        for (const lst of lists) {
+          const row = document.createElement('div');
+          row.className = 'lists-row';
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.dataset.listId = lst.id;
+          cb.checked = Array.isArray(lst.items) && lst.items.includes(itemId);
+          const label = document.createElement('div');
+          label.textContent = lst.name;
+          row.appendChild(cb);
+          row.appendChild(label);
+          grid.appendChild(row);
+        }
+      });
+
+      createBtn.onclick = async () => {
+        const name = (newListInput.value || '').trim();
+        if (!name) return;
+        const id = name.replace(/\s+/g,'_');
+        await setDoc(doc(db, LISTS_COLLECTION, id), { name, items: [] }, { merge: true });
+        // reload grid
+        openListsOverlayForItem(itemId);
+      };
+
+      cancelBtn.onclick = () => { overlay.style.display = 'none'; };
+
+      saveBtn.onclick = async () => {
+        const checks = Array.from(document.querySelectorAll('#lists-grid input[type=checkbox]'));
+        for (const cb of checks) {
+          const listId = cb.dataset.listId;
+          const listRef = doc(db, LISTS_COLLECTION, listId);
+          const listSnap = await getDoc(listRef);
+          const data = listSnap.exists() ? listSnap.data() : { name: listId, items: [] };
+          const itemsArr = Array.isArray(data.items) ? data.items.slice() : [];
+          const idx = itemsArr.indexOf(itemId);
+          if (cb.checked) {
+            if (idx === -1) itemsArr.push(itemId);
+          } else {
+            if (idx !== -1) itemsArr.splice(idx,1);
+          }
+          await setDoc(listRef, { name: data.name||listId, items: itemsArr }, { merge: true });
+        }
+        overlay.style.display = 'none';
+      };
+
+      overlay.style.display = 'flex';
     }
 
     function createColumn(colIdx, maxColIdx, columnTitle = "") {
@@ -717,119 +914,77 @@
       col.className = "column";
       col.dataset.col = colIdx;
 
-      const columnHeader = document.createElement("div");
-      columnHeader.className = "column-header";
-
-      const titleSlot = document.createElement("div");
-      titleSlot.className = "column-title-slot";
-      let currentTitle = (columnTitle || "").trim();
-      let titleLongPressTimeout = null;
-
-      const showDisplay = () => {
-        const titleDisplay = document.createElement("div");
-        titleDisplay.className = "column-title-display";
-        titleDisplay.textContent = currentTitle;
-        titleDisplay.addEventListener("mousedown", () => {
-          titleLongPressTimeout = setTimeout(showInput, 700);
-        });
-        ["mouseup", "mouseleave"].forEach((ev) => titleDisplay.addEventListener(ev, () => {
-          clearTimeout(titleLongPressTimeout);
-        }));
-        titleSlot.replaceChildren(titleDisplay);
-      };
-
-      const showInput = () => {
-        activeTitleEdit = { type: "column", colIdx };
-        const titleInput = document.createElement("input");
-        titleInput.type = "text";
-        titleInput.className = "column-title-edit";
-        titleInput.placeholder = "Column title";
-        titleInput.value = currentTitle;
-        titleSlot.replaceChildren(titleInput);
-        titleInput.focus();
-        titleInput.select();
-
-        const saveAndRender = async (nextValue, keepInputWhenEmpty = true) => {
-          currentTitle = (nextValue || "").trim();
-          await saveColumnTitle(colIdx, currentTitle);
-          clearActiveTitleEdit();
-          if (currentTitle || !keepInputWhenEmpty) showDisplay();
-          else showInput();
-        };
-
-        titleInput.addEventListener("keydown", async (e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            await saveAndRender(titleInput.value);
-          } else if (e.key === "Escape") {
-            e.preventDefault();
-            clearActiveTitleEdit();
-            if (currentTitle) showDisplay();
-            else showInput();
-          }
-        });
-        titleInput.addEventListener("blur", async () => {
-          if (suppressTitleBlurCommit) {
-            suppressTitleBlurCommit = false;
-            return;
-          }
-          await saveAndRender(titleInput.value);
-        });
-      };
-
-      if (activeTitleEdit && activeTitleEdit.type === "column" && activeTitleEdit.colIdx === colIdx) {
-        showInput();
-      } else if (currentTitle) {
-        showDisplay();
-      } else {
-        showInput();
-      }
-
-      columnHeader.appendChild(titleSlot);
-
-      // Add + button on same line as title
+      // Create add button for end of row
       const addBtn = document.createElement("button");
       addBtn.className = "btn btn-add column-add-btn";
       addBtn.textContent = "+";
-      addBtn.title = deleteMode ? "Delete this column" : "Add new item";
-      addBtn.addEventListener("click", async () => {
+      addBtn.title = deleteMode ? "Delete this row" : "Click to select random video, hold 1.5s to add new video";
+      
+      let holdTimer = null;
+      let isLongPress = false;
+      
+      addBtn.addEventListener("mousedown", (e) => {
+        if (deleteMode) return;
+        isLongPress = false;
+        holdTimer = setTimeout(async () => {
+          isLongPress = true;
+          // Create new video after 1.5s hold
+          const items = Array.from(col.querySelectorAll('.item'));
+          let refItem = null;
+          if (items.length > 0) {
+            const lastItem = items[items.length - 1];
+            refItem = {
+              id: lastItem.dataset.id,
+              col: parseInt(lastItem.dataset.col),
+              order: parseInt(lastItem.dataset.order)
+            };
+          } else {
+            refItem = { col: colIdx, order: -1 };
+          }
+          await addItemBelow(refItem, false);
+        }, 1500);
+      });
+      
+      addBtn.addEventListener("mouseup", () => {
+        clearTimeout(holdTimer);
+      });
+      
+      addBtn.addEventListener("mouseleave", () => {
+        clearTimeout(holdTimer);
+      });
+      
+      addBtn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        if (isLongPress) {
+          isLongPress = false;
+          return;
+        }
         if (deleteMode) {
           await deleteColumn(colIdx);
           return;
         }
-        // Find the last item in this column to add below it
+        // Click: play a random video from this row
         const items = Array.from(col.querySelectorAll('.item'));
-        let refItem = null;
         if (items.length > 0) {
-          const lastItem = items[items.length - 1];
-          refItem = {
-            id: lastItem.dataset.id,
-            col: parseInt(lastItem.dataset.col),
-            order: parseInt(lastItem.dataset.order)
-          };
-        } else {
-          // Empty column, add as first item
-          refItem = { col: colIdx, order: -1 };
+          const randomItem = items[Math.floor(Math.random() * items.length)];
+          const itemId = randomItem.dataset.id;
+          
+          // Get the item data to play it
+          const itemDoc = await getDoc(doc(db, NOTES_COLLECTION, itemId));
+          if (itemDoc.exists()) {
+            const it = itemDoc.data();
+            // Play the video if it has a link
+            if (it.link && (it.link.includes("youtube.com") || it.link.includes("youtu.be"))) {
+              const vid = extractYouTubeID(it.link);
+              if (vid) openVideoEmbed(vid, 0, 0, it.sections||"");
+            } else if (it.link) {
+              window.open(it.link, "_blank");
+            }
+          }
         }
-        await addItemBelow(refItem, false);
       });
-      columnHeader.appendChild(addBtn);
 
-      if (colIdx === maxColIdx) {
-        const addColumnBtn = document.createElement("button");
-        addColumnBtn.className = "add-column-btn";
-        addColumnBtn.textContent = "→";
-        addColumnBtn.title = deleteMode ? "Delete this column" : "Add column to the right";
-        addColumnBtn.addEventListener("click", async () => {
-          if (deleteMode) await deleteColumn(colIdx);
-          else await addColumnRight(colIdx);
-        });
-        columnHeader.appendChild(addColumnBtn);
-      }
-
-      col.appendChild(columnHeader);
-
-      return col;
+      return { col, addBtn };
     }
 
     async function saveColumnTitle(colIdx, title) {
@@ -1183,6 +1338,20 @@
       editingItem = it;
       editingSecondPart = isSecondPart;
       modalTitle.textContent = isSecondPart ? "Edit Second Title" : "Edit Item";
+      // add-to-lists button next to title
+      const existingAddBtn = document.getElementById('modal-add-to-lists');
+      if (existingAddBtn) existingAddBtn.remove();
+      const addToListsBtn = document.createElement('button');
+      addToListsBtn.id = 'modal-add-to-lists';
+      addToListsBtn.className = 'btn btn-add';
+      addToListsBtn.textContent = '+';
+      addToListsBtn.title = 'Add this item to lists';
+      addToListsBtn.style.marginLeft = '8px';
+      addToListsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openListsOverlayForItem(editingItem.id);
+      });
+      modalTitle.parentNode.insertBefore(addToListsBtn, modalTitle.nextSibling);
       
       if (isSecondPart) {
         // Editing second part
@@ -1481,29 +1650,34 @@
     }
     videoClose.addEventListener('click', closeVideo);
 
-    // Delete mode handlers
-    let deleteModeTimer;
-    deleteModeBtn.addEventListener('mousedown', () => {
-      deleteModeTimer = setTimeout(() => {
-        if (deleteMode) {
-          // Long-press X again cancels delete mode.
-          deleteMode = false;
-          selectedItems.clear();
-          confirmDeleteBtn.style.display = 'none';
-          columnsDiv.classList.remove('delete-mode-active');
-          loadPageItems();
-          console.log('Delete mode cancelled');
-          return;
-        }
+    // Delete mode handlers (click to toggle; click again to delete)
+    deleteModeBtn.addEventListener('click', async () => {
+      if (!deleteMode) {
+        // Enter delete mode
         deleteMode = true;
         selectedItems.clear();
         confirmDeleteBtn.style.display = 'inline-block';
         columnsDiv.classList.add('delete-mode-active');
+        deleteModeBtn.classList.add('active');
         console.log('Delete mode activated');
-      }, 1000);
+        await loadPageItems();
+      } else {
+        // Second click: delete selected items and exit
+        if (selectedItems.size > 0) {
+          console.log('Deleting items via X button:', Array.from(selectedItems));
+          for (const itemId of selectedItems) {
+            await deleteDoc(doc(db, NOTES_COLLECTION, itemId));
+          }
+        }
+        deleteMode = false;
+        selectedItems.clear();
+        confirmDeleteBtn.style.display = 'none';
+        columnsDiv.classList.remove('delete-mode-active');
+        deleteModeBtn.classList.remove('active');
+        await loadPageItems();
+        console.log('Delete mode exited after deletion');
+      }
     });
-    deleteModeBtn.addEventListener('mouseup', () => { clearTimeout(deleteModeTimer); });
-    deleteModeBtn.addEventListener('mouseleave', () => { clearTimeout(deleteModeTimer); });
 
     function updateCheckModeUI() {
       checkModeBtn.style.outline = checkMode ? '2px solid #fff' : 'none';
@@ -1523,6 +1697,26 @@
       columnsDiv.classList.remove('delete-mode-active');
       await loadPageItems();
     });
+
+    // Global click: clicking outside items or overlays deselects selections
+    document.addEventListener('click', (e) => {
+      // Ignore clicks inside the modal/overlays
+      if (e.target.closest('#modal') || e.target.closest('#lists-overlay') || e.target.closest('#video-modal')) return;
+      const clickedItem = e.target.closest('.item');
+      // If click is not on an item, clear move selection and (in non-delete) selections
+      if (!clickedItem) {
+        if (selectedMoveItem) {
+          const prev = document.querySelector(`[data-id="${selectedMoveItem}"]`);
+          if (prev) prev.classList.remove('move-selected');
+          selectedMoveItem = null;
+        }
+        if (deleteMode) {
+          // Clear visual selection of items
+          selectedItems.clear();
+          document.querySelectorAll('.item').forEach(it => { it.style.background = ''; });
+        }
+      }
+    }, true);
 
     // Check mode
     checkModeBtn.addEventListener('click', async () => {
