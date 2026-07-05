@@ -1,0 +1,1818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bird 2 Reset</title>
+  <style>
+    :root {
+      --bg: #c41e3a;
+      --gold: gold;
+      --white: #fff;
+      --green: #2b6b2b;
+      --green-hover: #1f4f1f;
+      --beige: #e8d9a7;
+      --gap: 10px;
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; background: var(--bg); color: var(--white); font-family: system-ui, sans-serif; }
+    .page { padding: 16px; }
+
+    /* Header (top-left) */
+    .header { display:flex; align-items:center; gap:8px; flex-wrap: wrap; }
+    .current-page-title { color: var(--gold); font-weight: 800; font-size: 18px; min-width: 90px; }
+    .page-tabs { display:flex; align-items:center; gap:8px; flex-wrap: wrap; margin-left: 8px; }
+    .page-tab { color: var(--gold); background: transparent; border: 1px solid rgba(255,215,0,0.45); border-radius: 6px; padding: 3px 8px; font-weight: 700; cursor: pointer; }
+    .page-tab:hover { background: rgba(255,215,0,0.12); }
+    .page-tab.active { background: rgba(255,215,0,0.2); border-color: var(--gold); }
+    .header a { color: var(--gold); font-weight: 700; text-decoration: none; }
+    .header a:hover { text-decoration: underline; }
+    .delete-mode-btn { background: #8b0000; color: #fff; border: none; border-radius: 6px; padding: 4px 8px; font-weight: 600; cursor: pointer; font-size: 13px; }
+    .delete-mode-btn:hover { background: #a00000; }
+    .confirm-delete-btn { background: var(--green); color: #fff; border: none; border-radius: 6px; padding: 4px 8px; font-weight: 600; cursor: pointer; font-size: 13px; display: none; }
+    .confirm-delete-btn:hover { background: var(--green-hover); }
+    .delete-mode-active .btn-add { background: #8b0000; }
+    .delete-mode-btn.active { box-shadow: 0 0 0 2px #fef08a; background: #b30000; }
+    .arrow-btn { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-weight: 600; cursor: pointer; font-size: 16px; }
+    .arrow-btn:hover { background: #1d4ed8; }
+    .item.move-selected { background: #eab308; box-shadow: 0 0 0 2px #fef08a; }
+
+    /* Section layout */
+    .columns { display:flex; flex-direction: column; gap: 14px; margin-top: 16px; }
+    .column { display:flex; flex-direction:column; gap: 6px; padding: 6px 8px; border: 1px solid rgba(255,255,255,0.16); border-radius: 10px; background: rgba(0,0,0,0.16); }
+    .column.default-section { border-color: transparent; background: transparent; padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0; }
+    .column-header { display:flex; align-items:center; justify-content:space-between; gap: 8px; }
+    .section-title-input { flex: 1; min-width: 0; background: transparent; border: none; color: var(--beige); font-family: Georgia, "Times New Roman", serif; font-size: 18px; line-height: 1.2; padding: 2px 0; }
+    .section-title-input::placeholder { color: rgba(232,217,167,0.8); }
+    .section-toggle-btn { border: none; background: transparent; color: var(--gold); font-size: 18px; cursor: pointer; padding: 2px 6px; line-height: 1; }
+    .section-toggle-btn:hover { color: var(--white); }
+    .section-content { display:flex; align-items:flex-start; overflow-x:visible; overflow-y:hidden; padding-bottom: 2px; }
+    .section-content.collapsed { display:none; }
+    .section-items { display:flex; flex-wrap:wrap; align-items:flex-start; gap: 6px; min-width: 0; margin-left: -2px; }
+    .add-column-btn { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 6px 12px; font-weight: 700; cursor: pointer; font-size: 18px; line-height: 1; align-self: flex-start; margin-top: 4px; }
+    .add-column-btn:hover { background: #1d4ed8; }
+    .add-row-btn { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 8px 16px; font-weight: 700; cursor: pointer; font-size: 16px; margin-top: 6px; }
+    .add-row-btn:hover { background: #1d4ed8; }
+    
+    /* Mobile layout */
+    @media (max-width: 700px) {
+      .columns { 
+        display: flex;
+        flex-direction: column;
+        gap: 20px; 
+      }
+      .column { 
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+    }
+    .item { background: rgba(255,255,255,0.08); border-radius: 4px; padding: 1px 2px; display:flex; flex-direction: column; gap:0; border: 1px solid rgba(255,255,255,0.1); min-width: 150px; max-width: 160px; flex: 0 0 auto; }
+    .item.is-green { background: rgba(43,107,43,0.82); border-color: rgba(182, 255, 182, 0.5); }
+    .item-checkbox { width: 17px; height: 17px; margin-right: 6px; cursor: pointer; }
+    .item-title { color: var(--white); text-decoration:none; font-size: 14px; cursor:pointer; margin: 0; display: block; line-height: 1.15; }
+    .item-title.text-only { color: var(--beige); }
+    .thumbnail-crop { width: 150px; height: 90px; margin-top: 1px; border-radius: 3px; overflow: hidden; }
+    .item-thumbnail { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; transform: scale(1.288); transform-origin: center; }
+    /* List link style */
+    .list-link { color: var(--beige); text-decoration: none; font-weight: 700; }
+    .list-link:hover { text-decoration: underline; color: var(--gold); }
+    /* Make add buttons not full width and center them */
+    .add-row-btn, .add-column-btn { width: auto; align-self: center; }
+    .column-add-btn { padding: 4px 10px; }
+
+    .toolbar { display:flex; gap:6px; padding: 4px 0 0 0; }
+    .btn { border: none; border-radius: 6px; padding: 4px 8px; font-weight:600; cursor:pointer; font-size: 13px; }
+    .btn-add { background: var(--green); color: #fff; }
+    .btn-add:hover { background: var(--green-hover); }
+    .split-separator { color: rgba(255, 255, 255, 0.7); margin: 0 4px; font-weight: 900; cursor: pointer; font-size: 16px; }
+    .split-separator:hover { color: rgba(255, 255, 255, 0.9); }
+
+    .group-gap { margin-top: 25px; }
+
+    /* Modal */
+    #modal { display:none; position:fixed; inset:0; background: rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:9999; }
+    #modal-content { background:#222; border-radius:12px; padding:16px; width: 520px; max-width: 92%; color:#eee; }
+    #modal h3 { margin:0 0 8px 0; color: var(--gold); font-size: 16px; text-align:center; }
+    .inputs { display:flex; flex-direction:column; gap:8px; }
+    .inputs-row { display:flex; gap:8px; }
+    .inputs-row > * { flex:1; }
+    .inputs-row .small-input { flex:0 0 80px; }
+    .inputs-row .large-input { flex:1; }
+    input, textarea { width:100%; border:none; border-radius: 6px; padding:8px; font-size: 14px; }
+    textarea { min-height: 120px; resize: vertical; font-family: system-ui, sans-serif; }
+    input::placeholder, textarea::placeholder { color:#aaa; }
+    .modal-checkbox-row { display:flex; align-items:center; gap:8px; color:#eee; font-size: 14px; padding: 2px 0; }
+    .modal-checkbox-row input[type="checkbox"] { width: 16px; height: 16px; flex: 0 0 auto; }
+    .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:8px; }
+    .btn-secondary { background:#444; color:#fff; }
+    .btn-primary { background: var(--gold); color:#222; }
+
+    /* Video modal */
+    #video-modal { display:none; position:fixed; inset:0; background: rgba(0,0,0,0.75); align-items:center; justify-content:center; z-index:10000; }
+    #video-modal-content { background:#000; border-radius:12px; padding:14px; width:90%; max-width:900px; display:flex; flex-direction:column; position:relative; }
+    #video-iframe { flex:1; min-height: 480px; border:none; border-radius:8px; }
+    #video-close { align-self:flex-end; margin-top:8px; }
+    #video-prompt { display:none; position:absolute; left:50%; transform:translateX(-50%); top:28%; background: rgba(0,0,0,0.65); color:#fff; padding:12px 16px; border-radius:10px; text-align:center; min-width:280px; }
+    #video-prompt .btn { margin-left:6px; }
+    /* Lists overlay */
+    #lists-overlay { display:none; position:fixed; inset:0; background: rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:10001; }
+    #lists-overlay-content { background:#222; border-radius:12px; padding:16px; width: 520px; max-width: 92%; color:#eee; max-height: 80vh; overflow:auto; }
+    #lists-overlay h3 { margin:0 0 8px 0; color: var(--gold); font-size: 16px; text-align:center; }
+    .lists-grid { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+    .lists-row { display:flex; align-items:center; gap:8px; }
+    .lists-row input[type="checkbox"] { width:16px; height:16px; }
+    .new-list-row { display:flex; gap:8px; margin-top:12px; }
+    .lists-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <div id="current-page-title" class="current-page-title"></div>
+      <div id="page-tabs" class="page-tabs"></div>
+      <button id="add-page-btn" class="btn btn-add">Add Page</button>
+      <button id="check-mode-btn" class="btn btn-add">N</button>
+      <button class="delete-mode-btn" id="delete-mode-btn">✕</button>
+      <button class="confirm-delete-btn" id="confirm-delete-btn">+</button>
+      <button class="arrow-btn" id="arrow-up" title="Move Up">↑</button>
+      <button class="arrow-btn" id="arrow-down" title="Move Down">↓</button>
+      <button class="arrow-btn" id="arrow-left" title="Move Left">←</button>
+      <button class="arrow-btn" id="arrow-right" title="Move Right">→</button>
+      <button class="arrow-btn" id="reset-now-btn" title="Reset Now">R</button>
+    </div>
+
+    <div class="columns" id="columns"></div>
+
+    <!-- Modal for creating/editing item -->
+    <div id="modal">
+      <div id="modal-content">
+        <h3 id="modal-title">Edit Item</h3>
+        <div class="inputs">
+          <input type="text" id="inp-link" placeholder="Paste link (YouTube/Drive) or leave blank for plain text" />
+          <input type="text" id="inp-title" placeholder="Enter title or plain text" />
+          <input type="number" id="inp-thumb-frame" placeholder="Thumbnail frame (0-3 for YouTube)" min="0" max="3" step="1" />
+          <input type="text" id="inp-preview-image" placeholder="Preview image URL (optional, overrides thumbnail)" />
+          <input type="text" id="inp-sections" placeholder="Sections (e.g. 30-4:30$ or 0:30-4:30$, 10:00)" />
+          <label class="modal-checkbox-row" for="inp-green-item">
+            <input type="checkbox" id="inp-green-item" />
+            Make item box green
+          </label>
+          <input type="text" id="inp-description" placeholder="Description (optional)" />
+          <textarea id="inp-notes" placeholder="Notes (optional)"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="btn-delete" style="margin-right: auto;">Delete</button>
+          <button class="btn btn-secondary" id="btn-cancel">Cancel</button>
+          <button class="btn btn-primary" id="btn-save">Save</button>
+        </div>
+      </div>
+    </div>
+    
+      <!-- Lists Overlay -->
+      <div id="lists-overlay">
+        <div id="lists-overlay-content">
+          <h3>Add Item To Lists</h3>
+          <div class="lists-grid" id="lists-grid"></div>
+          <div class="new-list-row">
+            <input type="text" id="new-list-name" placeholder="New list name" />
+            <button class="btn btn-primary" id="btn-create-list">Create</button>
+          </div>
+          <div class="lists-actions">
+            <button class="btn btn-secondary" id="btn-lists-cancel">Cancel</button>
+            <button class="btn btn-primary" id="btn-lists-save">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Video Modal -->
+    <div id="video-modal">
+      <div id="video-modal-content">
+        <iframe id="video-iframe" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+        <div id="video-prompt">
+          <span id="video-prompt-text">Section ended.</span>
+          <button class="btn btn-primary" id="video-prompt-continue">Jump to next</button>
+          <button class="btn btn-secondary" id="video-prompt-cancel">Keep paused</button>
+        </div>
+        <button class="btn btn-secondary" id="video-close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    // Firebase, deleteField
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import { getFirestore, collection, doc, setDoc, getDocs, getDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCdzIu5PwO5KiZmdFCNCOvJY1R6JHgkKjM",
+      authDomain: "birdfood-fda27.firebaseapp.com",
+      projectId: "birdfood-fda27",
+      storageBucket: "birdfood-fda27.firebasestorage.app",
+      messagingSenderId: "340792097507",
+      appId: "1:340792097507:web:f151f0076517cc2e0323d6"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const SITE_KEY = (urlParams.get("siteKey") || "birdfresh2").trim();
+    const PAGES_COLLECTION = SITE_KEY ? `${SITE_KEY}_pages` : "pages";
+    const NOTES_COLLECTION = SITE_KEY ? `${SITE_KEY}_notes` : "notes";
+    const COLUMN_META_COLLECTION = SITE_KEY ? `${SITE_KEY}_columnMeta` : "columnMeta";
+    const LISTS_COLLECTION = SITE_KEY ? `${SITE_KEY}_lists` : "lists";
+    const LAST_PAGE_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_lastPage` : "lastPage";
+    const storedLastPage = !urlParams.has("page") ? safeLocalStorageGet(LAST_PAGE_STORAGE_KEY) : null;
+    let PAGE = (urlParams.get("page") || (storedLastPage || (SITE_KEY ? "home" : "bird"))).trim() || (SITE_KEY ? "home" : "bird");
+
+    function safeLocalStorageGet(key) {
+      try {
+        return localStorage.getItem(key);
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function safeLocalStorageSet(key, value) {
+      try {
+        localStorage.setItem(key, value);
+      } catch (error) {
+        // ignore localStorage failures
+      }
+    }
+
+    safeLocalStorageSet(LAST_PAGE_STORAGE_KEY, PAGE);
+
+    // DOM
+    const columnsDiv = document.getElementById("columns");
+    const currentPageTitle = document.getElementById("current-page-title");
+    const pageTabs = document.getElementById("page-tabs");
+    const addPageBtn = document.getElementById("add-page-btn");
+    const checkModeBtn = document.getElementById("check-mode-btn");
+    const resetNowBtn = document.getElementById("reset-now-btn");
+    const modal = document.getElementById("modal");
+    const deleteModeBtn = document.getElementById("delete-mode-btn");
+    const confirmDeleteBtn = document.getElementById("confirm-delete-btn");
+    const arrowUp = document.getElementById("arrow-up");
+    const arrowDown = document.getElementById("arrow-down");
+    const arrowLeft = document.getElementById("arrow-left");
+    const arrowRight = document.getElementById("arrow-right");
+    const modalTitle = document.getElementById("modal-title");
+    const inpLink = document.getElementById("inp-link");
+    const inpTitle = document.getElementById("inp-title");
+    const inpThumbFrame = document.getElementById("inp-thumb-frame");
+    const inpPreviewImage = document.getElementById("inp-preview-image");
+    const inpDescription = document.getElementById("inp-description");
+    const inpSections = document.getElementById("inp-sections");
+    const inpGreenItem = document.getElementById("inp-green-item");
+    const inpNotes = document.getElementById("inp-notes");
+    const btnCancel = document.getElementById("btn-cancel");
+    const btnSave = document.getElementById("btn-save");
+    const btnDelete = document.getElementById("btn-delete");
+    const videoModal = document.getElementById("video-modal");
+    const videoIframe = document.getElementById("video-iframe");
+    const videoClose = document.getElementById("video-close");
+    const videoPrompt = document.getElementById("video-prompt");
+    const videoPromptText = document.getElementById("video-prompt-text");
+    const videoPromptContinue = document.getElementById("video-prompt-continue");
+    const videoPromptCancel = document.getElementById("video-prompt-cancel");
+
+    let videoPlayer = null;
+    let currentSections = [];
+    let currentSectionIndex = 0;
+    let isPaused = false;
+    let lastCheckedTime = -1;
+    let currentVideoID = null;
+    let currentStartTime = 0;
+
+    // Auto-resize textarea
+    inpNotes.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.max(120, this.scrollHeight) + 'px';
+    });
+
+    // Delete mode
+    let deleteMode = false;
+    let selectedItems = new Set();
+    let itemButtons = new Map(); // Map of itemId -> button element
+
+    // Check mode
+    let checkMode = false;
+    let checkedItems = new Set();
+
+    // Move - selected item
+    let selectedMoveItem = null;
+    let activeTitleEdit = null;
+    let pendingArrowTitleEdit = null;
+    let suppressTitleBlurCommit = false;
+
+    function clearActiveTitleEdit() {
+      activeTitleEdit = null;
+    }
+
+    function setPendingArrowTitleEdit() {
+      suppressTitleBlurCommit = true;
+      pendingArrowTitleEdit = activeTitleEdit ? { ...activeTitleEdit } : null;
+    }
+
+    function consumeArrowTitleEditContext() {
+      const ctx = activeTitleEdit || pendingArrowTitleEdit;
+      pendingArrowTitleEdit = null;
+      return ctx;
+    }
+
+    function getOrderedPages(pageRows) {
+      const sortedByName = [...pageRows].sort((a, b) => a.name.localeCompare(b.name));
+      return sortedByName
+        .map((row, idx) => ({ ...row, normalizedOrder: Number.isFinite(row.order) ? row.order : 100000 + idx }))
+        .sort((a, b) => (a.normalizedOrder - b.normalizedOrder) || a.name.localeCompare(b.name));
+    }
+
+    async function movePage(pageName, direction) {
+      const snap = await getDocs(collection(db, PAGES_COLLECTION));
+      const rows = [];
+      snap.forEach((d) => {
+        const data = d.data();
+        const name = (data.name || d.id || "").trim();
+        if (!name) return;
+        const parsedOrder = Number(data.order);
+        rows.push({ id: d.id, name, order: Number.isFinite(parsedOrder) ? parsedOrder : null });
+      });
+      const ordered = getOrderedPages(rows);
+      const idx = ordered.findIndex((r) => r.name === pageName);
+      if (idx < 0) return;
+      const targetIdx = idx + direction;
+      if (targetIdx < 0 || targetIdx >= ordered.length) return;
+
+      const current = ordered[idx];
+      const target = ordered[targetIdx];
+      await setDoc(doc(db, PAGES_COLLECTION, current.name), { order: target.normalizedOrder }, { merge: true });
+      await setDoc(doc(db, PAGES_COLLECTION, target.name), { order: current.normalizedOrder }, { merge: true });
+
+      if (activeTitleEdit && activeTitleEdit.type === "page") {
+        activeTitleEdit.pageName = pageName;
+      }
+      await loadPages();
+    }
+
+    function startPageTitleInlineEdit(hostEl, pageName) {
+      if (!hostEl) return;
+      activeTitleEdit = { type: "page", pageName };
+      hostEl.dataset.editing = "1";
+
+      const originalText = pageName;
+      const input = document.createElement("input");
+      input.type = "text";
+      input.className = "column-title-edit";
+      input.value = originalText;
+      input.placeholder = "Page title";
+
+      const restoreDisplay = () => {
+        hostEl.dataset.editing = "0";
+        if (hostEl === currentPageTitle) {
+          updatePageTitleUI();
+        } else {
+          hostEl.textContent = pageName;
+        }
+      };
+
+      const commit = async () => {
+        const nextValue = (input.value || "").trim();
+        if (!nextValue) {
+          restoreDisplay();
+          clearActiveTitleEdit();
+          return;
+        }
+        if (nextValue === pageName) {
+          restoreDisplay();
+          clearActiveTitleEdit();
+          return;
+        }
+        await renamePage(pageName, nextValue);
+        clearActiveTitleEdit();
+      };
+
+      const cancel = () => {
+        restoreDisplay();
+        clearActiveTitleEdit();
+      };
+
+      input.addEventListener("keydown", async (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          await commit();
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          cancel();
+        }
+      });
+      input.addEventListener("blur", async () => {
+        if (suppressTitleBlurCommit) {
+          suppressTitleBlurCommit = false;
+          return;
+        }
+        await commit();
+      });
+
+      hostEl.replaceChildren(input);
+      input.focus();
+      input.select();
+    }
+
+    // Helpers
+    function extractYouTubeID(url) {
+      try {
+        const u = new URL(url);
+        if (u.hostname.includes("youtube.com")) return u.searchParams.get("v");
+        if (u.hostname.includes("youtu.be")) return u.pathname.slice(1);
+      } catch {}
+      return null;
+    }
+    function extractGoogleDriveID(url) {
+      try {
+        const u = new URL(url);
+        if (!u.hostname.includes("drive.google.com")) return null;
+        let m = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+        if (m) return m[1];
+        m = url.match(/id=([a-zA-Z0-9-_]+)/);
+        if (m) return m[1];
+      } catch {}
+      return null;
+    }
+    function getThumbnailUrl(link, thumbFrame, previewImage) {
+      const customPreview = (previewImage || "").trim();
+      if (customPreview) return customPreview;
+      if (!link) return null;
+      const ytId = extractYouTubeID(link);
+      if (ytId) {
+        let frame = Number.isInteger(thumbFrame) ? thumbFrame : parseInt(thumbFrame, 10);
+        if (!Number.isInteger(frame) || frame < 0 || frame > 3) frame = 0;
+        return `https://img.youtube.com/vi/${ytId}/${frame}.jpg?frame=${frame}`;
+      }
+      const gdId = extractGoogleDriveID(link);
+      if (gdId) return `https://drive.google.com/thumbnail?id=${gdId}`;
+      return null;
+    }
+    function timeToSeconds(str) {
+      const s = (str || "").trim();
+      if (!s) return 0;
+      if (/^\d+$/.test(s)) return parseInt(s, 10);
+      if (s.includes(":")) { const [m, sec] = s.split(":"); return parseInt(m,10)*60 + parseInt(sec,10); }
+      return 0;
+    }
+    function secondsToTime(sec) {
+      if (!sec || sec === 0) return "";
+      const minutes = Math.floor(sec / 60);
+      const seconds = sec % 60;
+      return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+    }
+    function parseSections(sectionsString) {
+      const sections = [];
+      if (!sectionsString) return sections;
+      const parts = sectionsString.trim().split(",").map(p => p.trim()).filter(Boolean);
+      let lastEnd = -1;
+      for (let i=0;i<parts.length;i++) {
+        const raw = parts[i];
+        const autoSkip = raw.endsWith("$");
+        const t = autoSkip ? raw.slice(0,-1).trim() : raw;
+        if (t.includes("-")) {
+          const [startStr, endStr] = t.split("-");
+          const startSec = startStr ? timeToSeconds(startStr) : 0;
+          const endSec = endStr && endStr.trim() ? timeToSeconds(endStr) : 999999;
+          if (lastEnd >= 0 && startSec > lastEnd) {
+            sections.push({start: lastEnd, end: startSec, autoSkip: true, isGap: true});
+          }
+          sections.push({start: startSec, end: endSec, autoSkip, isGap: false});
+          lastEnd = endSec;
+        } else {
+          const mark = timeToSeconds(t);
+          if (lastEnd >= 0 && mark > lastEnd) {
+            sections.push({start: lastEnd, end: mark, autoSkip: true, isGap: true});
+          }
+          sections.push({start: mark, end: 999999, autoSkip, isGap: false});
+          lastEnd = 999999;
+        }
+      }
+      return sections;
+    }
+
+    // Data
+    function updatePageTitleUI() {
+      currentPageTitle.textContent = PAGE;
+      document.title = PAGE.charAt(0).toUpperCase() + PAGE.slice(1) + " — Template";
+    }
+
+    async function renamePage(oldName, newName) {
+      const trimmedNew = (newName || "").trim();
+      if (!trimmedNew || trimmedNew === oldName) return;
+
+      const oldPageSnap = await getDoc(doc(db, PAGES_COLLECTION, oldName));
+      const existingOrder = oldPageSnap.exists() ? Number(oldPageSnap.data().order) : null;
+
+      await setDoc(doc(db, PAGES_COLLECTION, trimmedNew), { name: trimmedNew, ...(Number.isFinite(existingOrder) ? { order: existingOrder } : {}) }, { merge: true });
+      await deleteDoc(doc(db, PAGES_COLLECTION, oldName));
+
+      const notesQ = query(collection(db, NOTES_COLLECTION), where("page", "==", oldName));
+      const notesSnap = await getDocs(notesQ);
+      for (const d of notesSnap.docs) {
+        await setDoc(doc(db, NOTES_COLLECTION, d.id), { page: trimmedNew }, { merge: true });
+      }
+
+      const metaQ = query(collection(db, COLUMN_META_COLLECTION), where("page", "==", oldName));
+      const metaSnap = await getDocs(metaQ);
+      const metaRows = metaSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      for (const row of metaRows) {
+        const colIdx = Number(row.col ?? 0);
+        const newId = `${trimmedNew}_${colIdx}`;
+        await setDoc(doc(db, COLUMN_META_COLLECTION, newId), { page: trimmedNew, col: colIdx, title: row.title || "" }, { merge: true });
+        if (row.id !== newId) await deleteDoc(doc(db, COLUMN_META_COLLECTION, row.id));
+      }
+
+      PAGE = trimmedNew;
+      if (activeTitleEdit && activeTitleEdit.type === "page") {
+        activeTitleEdit.pageName = trimmedNew;
+      }
+      updatePageTitleUI();
+      await loadPages();
+      await loadPageItems();
+    }
+
+    async function deletePage(pageName) {
+      const allPagesSnap = await getDocs(collection(db, PAGES_COLLECTION));
+      const pageNames = [];
+      allPagesSnap.forEach((d) => {
+        const name = d.data().name;
+        if (name) pageNames.push(name);
+      });
+      if (pageNames.length <= 1) {
+        alert("You need at least one page.");
+        return;
+      }
+
+      const notesQ = query(collection(db, NOTES_COLLECTION), where("page", "==", pageName));
+      const metaQ = query(collection(db, COLUMN_META_COLLECTION), where("page", "==", pageName));
+      const [notesSnap, metaSnap] = await Promise.all([getDocs(notesQ), getDocs(metaQ)]);
+      for (const d of notesSnap.docs) {
+        await deleteDoc(doc(db, NOTES_COLLECTION, d.id));
+      }
+      for (const d of metaSnap.docs) {
+        await deleteDoc(doc(db, COLUMN_META_COLLECTION, d.id));
+      }
+      await deleteDoc(doc(db, PAGES_COLLECTION, pageName));
+
+      const remaining = pageNames.filter((n) => n !== pageName).sort((a, b) => a.localeCompare(b));
+      PAGE = remaining[0] || (SITE_KEY ? "home" : "bird");
+      updatePageTitleUI();
+      await loadPages();
+      await loadPageItems();
+    }
+
+    function attachPageTitleLongPress(el, pageName) {
+      let pressTimer = null;
+      const onPress = () => {
+        pressTimer = setTimeout(() => {
+          startPageTitleInlineEdit(el, pageName);
+        }, 700);
+      };
+      const clearPress = () => {
+        if (pressTimer) clearTimeout(pressTimer);
+      };
+      el.addEventListener("mousedown", onPress);
+      ["mouseup", "mouseleave"].forEach((ev) => el.addEventListener(ev, clearPress));
+      el.addEventListener("touchstart", onPress, { passive: true });
+      ["touchend", "touchcancel"].forEach((ev) => el.addEventListener(ev, clearPress));
+    }
+
+    function bindCurrentPageTitleLongPress() {
+      if (currentPageTitle.dataset.longpressBound === "1") return;
+      currentPageTitle.dataset.longpressBound = "1";
+      let pressTimer = null;
+      const onPress = () => {
+        pressTimer = setTimeout(() => {
+          startPageTitleInlineEdit(currentPageTitle, PAGE);
+        }, 700);
+      };
+      const clearPress = () => {
+        if (pressTimer) clearTimeout(pressTimer);
+      };
+      currentPageTitle.addEventListener("mousedown", onPress);
+      ["mouseup", "mouseleave"].forEach((ev) => currentPageTitle.addEventListener(ev, clearPress));
+      currentPageTitle.addEventListener("touchstart", onPress, { passive: true });
+      ["touchend", "touchcancel"].forEach((ev) => currentPageTitle.addEventListener(ev, clearPress));
+    }
+
+    async function switchPage(pageName) {
+      PAGE = pageName;
+      safeLocalStorageSet(LAST_PAGE_STORAGE_KEY, PAGE);
+      updatePageTitleUI();
+      updateCheckModeUI();
+      await loadPages();
+      await loadPageItems();
+    }
+
+    async function copySelectedItemToPage(targetPage) {
+      if (!selectedMoveItem) return false;
+      if (targetPage === PAGE) return false;
+      if (String(selectedMoveItem).startsWith("tmp_")) return false;
+
+      const sourceRef = doc(db, NOTES_COLLECTION, selectedMoveItem);
+      const sourceSnap = await getDoc(sourceRef);
+      if (!sourceSnap.exists()) return false;
+
+      const sourceItem = sourceSnap.data();
+      const targetNotesQ = query(collection(db, NOTES_COLLECTION), where("page", "==", targetPage));
+      const targetNotesSnap = await getDocs(targetNotesQ);
+      let minOrderInCol0 = 0;
+      targetNotesSnap.forEach((d) => {
+        const it = d.data();
+        if ((it.col ?? 0) === 0) {
+          minOrderInCol0 = Math.min(minOrderInCol0, it.order ?? 0);
+        }
+      });
+
+      const newId = `${targetPage}_${Date.now()}`;
+      const copiedItem = {
+        ...sourceItem,
+        page: targetPage,
+        col: 0,
+        order: minOrderInCol0 - 1
+      };
+      delete copiedItem.id;
+      await setDoc(doc(db, NOTES_COLLECTION, newId), copiedItem);
+      selectedMoveItem = newId;
+      await switchPage(targetPage);
+      return true;
+    }
+
+    async function loadPages() {
+      const snap = await getDocs(collection(db, PAGES_COLLECTION));
+      if (snap.empty) {
+        if (SITE_KEY) {
+          await setDoc(doc(db, PAGES_COLLECTION, PAGE), { name: PAGE, order: 0 });
+        } else {
+          await setDoc(doc(db, PAGES_COLLECTION, "adrian"), { name: "adrian", order: 0 });
+          await setDoc(doc(db, PAGES_COLLECTION, "bird"), { name: "bird", order: 1 });
+          PAGE = "bird";
+        }
+        return loadPages();
+      }
+      const pageRows = [];
+      snap.forEach(d => {
+        const data = d.data();
+        const name = (data.name || d.id || "").trim();
+        if (!name) return;
+        const parsedOrder = Number(data.order);
+        pageRows.push({ id: d.id, name, order: Number.isFinite(parsedOrder) ? parsedOrder : null });
+      });
+      const orderedPages = getOrderedPages(pageRows);
+      let pageNames = orderedPages.map((r) => r.name);
+      pageNames = pageNames.filter(n => n !== 'Now');
+      if (!pageNames.includes(PAGE)) {
+        PAGE = pageNames[0];
+      }
+
+      pageTabs.innerHTML = "";
+      pageNames.forEach((name) => {
+        const tab = document.createElement("button");
+        tab.className = "page-tab" + (name === PAGE ? " active" : "");
+        tab.textContent = name;
+        tab.addEventListener("click", async () => {
+          if (tab.dataset.editing === "1") return;
+          if (name === PAGE) return;
+          if (selectedMoveItem) {
+            const copied = await copySelectedItemToPage(name);
+            if (copied) return;
+          }
+          await switchPage(name);
+        });
+        attachPageTitleLongPress(tab, name);
+        pageTabs.appendChild(tab);
+      });
+
+      updatePageTitleUI();
+
+      if (activeTitleEdit && activeTitleEdit.type === "page") {
+        const activePageName = activeTitleEdit.pageName;
+        const editHost = activePageName === PAGE
+          ? currentPageTitle
+          : Array.from(pageTabs.children).find((el) => el.textContent === activePageName);
+        if (editHost && editHost.dataset.editing !== "1") {
+          startPageTitleInlineEdit(editHost, activePageName);
+        }
+      }
+    }
+
+    async function loadPageItems() {
+      console.log("Loading page items for:", PAGE);
+      columnsDiv.innerHTML = "";
+      itemButtons.clear();
+      const q = query(collection(db, NOTES_COLLECTION), where("page","==", PAGE));
+      const metaQ = query(collection(db, COLUMN_META_COLLECTION), where("page","==", PAGE));
+      const [snap, metaSnap] = await Promise.all([getDocs(q), getDocs(metaQ)]);
+      const rows = new Map();
+      const rowTitles = new Map();
+      const collapsedByRow = new Map();
+      metaSnap.forEach(d => {
+        const meta = d.data();
+        const rowIdx = Number(meta.col ?? 0);
+        rowTitles.set(rowIdx, meta.title || "");
+        if (typeof meta.collapsed === "boolean") {
+          collapsedByRow.set(rowIdx, meta.collapsed);
+        }
+      });
+      snap.forEach(d => {
+        const it = d.data(); it.id = d.id;
+        const row = it.col ?? 0;
+        if (!rows.has(row)) rows.set(row, []);
+        rows.get(row).push(it);
+      });
+      [...rows.keys()].forEach(k => rows.get(k).sort((a,b) => (a.order??0)-(b.order??0)));
+
+      console.log("Found rows:", rows.size);
+      if (rows.size===0) {
+        console.log("No rows found, creating default row");
+        const { col: rowEl, addBtn, itemsWrap } = createColumn(0, 0, rowTitles.get(0) || "", false, false);
+        if (!SITE_KEY) {
+          const placeholder = renderItem({ id: `tmp_${Date.now()}`, title:"!", isText:false, order:0, col:0 });
+          itemsWrap.insertBefore(placeholder, addBtn);
+        }
+        columnsDiv.appendChild(rowEl);
+        const addRowBtn = document.createElement("button");
+        addRowBtn.className = "btn btn-add add-row-btn";
+        addRowBtn.textContent = "+ Add Row";
+        addRowBtn.addEventListener("click", async () => {
+          await addColumnRight(0);
+        });
+        columnsDiv.appendChild(addRowBtn);
+        console.log("Default row created");
+        return;
+      }
+      const allRowIdx = new Set([...rows.keys(), ...rowTitles.keys()]);
+      const maxRowIdx = Math.max(...allRowIdx);
+      for (let rowIdx = 0; rowIdx <= maxRowIdx; rowIdx++) {
+        const items = rows.get(rowIdx) || [];
+        const isCollapsed = collapsedByRow.get(rowIdx) ?? (rowIdx > 0);
+        const showHeader = rowIdx > 0;
+        const { col: rowEl, addBtn, itemsWrap } = createColumn(rowIdx, maxRowIdx, rowTitles.get(rowIdx) || "", isCollapsed, showHeader);
+        items.forEach(it => {
+          const itemEl = renderItem(it);
+          itemsWrap.insertBefore(itemEl, addBtn);
+        });
+        columnsDiv.appendChild(rowEl);
+      }
+
+      const addRowBtn = document.createElement("button");
+      addRowBtn.className = "btn btn-add add-row-btn";
+      addRowBtn.textContent = "+ Add Row";
+      addRowBtn.addEventListener("click", async () => {
+        await addColumnRight(maxRowIdx);
+      });
+      columnsDiv.appendChild(addRowBtn);
+    }
+
+    // ===== Lists management =====
+    async function getLists() {
+      const snap = await getDocs(collection(db, LISTS_COLLECTION));
+      return snap.docs.map(d => ({ id: d.id, ...(d.data()||{}) }));
+    }
+
+    async function loadListsPage() {
+      columnsDiv.innerHTML = '';
+      const lists = await getLists();
+      const col = document.createElement('div');
+      col.className = 'column';
+      col.style.flexDirection = 'column';
+      col.style.alignItems = 'center';
+      col.style.gap = '12px';
+      lists.forEach(list => {
+        const card = document.createElement('div');
+        card.className = 'item';
+        card.style.width = '360px';
+        const a = document.createElement('a');
+        a.href = '#';
+        a.className = 'list-link';
+        a.textContent = list.name + (Array.isArray(list.items) ? ` (${list.items.length})` : ' (0)');
+        a.addEventListener('click', async (e) => {
+          e.preventDefault();
+          if (!Array.isArray(list.items) || list.items.length===0) return;
+          const randId = list.items[Math.floor(Math.random()*list.items.length)];
+          const docSnap = await getDoc(doc(db, NOTES_COLLECTION, randId));
+          if (docSnap.exists()) {
+            const it = docSnap.data();
+            if (it.link && (it.link.includes('youtube.com')||it.link.includes('youtu.be'))) {
+              const vid = extractYouTubeID(it.link);
+              if (vid) openVideoEmbed(vid,0,0,it.sections||'');
+            } else if (it.link) {
+              window.open(it.link, '_blank');
+            }
+          }
+        });
+        card.appendChild(a);
+        col.appendChild(card);
+      });
+
+      const addListBtn = document.createElement('button');
+      addListBtn.className = 'btn btn-add add-row-btn';
+      addListBtn.textContent = '+ Add List';
+      addListBtn.addEventListener('click', async () => {
+        const name = prompt('New list name');
+        if (!name) return;
+        const id = name.replace(/\s+/g,'_');
+        await setDoc(doc(db, LISTS_COLLECTION, id), { name, items: [] }, { merge: true });
+        await loadListsPage();
+      });
+
+      columnsDiv.appendChild(col);
+      columnsDiv.appendChild(addListBtn);
+    }
+
+    function openListsOverlayForItem(itemId) {
+      const overlay = document.getElementById('lists-overlay');
+      const grid = document.getElementById('lists-grid');
+      const newListInput = document.getElementById('new-list-name');
+      const createBtn = document.getElementById('btn-create-list');
+      const cancelBtn = document.getElementById('btn-lists-cancel');
+      const saveBtn = document.getElementById('btn-lists-save');
+
+      grid.innerHTML = '';
+      newListInput.value = '';
+
+      getLists().then(async (lists) => {
+        for (const lst of lists) {
+          const row = document.createElement('div');
+          row.className = 'lists-row';
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.dataset.listId = lst.id;
+          cb.checked = Array.isArray(lst.items) && lst.items.includes(itemId);
+          const label = document.createElement('div');
+          label.textContent = lst.name;
+          row.appendChild(cb);
+          row.appendChild(label);
+          grid.appendChild(row);
+        }
+      });
+
+      createBtn.onclick = async () => {
+        const name = (newListInput.value || '').trim();
+        if (!name) return;
+        const id = name.replace(/\s+/g,'_');
+        await setDoc(doc(db, LISTS_COLLECTION, id), { name, items: [] }, { merge: true });
+        openListsOverlayForItem(itemId);
+      };
+
+      cancelBtn.onclick = () => { overlay.style.display = 'none'; };
+
+      saveBtn.onclick = async () => {
+        const checks = Array.from(document.querySelectorAll('#lists-grid input[type=checkbox]'));
+        for (const cb of checks) {
+          const listId = cb.dataset.listId;
+          const listRef = doc(db, LISTS_COLLECTION, listId);
+          const listSnap = await getDoc(listRef);
+          const data = listSnap.exists() ? listSnap.data() : { name: listId, items: [] };
+          const itemsArr = Array.isArray(data.items) ? data.items.slice() : [];
+          const idx = itemsArr.indexOf(itemId);
+          if (cb.checked) {
+            if (idx === -1) itemsArr.push(itemId);
+          } else {
+            if (idx !== -1) itemsArr.splice(idx,1);
+          }
+          await setDoc(listRef, { name: data.name||listId, items: itemsArr }, { merge: true });
+        }
+        overlay.style.display = 'none';
+      };
+
+      overlay.style.display = 'flex';
+    }
+
+    function createColumn(colIdx, maxColIdx, columnTitle = "", collapsed = false, showHeader = false) {
+      const col = document.createElement("section");
+      col.className = "column" + (colIdx === 0 ? " default-section" : "");
+      col.dataset.col = colIdx;
+
+      let collapsedState = collapsed;
+      const header = document.createElement("div");
+      header.className = "column-header";
+
+      const titleInput = document.createElement("input");
+      titleInput.type = "text";
+      titleInput.className = "section-title-input";
+      titleInput.placeholder = colIdx === 0 ? "" : "Section name";
+      titleInput.value = columnTitle || "";
+      titleInput.addEventListener("click", (e) => e.stopPropagation());
+      titleInput.addEventListener("keydown", async (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          titleInput.blur();
+        }
+      });
+      titleInput.addEventListener("blur", async () => {
+        const trimmed = (titleInput.value || "").trim();
+        await saveColumnTitle(colIdx, trimmed, collapsedState);
+      });
+
+      const toggleBtn = document.createElement("button");
+      toggleBtn.className = "section-toggle-btn";
+      toggleBtn.type = "button";
+      toggleBtn.textContent = collapsed ? "▸" : "▾";
+      toggleBtn.title = collapsed ? "Expand section" : "Collapse section";
+      toggleBtn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        collapsedState = !collapsedState;
+        content.classList.toggle("collapsed", collapsedState);
+        toggleBtn.textContent = collapsedState ? "▸" : "▾";
+        toggleBtn.title = collapsedState ? "Expand section" : "Collapse section";
+        await saveColumnTitle(colIdx, (titleInput.value || "").trim(), collapsedState);
+      });
+
+      const content = document.createElement("div");
+      content.className = "section-content";
+      if (collapsed) content.classList.add("collapsed");
+
+      const itemsWrap = document.createElement("div");
+      itemsWrap.className = "section-items";
+      content.appendChild(itemsWrap);
+
+      const addBtn = document.createElement("button");
+      addBtn.className = "btn btn-add column-add-btn";
+      addBtn.textContent = "+";
+      addBtn.title = deleteMode ? "Delete this section" : "Add a new item to this section";
+      
+      addBtn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        if (deleteMode) {
+          await deleteColumn(colIdx);
+          return;
+        }
+        const items = Array.from(itemsWrap.querySelectorAll('.item'));
+        let refItem = null;
+        if (items.length > 0) {
+          const lastItem = items[items.length - 1];
+          refItem = {
+            id: lastItem.dataset.id,
+            col: parseInt(lastItem.dataset.col),
+            order: parseInt(lastItem.dataset.order)
+          };
+        } else {
+          refItem = { col: colIdx, order: -1 };
+        }
+        await addItemBelow(refItem, false);
+      });
+
+      if (showHeader) {
+        header.appendChild(titleInput);
+        header.appendChild(toggleBtn);
+        col.appendChild(header);
+      }
+      col.appendChild(content);
+      itemsWrap.appendChild(addBtn);
+
+      return { col, addBtn, itemsWrap, titleInput, toggleBtn };
+    }
+
+    async function saveColumnTitle(colIdx, title, collapsed = undefined) {
+      const id = `${PAGE}_${colIdx}`;
+      const payload = { page: PAGE, col: colIdx, title };
+      if (typeof collapsed === "boolean") payload.collapsed = collapsed;
+      await setDoc(doc(db, COLUMN_META_COLLECTION, id), payload, { merge: true });
+    }
+
+    async function addColumnRight(currentColIdx) {
+      const newColIdx = currentColIdx + 1;
+      await saveColumnTitle(newColIdx, "", true);
+      await loadPageItems();
+    }
+
+    async function moveColumn(colIdx, direction) {
+      const targetCol = colIdx + direction;
+      if (targetCol < 0) return;
+
+      const notesQ = query(collection(db, NOTES_COLLECTION), where("page", "==", PAGE));
+      const metaQ = query(collection(db, COLUMN_META_COLLECTION), where("page", "==", PAGE));
+      const [notesSnap, metaSnap] = await Promise.all([getDocs(notesQ), getDocs(metaQ)]);
+
+      const maxColInNotes = notesSnap.docs.reduce((max, d) => Math.max(max, Number(d.data().col ?? 0)), 0);
+      const maxColInMeta = metaSnap.docs.reduce((max, d) => Math.max(max, Number(d.data().col ?? 0)), 0);
+      const maxCol = Math.max(maxColInNotes, maxColInMeta);
+      if (targetCol > maxCol) return;
+
+      for (const d of notesSnap.docs) {
+        const itemCol = Number(d.data().col ?? 0);
+        if (itemCol === colIdx) {
+          await setDoc(doc(db, NOTES_COLLECTION, d.id), { col: targetCol }, { merge: true });
+        } else if (itemCol === targetCol) {
+          await setDoc(doc(db, NOTES_COLLECTION, d.id), { col: colIdx }, { merge: true });
+        }
+      }
+
+      const titleByCol = new Map();
+      metaSnap.forEach((d) => {
+        const data = d.data();
+        titleByCol.set(Number(data.col ?? 0), data.title || "");
+      });
+      const currentTitle = titleByCol.get(colIdx) || "";
+      const targetTitle = titleByCol.get(targetCol) || "";
+      await saveColumnTitle(colIdx, targetTitle);
+      await saveColumnTitle(targetCol, currentTitle);
+
+      activeTitleEdit = { type: "column", colIdx: targetCol };
+      await loadPageItems();
+    }
+
+    async function deleteColumn(colIdx) {
+      const notesQ = query(collection(db, NOTES_COLLECTION), where("page", "==", PAGE));
+      const metaQ = query(collection(db, COLUMN_META_COLLECTION), where("page", "==", PAGE));
+      const [notesSnap, metaSnap] = await Promise.all([getDocs(notesQ), getDocs(metaQ)]);
+
+      for (const d of notesSnap.docs) {
+        const it = d.data();
+        const itemCol = it.col ?? 0;
+        if (itemCol === colIdx) {
+          await deleteDoc(doc(db, NOTES_COLLECTION, d.id));
+        } else if (itemCol > colIdx) {
+          await setDoc(doc(db, NOTES_COLLECTION, d.id), { col: itemCol - 1 }, { merge: true });
+        }
+      }
+
+      const metaRows = metaSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      for (const row of metaRows) {
+        const metaCol = Number(row.col ?? 0);
+        if (metaCol === colIdx) {
+          await deleteDoc(doc(db, COLUMN_META_COLLECTION, row.id));
+        }
+      }
+      for (const row of metaRows) {
+        const metaCol = Number(row.col ?? 0);
+        if (metaCol > colIdx) {
+          const newCol = metaCol - 1;
+          const newId = `${PAGE}_${newCol}`;
+          await setDoc(doc(db, COLUMN_META_COLLECTION, newId), { page: PAGE, col: newCol, title: row.title || "" }, { merge: true });
+          if (row.id !== newId) {
+            await deleteDoc(doc(db, COLUMN_META_COLLECTION, row.id));
+          }
+        }
+      }
+
+      await loadPageItems();
+    }
+
+    function clearMoveSelection() {
+      if (!selectedMoveItem) return;
+      const selectedEl = document.querySelector(`[data-id="${selectedMoveItem}"]`);
+      if (selectedEl) selectedEl.classList.remove("move-selected");
+      selectedMoveItem = null;
+    }
+
+    function renderItem(it) {
+      const wrap = document.createElement("div");
+      wrap.className = "item" + (it.groupBefore?" group-gap":"");
+      if (it.isGreen) {
+        wrap.classList.add("is-green");
+      }
+      if (selectedMoveItem === it.id) {
+        wrap.classList.add("move-selected");
+      }
+      wrap.dataset.id = it.id;
+      wrap.dataset.col = it.col ?? 0;
+      wrap.dataset.order = it.order ?? 0;
+
+      let checkbox = null;
+      if (checkMode) {
+        checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "item-checkbox";
+        checkbox.checked = checkedItems.has(it.id);
+        checkbox.addEventListener("click", (e) => {
+          e.stopPropagation();
+        });
+        checkbox.addEventListener("change", (e) => {
+          if (checkbox.checked) {
+            checkedItems.add(it.id);
+          } else {
+            checkedItems.delete(it.id);
+          }
+        });
+      }
+
+      const titleRow = document.createElement("div");
+      titleRow.style.display = "flex";
+      titleRow.style.alignItems = "center";
+      if (checkbox) titleRow.appendChild(checkbox);
+
+      const titleEl = document.createElement("a");
+      titleEl.className = "item-title" + (it.isText?" text-only":"");
+      titleEl.href = "#";
+      
+      const titleText = it.title || "!";
+      if (it.title2 !== undefined) {
+        const firstPart = document.createElement('span');
+        firstPart.textContent = titleText;
+        firstPart.style.cursor = 'pointer';
+        firstPart.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (it.link && (it.link.includes("youtube.com") || it.link.includes("youtu.be"))) {
+            const vid = extractYouTubeID(it.link);
+            if (vid) openVideoEmbed(vid, 0, 0, it.sections||"");
+          } else if (it.link) {
+            window.open(it.link, "_blank");
+          }
+        });
+        
+        let lpTo1;
+        firstPart.addEventListener("mousedown", (e) => { 
+          e.stopPropagation();
+          lpTo1 = setTimeout(()=>openEditModal(it, false), 1000); 
+        });
+        ["mouseup","mouseleave"].forEach(ev => firstPart.addEventListener(ev, () => { clearTimeout(lpTo1); }));
+        
+        const separator = document.createElement('span');
+        separator.className = 'split-separator';
+        separator.textContent = '/';
+        
+        const secondPart = document.createElement('span');
+        secondPart.textContent = it.title2 || '!';
+        secondPart.style.cursor = 'pointer';
+        secondPart.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!it.title2 || it.title2 === '!') {
+            openEditModal(it, true);
+          } else if (it.link2 && (it.link2.includes("youtube.com") || it.link2.includes("youtu.be"))) {
+            const vid = extractYouTubeID(it.link2);
+            if (vid) openVideoEmbed(vid, 0, 0, it.sections2||"");
+          } else if (it.link2) {
+            window.open(it.link2, "_blank");
+          }
+        });
+        
+        let lpTo2;
+        secondPart.addEventListener("mousedown", (e) => { 
+          e.stopPropagation();
+          lpTo2 = setTimeout(()=>openEditModal(it, true), 1000); 
+        });
+        ["mouseup","mouseleave"].forEach(ev => secondPart.addEventListener(ev, () => { clearTimeout(lpTo2); }));
+        
+        titleEl.appendChild(firstPart);
+        titleEl.appendChild(separator);
+        titleEl.appendChild(secondPart);
+      } else {
+        titleEl.textContent = titleText;
+        let titleLpTo;
+        let isTitleLongPress = false;
+        titleEl.addEventListener("mousedown", (e) => {
+          e.stopPropagation();
+          isTitleLongPress = false;
+          titleLpTo = setTimeout(() => {
+            isTitleLongPress = true;
+            openEditModal(it, false);
+            setTimeout(() => { isTitleLongPress = false; }, 100);
+          }, 1000);
+        });
+        ["mouseup","mouseleave"].forEach(ev => titleEl.addEventListener(ev, () => {
+          clearTimeout(titleLpTo);
+        }));
+        titleEl.addEventListener("click", (e) => {
+          if (isTitleLongPress) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        });
+      }
+
+      titleRow.appendChild(titleEl);
+      wrap.appendChild(titleRow);
+
+      const thumbUrl = getThumbnailUrl(it.link, it.thumbFrame, it.previewImage);
+      if (thumbUrl) {
+        const thumbWrap = document.createElement("div");
+        thumbWrap.className = "thumbnail-crop";
+        const img = document.createElement("img");
+        img.src = thumbUrl;
+        img.className = "item-thumbnail";
+        img.alt = "Thumbnail";
+        thumbWrap.appendChild(img);
+        wrap.appendChild(thumbWrap);
+      }
+
+      let lpTo;
+      let suppressClickUntil = 0;
+      wrap.addEventListener("click", (e) => {
+        e.preventDefault();
+
+        if (checkMode) return;
+
+        if (Date.now() < suppressClickUntil) {
+          return;
+        }
+        
+        if (deleteMode) {
+          if (selectedItems.has(it.id)) {
+            selectedItems.delete(it.id);
+            wrap.style.background = '';
+          } else {
+            selectedItems.add(it.id);
+            wrap.style.background = '#ff0000';
+          }
+          return;
+        }
+        
+        if (it.title2 !== undefined) return;
+        
+        if (!it.link && (!it.title || it.title === "!")) {
+          openEditModal(it);
+          return;
+        }
+        if (it.link && (it.link.includes("youtube.com") || it.link.includes("youtu.be"))) {
+          const vid = extractYouTubeID(it.link);
+          if (vid) openVideoEmbed(vid, 0, 0, it.sections||"");
+        } else if (it.link) {
+          window.open(it.link, "_blank");
+        }
+      });
+
+      wrap.addEventListener("dblclick", (e) => {
+        e.preventDefault();
+        if (deleteMode || checkMode) return;
+        openEditModal(it);
+      });
+
+      wrap.addEventListener("mousedown", (e) => { 
+        if (deleteMode || checkMode) return;
+        if (it.title2 !== undefined) return;
+        lpTo = setTimeout(()=> {
+          suppressClickUntil = Date.now() + 600;
+          if (selectedMoveItem !== it.id) {
+            if (selectedMoveItem) {
+              const prevWrap = document.querySelector(`[data-id="${selectedMoveItem}"]`);
+              if (prevWrap) prevWrap.classList.remove("move-selected");
+            }
+            selectedMoveItem = it.id;
+            wrap.classList.add("move-selected");
+            console.log("Item selected for moving:", it.id);
+          }
+        }, 1000); 
+      });
+      ["mouseup","mouseleave"].forEach(ev => wrap.addEventListener(ev, () => { 
+        clearTimeout(lpTo);
+      }));
+
+      return wrap;
+    }
+
+    async function addItemBelow(refItem, groupBefore) {
+      const colIdx = refItem.col ?? 0;
+      const refOrder = refItem.order ?? 0;
+      const q = query(collection(db, NOTES_COLLECTION), where("page","==", PAGE));
+      const snap = await getDocs(q);
+      const itemsToUpdate = [];
+      snap.forEach(d => {
+        const it = d.data();
+        if ((it.col ?? 0) === colIdx && (it.order ?? 0) > refOrder) {
+          itemsToUpdate.push({ id: d.id, newOrder: (it.order ?? 0) + 1 });
+        }
+      });
+      for (const item of itemsToUpdate) {
+        await setDoc(doc(db, NOTES_COLLECTION, item.id), { order: item.newOrder }, { merge: true });
+      }
+      const id = `${PAGE}_${Date.now()}`;
+      const newItem = { id, page: PAGE, col: colIdx, order: refOrder + 1, title: "!", isText:false };
+      if (groupBefore) newItem.groupBefore = true;
+      await setDoc(doc(db, NOTES_COLLECTION, id), newItem);
+      await loadPageItems();
+      const newDoc = await getDoc(doc(db, NOTES_COLLECTION, id));
+      if (newDoc.exists()) {
+        const newItemData = newDoc.data();
+        newItemData.id = newDoc.id;
+        openEditModal(newItemData);
+      }
+    }
+    async function addItemRight(refItem) {
+      const colIdx = (refItem.col ?? 0) + 1;
+      const id = `${PAGE}_${Date.now()}`;
+      const newItem = { id, page: PAGE, col: colIdx, order: 0, title: "!", isText:false };
+      await setDoc(doc(db, NOTES_COLLECTION, id), newItem);
+      await loadPageItems();
+    }
+
+    let editingItem = null;
+    let editingSecondPart = false;
+    function openEditModal(it, isSecondPart = false) {
+      editingItem = it;
+      editingSecondPart = isSecondPart;
+      modalTitle.textContent = isSecondPart ? "Edit Second Title" : "Edit Item";
+      const existingAddBtn = document.getElementById('modal-add-to-lists');
+      if (existingAddBtn) existingAddBtn.remove();
+      const addToListsBtn = document.createElement('button');
+      addToListsBtn.id = 'modal-add-to-lists';
+      addToListsBtn.className = 'btn btn-add';
+      addToListsBtn.textContent = '+';
+      addToListsBtn.title = 'Add this item to lists';
+      addToListsBtn.style.marginLeft = '8px';
+      addToListsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openListsOverlayForItem(editingItem.id);
+      });
+      modalTitle.parentNode.insertBefore(addToListsBtn, modalTitle.nextSibling);
+      
+      if (isSecondPart) {
+        inpLink.value = it.link2 || "";
+        inpTitle.value = it.title2 && it.title2 !== "!" ? it.title2 : "";
+        inpThumbFrame.value = "";
+        inpPreviewImage.value = "";
+        inpDescription.value = it.description || "";
+        inpSections.value = it.sections2 || "";
+        inpGreenItem.checked = !!it.isGreen;
+        inpNotes.value = it.text || "";
+      } else {
+        inpLink.value = it.link || "";
+        inpTitle.value = it.title && it.title !== "!" ? it.title : "";
+        inpThumbFrame.value = Number.isInteger(it.thumbFrame) ? String(it.thumbFrame) : "";
+        inpPreviewImage.value = it.previewImage || "";
+        inpDescription.value = it.description || "";
+        inpSections.value = it.sections || "";
+        inpGreenItem.checked = !!it.isGreen;
+        inpNotes.value = it.text || "";
+      }
+      
+      modal.style.display = "flex";
+      inpTitle.focus();
+      
+      setTimeout(() => {
+        inpNotes.style.height = 'auto';
+        inpNotes.style.height = Math.max(120, inpNotes.scrollHeight) + 'px';
+      }, 0);
+    }
+    function closeEditModal() { modal.style.display = "none"; editingItem = null; editingSecondPart = false; }
+
+    btnCancel.addEventListener("click", closeEditModal);
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeEditModal(); closeVideo(); } });
+
+    btnSave.addEventListener("click", async () => {
+      if (!editingItem) return;
+      const link = inpLink.value.trim();
+      const title = inpTitle.value.trim();
+      let thumbFrameRaw = inpThumbFrame.value.trim();
+      let thumbFrame = parseInt(thumbFrameRaw, 10);
+      const hasThumbFrame = Number.isInteger(thumbFrame) && thumbFrame >= 0 && thumbFrame <= 3;
+      const previewImage = inpPreviewImage.value.trim();
+      const description = inpDescription.value.trim();
+      const sections = inpSections.value.trim();
+      const text = inpNotes.value.trim();
+      const isGreen = inpGreenItem.checked;
+
+      let update;
+      if (editingSecondPart) {
+        update = { 
+          link2: link, 
+          title2: title || (link ? "(untitled)" : "!"),
+          description: description,
+          isGreen,
+          sections2: sections, 
+          text: text 
+        };
+      } else {
+        update = { 
+          link, 
+          title: title || (link ? "(untitled)" : "!"),
+          previewImage,
+          description: description,
+          isGreen,
+          sections, 
+          text 
+        };
+        if (hasThumbFrame) update.thumbFrame = thumbFrame;
+        else update.thumbFrame = 0;
+        if (!link && title) update.isText = true; else update.isText = false;
+      }
+      
+      if (editingItem.id.startsWith('tmp_')) {
+        update.page = PAGE;
+        update.col = editingItem.col ?? 0;
+        update.order = editingItem.order ?? 0;
+      }
+      
+      await setDoc(doc(db, NOTES_COLLECTION, editingItem.id), update, { merge: true });
+      closeEditModal();
+      await loadPageItems();
+    });
+
+    btnDelete.addEventListener("click", async () => {
+      if (!editingItem) return;
+      
+      if (editingSecondPart) {
+        await setDoc(doc(db, NOTES_COLLECTION, editingItem.id), { 
+          title2: deleteField(),
+          link2: deleteField(),
+          sections2: deleteField()
+        }, { merge: true });
+      } else {
+        await deleteDoc(doc(db, NOTES_COLLECTION, editingItem.id));
+      }
+      
+      closeEditModal();
+      await loadPageItems();
+    });
+
+    function openVideoEmbed(videoID, startTime=0, endTime=0, sectionsStr="") {
+      currentSections = parseSections(sectionsStr);
+      console.log("Parsed sections:", currentSections);
+      const actualStartTime = currentSections.length > 0 ? currentSections[0].start : startTime;
+      
+      currentVideoID = videoID;
+      currentStartTime = actualStartTime;
+      currentSectionIndex = 0; isPaused=false; lastCheckedTime=-1;
+      videoModal.style.display = "flex";
+      
+      setTimeout(setupYouTubeListener, 100);
+    }
+    function setupYouTubeListener() {
+      console.log("Setting up YouTube listener...");
+      if (window.YT===undefined) { 
+        const tag=document.createElement('script'); 
+        tag.src="https://www.youtube.com/iframe_api"; 
+        document.body.appendChild(tag); 
+      }
+      const iv = setInterval(()=>{
+        if (window.YT && window.YT.Player) { 
+          clearInterval(iv);
+          console.log("YouTube API ready, creating player...");
+          try { 
+            if (videoPlayer && videoPlayer.destroy) {
+              videoPlayer.destroy();
+            }
+            const oldIframe = document.getElementById('video-iframe');
+            if (oldIframe) {
+              oldIframe.remove();
+            }
+            const newIframe = document.createElement('div');
+            newIframe.id = 'video-iframe';
+            const container = document.getElementById('video-modal-content');
+            container.insertBefore(newIframe, container.firstChild);
+            videoPlayer = new YT.Player('video-iframe', { 
+              height: '480',
+              width: '100%',
+              videoId: currentVideoID,
+              playerVars: {
+                autoplay: 1,
+                start: Math.floor(currentStartTime),
+                enablejsapi: 1
+              },
+              events: { 
+                onReady: onPlayerReady, 
+                onStateChange: onPlayerStateChange 
+              } 
+            }); 
+          } catch(e) { 
+            console.error("Error creating player:", e); 
+          }
+        }
+      }, 100);
+    }
+    function onPlayerReady(e) {
+      console.log("Player ready!");
+      try { e.target.unMute(); e.target.setVolume(50); e.target.playVideo(); } catch(e) { console.error("Error in onPlayerReady:", e); }
+    }
+    function onPlayerStateChange(e) { 
+      console.log("Player state changed:", e.data);
+      if (e.data === window.YT.PlayerState.PLAYING) monitorPlayback(); 
+    }
+    function monitorPlayback() {
+      if (videoModal.style.display === 'none') {
+        console.log("Video closed, stopping monitor");
+        return;
+      }
+      if (!videoPlayer || !videoPlayer.getCurrentTime) { 
+        console.log("Player not ready yet...");
+        setTimeout(monitorPlayback,100); 
+        return; 
+      }
+      if (currentSections.length===0) { 
+        console.log("No sections, stopping monitor");
+        setTimeout(monitorPlayback,500); 
+        return; 
+      }
+      const t = videoPlayer.getCurrentTime();
+      const sec = currentSections[currentSectionIndex];
+      if (!sec) {
+        console.log("No current section found");
+        return;
+      }
+      if (Math.floor(t) !== Math.floor(lastCheckedTime)) {
+        console.log(`Time: ${t.toFixed(1)}s, Section ${currentSectionIndex}: ${sec.start}-${sec.end}, autoSkip: ${sec.autoSkip}`);
+      }
+      if (t>=sec.end && lastCheckedTime<sec.end) {
+        console.log(`Reached end of section at ${t}s. Section:`, sec, `Next index:`, currentSectionIndex + 1);
+        if (sec.autoSkip && currentSectionIndex<currentSections.length-1) {
+          currentSectionIndex++;
+          let next = currentSections[currentSectionIndex];
+          console.log("Skipping to next section:", next);
+          while (next && next.isGap && currentSectionIndex < currentSections.length - 1) {
+            const nextNext = currentSections[currentSectionIndex + 1];
+            if (nextNext && Math.abs(next.end - nextNext.start) < 1) {
+              console.log("Skipping through gap section:", next);
+              currentSectionIndex++;
+              next = currentSections[currentSectionIndex];
+            } else {
+              break;
+            }
+          }
+          console.log("Final seek to:", next.start);
+          videoPlayer.seekTo(next.start);
+          lastCheckedTime = next.start;
+        } else if (currentSectionIndex<currentSections.length-1) {
+          videoPlayer.pauseVideo(); 
+          isPaused=true; 
+          let nextIndex = currentSectionIndex + 1;
+          let next = currentSections[nextIndex];
+          while (next && next.isGap && nextIndex < currentSections.length - 1) {
+            const nextNext = currentSections[nextIndex + 1];
+            if (nextNext && Math.abs(next.end - nextNext.start) < 1) {
+              console.log("Prompt: Skipping through gap section:", next);
+              nextIndex++;
+              next = currentSections[nextIndex];
+            } else {
+              break;
+            }
+          }
+          if (next) showSectionPrompt(next.start, nextIndex);
+        }
+      } else {
+        for (let i = 0; i < currentSections.length; i++) {
+          const s = currentSections[i];
+          if (t >= s.start && t < s.end && i !== currentSectionIndex) {
+            currentSectionIndex = i;
+            break;
+          }
+        }
+      }
+      if (isPaused && videoPlayer.getPlayerState()===window.YT.PlayerState.PLAYING) {
+        isPaused=false; if (currentSectionIndex<currentSections.length-1) { currentSectionIndex++; const next=currentSections[currentSectionIndex]; videoPlayer.seekTo(next.start); }
+      }
+      lastCheckedTime = t;
+      setTimeout(monitorPlayback, (videoPlayer.getPlayerState()===window.YT.PlayerState.PLAYING || (isPaused && currentSections.length>0)) ? 100 : 500);
+    }
+    function showSectionPrompt(nextStart, nextIndex) {
+      videoPromptText.textContent = `Section ended. Press Enter or click to jump to ${Math.floor(nextStart)}s`;
+      videoPrompt.dataset.nextStart = nextStart; videoPrompt.dataset.nextIndex = nextIndex; videoPrompt.style.display = 'block'; setTimeout(()=>{ try{ videoPromptContinue.focus(); }catch{} }, 20);
+      document.addEventListener('keydown', promptKeyHandler);
+    }
+    function hideSectionPrompt() { videoPrompt.style.display='none'; delete videoPrompt.dataset.nextStart; delete videoPrompt.dataset.nextIndex; document.removeEventListener('keydown', promptKeyHandler); }
+    function promptKeyHandler(e){ if(e.key==='Enter' && videoPrompt.style.display==='block'){ e.preventDefault(); videoPromptContinue.click(); } if(e.key==='Escape' && videoPrompt.style.display==='block'){ e.preventDefault(); videoPromptCancel.click(); } }
+
+    videoPromptContinue.addEventListener('click', ()=>{ 
+      const nextStart=parseFloat(videoPrompt.dataset.nextStart||0); 
+      const nextIndex=parseInt(videoPrompt.dataset.nextIndex||0,10); 
+      console.log("Prompt continue clicked. Jump to:", nextStart, "Section:", nextIndex);
+      hideSectionPrompt(); 
+      if(videoPlayer){ 
+        currentSectionIndex=nextIndex; 
+        videoPlayer.seekTo(nextStart); 
+        try{
+          videoPlayer.playVideo();
+        }catch{} 
+        isPaused=false; 
+      } 
+    });
+    videoPromptCancel.addEventListener('click', hideSectionPrompt);
+
+    function closeVideo(){ 
+      videoModal.style.display='none'; 
+      if (videoPlayer && videoPlayer.destroy) {
+        videoPlayer.destroy();
+        videoPlayer = null;
+      }
+      hideSectionPrompt(); 
+    }
+    videoClose.addEventListener('click', closeVideo);
+
+    deleteModeBtn.addEventListener('mousedown', (e) => {
+      if (activeTitleEdit?.type === 'page') {
+        e.preventDefault();
+        e.stopPropagation();
+        suppressTitleBlurCommit = true;
+      }
+    });
+
+    deleteModeBtn.addEventListener('click', async (e) => {
+      if (activeTitleEdit?.type === 'page') {
+        e.preventDefault();
+        e.stopPropagation();
+        const pageName = activeTitleEdit.pageName || PAGE;
+        clearActiveTitleEdit();
+        await deletePage(pageName);
+        return;
+      }
+
+      if (!deleteMode) {
+        deleteMode = true;
+        selectedItems.clear();
+        confirmDeleteBtn.style.display = 'inline-block';
+        columnsDiv.classList.add('delete-mode-active');
+        deleteModeBtn.classList.add('active');
+        console.log('Delete mode activated');
+        await loadPageItems();
+      } else {
+        if (selectedItems.size > 0) {
+          console.log('Deleting items via X button:', Array.from(selectedItems));
+          for (const itemId of selectedItems) {
+            await deleteDoc(doc(db, NOTES_COLLECTION, itemId));
+          }
+        }
+        deleteMode = false;
+        selectedItems.clear();
+        confirmDeleteBtn.style.display = 'none';
+        columnsDiv.classList.remove('delete-mode-active');
+        deleteModeBtn.classList.remove('active');
+        await loadPageItems();
+        console.log('Delete mode exited after deletion');
+      }
+    });
+
+    function updateCheckModeUI() {
+      checkModeBtn.style.outline = checkMode ? '2px solid #fff' : 'none';
+      resetNowBtn.style.display = PAGE === 'Now' ? 'inline-block' : 'none';
+    }
+
+    confirmDeleteBtn.addEventListener('click', async () => {
+      console.log('Deleting items:', Array.from(selectedItems));
+      for (const itemId of selectedItems) {
+        await deleteDoc(doc(db, NOTES_COLLECTION, itemId));
+      }
+      deleteMode = false;
+      selectedItems.clear();
+      confirmDeleteBtn.style.display = 'none';
+      columnsDiv.classList.remove('delete-mode-active');
+      await loadPageItems();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('#modal') || e.target.closest('#lists-overlay') || e.target.closest('#video-modal')) return;
+      if (e.target.closest('#delete-mode-btn') || e.target.closest('#confirm-delete-btn')) return;
+      const clickedItem = e.target.closest('.item');
+      if (!clickedItem) {
+        if (selectedMoveItem) {
+          const prev = document.querySelector(`[data-id="${selectedMoveItem}"]`);
+          if (prev) prev.classList.remove('move-selected');
+          selectedMoveItem = null;
+        }
+        if (deleteMode) {
+          selectedItems.clear();
+          document.querySelectorAll('.item').forEach(it => { it.style.background = ''; });
+        }
+      }
+    }, true);
+
+    checkModeBtn.addEventListener('click', async () => {
+      if (checkMode) {
+        for (const itemId of checkedItems) {
+          await setDoc(doc(db, NOTES_COLLECTION, itemId), { page: 'Now' }, { merge: true });
+        }
+        checkedItems.clear();
+        checkMode = false;
+        updateCheckModeUI();
+        await loadPageItems();
+      } else {
+        checkMode = true;
+        updateCheckModeUI();
+        await loadPageItems();
+      }
+    });
+
+    resetNowBtn.addEventListener('click', async () => {
+      if (PAGE === 'Now') {
+        const q = query(collection(db, NOTES_COLLECTION), where("page", "==", "Now"));
+        const snap = await getDocs(q);
+        for (const d of snap.docs) {
+          await deleteDoc(doc(db, NOTES_COLLECTION, d.id));
+        }
+        await loadPageItems();
+      }
+    });
+
+    arrowUp.addEventListener('click', () => moveItem('up'));
+    arrowDown.addEventListener('click', () => moveItem('down'));
+    arrowLeft.addEventListener('mousedown', setPendingArrowTitleEdit);
+    arrowLeft.addEventListener('click', async () => {
+      if (selectedMoveItem) {
+        await moveItem('left');
+        return;
+      }
+      const titleCtx = consumeArrowTitleEditContext();
+      if (titleCtx?.type === 'column') {
+        await moveColumn(titleCtx.colIdx, -1);
+        return;
+      }
+      if (titleCtx?.type === 'page') {
+        await movePage(titleCtx.pageName, -1);
+        return;
+      }
+      await moveItem('left');
+    });
+    arrowRight.addEventListener('mousedown', setPendingArrowTitleEdit);
+    arrowRight.addEventListener('click', async () => {
+      if (selectedMoveItem) {
+        await moveItem('right');
+        return;
+      }
+      const titleCtx = consumeArrowTitleEditContext();
+      if (titleCtx?.type === 'column') {
+        await moveColumn(titleCtx.colIdx, 1);
+        return;
+      }
+      if (titleCtx?.type === 'page') {
+        await movePage(titleCtx.pageName, 1);
+        return;
+      }
+      await moveItem('right');
+    });
+    columnsDiv.addEventListener("click", (e) => {
+      if (e.target === columnsDiv) {
+        clearMoveSelection();
+      }
+    });
+
+    async function moveItem(direction) {
+      if (!selectedMoveItem) {
+        console.log('No item selected for moving');
+        return;
+      }
+      const itemId = selectedMoveItem;
+      const docRef = doc(db, NOTES_COLLECTION, itemId);
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) return;
+
+      const itemData = docSnap.data();
+      const currentCol = itemData.col ?? 0;
+      const currentOrder = itemData.order ?? 0;
+
+      const q = query(collection(db, NOTES_COLLECTION), where("page", "==", PAGE));
+      const snap = await getDocs(q);
+      const allItems = [];
+      snap.forEach(d => {
+        const it = d.data();
+        it.id = d.id;
+        allItems.push(it);
+      });
+
+      if (direction === 'up') {
+        const colItems = allItems.filter(it => (it.col ?? 0) === currentCol).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        const currentIndex = colItems.findIndex(it => it.id === itemId);
+        if (currentIndex > 0) {
+          const prevItem = colItems[currentIndex - 1];
+          await setDoc(doc(db, NOTES_COLLECTION, itemId), { order: prevItem.order ?? 0 }, { merge: true });
+          await setDoc(doc(db, NOTES_COLLECTION, prevItem.id), { order: currentOrder }, { merge: true });
+        }
+      } else if (direction === 'down') {
+        const colItems = allItems.filter(it => (it.col ?? 0) === currentCol).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        const currentIndex = colItems.findIndex(it => it.id === itemId);
+        if (currentIndex < colItems.length - 1) {
+          const nextItem = colItems[currentIndex + 1];
+          await setDoc(doc(db, NOTES_COLLECTION, itemId), { order: nextItem.order ?? 0 }, { merge: true });
+          await setDoc(doc(db, NOTES_COLLECTION, nextItem.id), { order: currentOrder }, { merge: true });
+        }
+      } else if (direction === 'left') {
+        if (currentCol > 0) {
+          const targetCol = currentCol - 1;
+          const colItems = allItems.filter(it => (it.col ?? 0) === targetCol);
+          const minOrder = colItems.length > 0 ? Math.min(...colItems.map(it => it.order ?? 0)) : 0;
+          await setDoc(doc(db, NOTES_COLLECTION, itemId), { col: targetCol, order: minOrder - 1 }, { merge: true });
+        }
+      } else if (direction === 'right') {
+        const targetCol = currentCol + 1;
+        const colItems = allItems.filter(it => (it.col ?? 0) === targetCol);
+        const minOrder = colItems.length > 0 ? Math.min(...colItems.map(it => it.order ?? 0)) : 0;
+        await setDoc(doc(db, NOTES_COLLECTION, itemId), { col: targetCol, order: minOrder - 1 }, { merge: true });
+      }
+
+      await loadPageItems();
+    }
+
+    addPageBtn.addEventListener("click", async () => {
+      const name = prompt("Enter new page name:");
+      if (name && name.trim()) {
+        const pageName = name.trim();
+        const pagesSnap = await getDocs(collection(db, PAGES_COLLECTION));
+        const rows = [];
+        pagesSnap.forEach((d) => {
+          const data = d.data();
+          const rawName = (data.name || d.id || "").trim();
+          if (!rawName) return;
+          const parsedOrder = Number(data.order);
+          rows.push({ name: rawName, order: Number.isFinite(parsedOrder) ? parsedOrder : null });
+        });
+        const ordered = getOrderedPages(rows);
+        const nextOrder = ordered.length ? ordered[ordered.length - 1].normalizedOrder + 1 : 0;
+        await setDoc(doc(db, PAGES_COLLECTION, pageName), { name: pageName, order: nextOrder }, { merge: true });
+        await switchPage(pageName);
+      }
+    });
+
+    bindCurrentPageTitleLongPress();
+
+    updatePageTitleUI();
+    updateCheckModeUI();
+    loadPages().then(() => loadPageItems());
+  </script>
+</body>
+</html>
