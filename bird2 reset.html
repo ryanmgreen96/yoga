@@ -16,15 +16,14 @@
     }
     * { box-sizing: border-box; }
     body { margin:0; background: var(--bg); color: var(--white); font-family: system-ui, sans-serif; }
-    .page { padding: 16px; }
+    .page { padding: 8px 0 16px 0; }
 
     /* Header (top-left) */
-    .header { display:flex; align-items:center; gap:8px; flex-wrap: wrap; }
-    .current-page-title { color: var(--gold); font-weight: 800; font-size: 18px; min-width: 90px; }
-    .page-tabs { display:flex; align-items:center; gap:8px; flex-wrap: wrap; margin-left: 8px; }
+    .header { display:flex; align-items:center; gap:8px; flex-wrap: wrap; padding: 0 8px; }
+    .page-tabs { display:flex; align-items:center; gap:8px; flex-wrap: wrap; margin-left: 22px; }
     .page-tab { color: var(--gold); background: transparent; border: 1px solid rgba(255,215,0,0.45); border-radius: 6px; padding: 3px 8px; font-weight: 700; cursor: pointer; }
     .page-tab:hover { background: rgba(255,215,0,0.12); }
-    .page-tab.active { background: rgba(255,215,0,0.2); border-color: var(--gold); }
+    .page-tab.active { background: rgba(255,215,0,0.28); border-color: #ffe066; box-shadow: 0 0 0 2px rgba(255,224,102,0.65); font-weight: 800; }
     .header a { color: var(--gold); font-weight: 700; text-decoration: none; }
     .header a:hover { text-decoration: underline; }
     .delete-mode-btn { background: #8b0000; color: #fff; border: none; border-radius: 6px; padding: 4px 8px; font-weight: 600; cursor: pointer; font-size: 13px; }
@@ -38,20 +37,20 @@
     .item.move-selected { background: #eab308; box-shadow: 0 0 0 2px #fef08a; }
 
     /* Section layout */
-    .columns { display:flex; flex-direction: column; gap: 14px; margin-top: 16px; }
-    .column { display:flex; flex-direction:column; gap: 6px; padding: 6px 8px; border: 1px solid rgba(255,255,255,0.16); border-radius: 10px; background: rgba(0,0,0,0.16); }
+    .columns { display:flex; flex-direction: column; gap: 14px; margin-top: 10px; }
+    .column { display:flex; flex-direction:column; gap: 6px; padding: 0; border: none; border-radius: 0; background: transparent; }
     .column.default-section { border-color: transparent; background: transparent; padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0; }
     .column-header { display:flex; align-items:center; justify-content:space-between; gap: 8px; }
     .section-title-input { flex: 1; min-width: 0; background: transparent; border: none; color: var(--beige); font-family: Georgia, "Times New Roman", serif; font-size: 18px; line-height: 1.2; padding: 2px 0; }
     .section-title-input::placeholder { color: rgba(232,217,167,0.8); }
     .section-toggle-btn { border: none; background: transparent; color: var(--gold); font-size: 18px; cursor: pointer; padding: 2px 6px; line-height: 1; }
     .section-toggle-btn:hover { color: var(--white); }
-    .section-content { display:flex; align-items:flex-start; overflow-x:visible; overflow-y:hidden; padding-bottom: 2px; }
+    .section-content { display:flex; align-items:flex-start; overflow-x:auto; overflow-y:hidden; padding: 0 2px; }
     .section-content.collapsed { display:none; }
-    .section-items { display:flex; flex-wrap:wrap; align-items:flex-start; gap: 6px; min-width: 0; margin-left: -2px; }
+    .section-items { display:flex; flex-wrap:nowrap; align-items:flex-start; gap: 6px; min-width: 100%; width: max-content; }
     .add-column-btn { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 6px 12px; font-weight: 700; cursor: pointer; font-size: 18px; line-height: 1; align-self: flex-start; margin-top: 4px; }
     .add-column-btn:hover { background: #1d4ed8; }
-    .add-row-btn { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 8px 16px; font-weight: 700; cursor: pointer; font-size: 16px; margin-top: 6px; }
+    .add-row-btn { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 8px 16px; font-weight: 700; cursor: pointer; font-size: 16px; margin-top: 6px; display: none; }
     .add-row-btn:hover { background: #1d4ed8; }
     
     /* Mobile layout */
@@ -66,13 +65,13 @@
         flex-wrap: wrap;
       }
     }
-    .item { background: rgba(255,255,255,0.08); border-radius: 4px; padding: 1px 2px; display:flex; flex-direction: column; gap:0; border: 1px solid rgba(255,255,255,0.1); min-width: 150px; max-width: 160px; flex: 0 0 auto; }
-    .item.is-green { background: rgba(43,107,43,0.82); border-color: rgba(182, 255, 182, 0.5); }
+    .item { background: rgba(255,255,255,0.08); border-radius: 2px; padding: 0; display:flex; flex-direction: column; gap:0; border: 1px solid rgba(255,255,255,0.1); min-width: 0; max-width: none; flex: 0 0 calc((100vw - 40px) / 6); }
+    .item.is-green { background: rgba(43,107,43,0.82); border: 2px solid rgba(43,107,43,0.98); }
     .item-checkbox { width: 17px; height: 17px; margin-right: 6px; cursor: pointer; }
-    .item-title { color: var(--white); text-decoration:none; font-size: 14px; cursor:pointer; margin: 0; display: block; line-height: 1.15; }
+    .item-title { color: var(--white); text-decoration:none; font-size: 14px; cursor:pointer; margin: 0; display: none; line-height: 1.15; }
     .item-title.text-only { color: var(--beige); }
-    .thumbnail-crop { width: 150px; height: 90px; margin-top: 1px; border-radius: 3px; overflow: hidden; }
-    .item-thumbnail { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; transform: scale(1.288); transform-origin: center; }
+    .thumbnail-crop { width: 100%; aspect-ratio: 16 / 9; margin-top: 0; border-radius: 0; overflow: hidden; }
+    .item-thumbnail { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; transform: scale(0.95); transform-origin: center; }
     /* List link style */
     .list-link { color: var(--beige); text-decoration: none; font-weight: 700; }
     .list-link:hover { text-decoration: underline; color: var(--gold); }
@@ -87,25 +86,34 @@
     .split-separator { color: rgba(255, 255, 255, 0.7); margin: 0 4px; font-weight: 900; cursor: pointer; font-size: 16px; }
     .split-separator:hover { color: rgba(255, 255, 255, 0.9); }
 
-    .group-gap { margin-top: 25px; }
+    .group-gap { margin-top: 0; }
 
     /* Modal */
-    #modal { display:none; position:fixed; inset:0; background: rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:9999; }
-    #modal-content { background:#222; border-radius:12px; padding:16px; width: 520px; max-width: 92%; color:#eee; }
-    #modal h3 { margin:0 0 8px 0; color: var(--gold); font-size: 16px; text-align:center; }
-    .inputs { display:flex; flex-direction:column; gap:8px; }
+    #modal { display:none; position:fixed; inset:0; background: transparent; z-index:9999; pointer-events: none; }
+    #modal-content { position: fixed; background:#222; border-radius:8px; padding: 6px; width: 416px; max-width: calc(100vw - 12px); color:#eee; pointer-events: auto; }
+    #modal h3 { display: none; }
+    .inputs { display:flex; flex-direction:column; gap:0; }
     .inputs-row { display:flex; gap:8px; }
     .inputs-row > * { flex:1; }
     .inputs-row .small-input { flex:0 0 80px; }
     .inputs-row .large-input { flex:1; }
-    input, textarea { width:100%; border:none; border-radius: 6px; padding:8px; font-size: 14px; }
+    input, textarea { width:100%; border:none; border-radius: 0; padding:6px; font-size: 14px; margin: 0; }
     textarea { min-height: 120px; resize: vertical; font-family: system-ui, sans-serif; }
     input::placeholder, textarea::placeholder { color:#aaa; }
-    .modal-checkbox-row { display:flex; align-items:center; gap:8px; color:#eee; font-size: 14px; padding: 2px 0; }
+    .modal-checkbox-row { display:flex; align-items:center; gap:8px; color:#eee; font-size: 14px; padding: 0; }
     .modal-checkbox-row input[type="checkbox"] { width: 16px; height: 16px; flex: 0 0 auto; }
-    .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:8px; }
+    .modal-actions { display:flex; justify-content:flex-end; gap:6px; margin-top:0; }
+    .modal-actions .modal-checkbox-row { margin-right: auto; }
+    .lane-separator { height: 12px; }
     .btn-secondary { background:#444; color:#fff; }
     .btn-primary { background: var(--gold); color:#222; }
+    .notes-btn { background: #1f2937; color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-weight: 700; cursor: pointer; font-size: 14px; }
+    .notes-btn:hover { background: #111827; }
+
+    /* Notes overlay */
+    #notes-overlay { display:none; position:fixed; inset:0; background: transparent; align-items:center; justify-content:center; z-index:10003; }
+    #notes-overlay-content { background:#202020; border-radius:8px; padding:8px; width: 520px; max-width: calc(100vw - 16px); }
+    #notes-text { width:100%; min-height: 260px; border:none; resize: vertical; padding:8px; background:#111; color:#eee; }
 
     /* Video modal */
     #video-modal { display:none; position:fixed; inset:0; background: rgba(0,0,0,0.75); align-items:center; justify-content:center; z-index:10000; }
@@ -128,17 +136,16 @@
 <body>
   <div class="page">
     <div class="header">
-      <div id="current-page-title" class="current-page-title"></div>
-      <div id="page-tabs" class="page-tabs"></div>
       <button id="add-page-btn" class="btn btn-add">Add Page</button>
-      <button id="check-mode-btn" class="btn btn-add">N</button>
       <button class="delete-mode-btn" id="delete-mode-btn">✕</button>
       <button class="confirm-delete-btn" id="confirm-delete-btn">+</button>
       <button class="arrow-btn" id="arrow-up" title="Move Up">↑</button>
       <button class="arrow-btn" id="arrow-down" title="Move Down">↓</button>
       <button class="arrow-btn" id="arrow-left" title="Move Left">←</button>
       <button class="arrow-btn" id="arrow-right" title="Move Right">→</button>
+      <button id="notes-btn" class="notes-btn" title="Notes">📝</button>
       <button class="arrow-btn" id="reset-now-btn" title="Reset Now">R</button>
+      <div id="page-tabs" class="page-tabs"></div>
     </div>
 
     <div class="columns" id="columns"></div>
@@ -150,18 +157,14 @@
         <div class="inputs">
           <input type="text" id="inp-link" placeholder="Paste link (YouTube/Drive) or leave blank for plain text" />
           <input type="text" id="inp-title" placeholder="Enter title or plain text" />
-          <input type="number" id="inp-thumb-frame" placeholder="Thumbnail frame (0-3 for YouTube)" min="0" max="3" step="1" />
-          <input type="text" id="inp-preview-image" placeholder="Preview image URL (optional, overrides thumbnail)" />
           <input type="text" id="inp-sections" placeholder="Sections (e.g. 30-4:30$ or 0:30-4:30$, 10:00)" />
-          <label class="modal-checkbox-row" for="inp-green-item">
-            <input type="checkbox" id="inp-green-item" />
-            Make item box green
-          </label>
-          <input type="text" id="inp-description" placeholder="Description (optional)" />
           <textarea id="inp-notes" placeholder="Notes (optional)"></textarea>
         </div>
         <div class="modal-actions">
           <button class="btn btn-secondary" id="btn-delete" style="margin-right: auto;">Delete</button>
+          <label class="modal-checkbox-row" for="inp-green-item">
+            <input type="checkbox" id="inp-green-item" />
+          </label>
           <button class="btn btn-secondary" id="btn-cancel">Cancel</button>
           <button class="btn btn-primary" id="btn-save">Save</button>
         </div>
@@ -196,6 +199,12 @@
         <button class="btn btn-secondary" id="video-close">Close</button>
       </div>
     </div>
+
+    <div id="notes-overlay">
+      <div id="notes-overlay-content">
+        <textarea id="notes-text"></textarea>
+      </div>
+    </div>
   </div>
 
   <script type="module">
@@ -218,9 +227,11 @@
     const SITE_KEY = (urlParams.get("siteKey") || "birdfresh2").trim();
     const PAGES_COLLECTION = SITE_KEY ? `${SITE_KEY}_pages` : "pages";
     const NOTES_COLLECTION = SITE_KEY ? `${SITE_KEY}_notes` : "notes";
+    const QUICK_NOTES_COLLECTION = SITE_KEY ? `${SITE_KEY}_quickNotes` : "quickNotes";
     const COLUMN_META_COLLECTION = SITE_KEY ? `${SITE_KEY}_columnMeta` : "columnMeta";
     const LISTS_COLLECTION = SITE_KEY ? `${SITE_KEY}_lists` : "lists";
     const LAST_PAGE_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_lastPage` : "lastPage";
+    const QUICK_NOTES_DRAFT_KEY = SITE_KEY ? `${SITE_KEY}_quickNotesDraft` : "quickNotesDraft";
     const storedLastPage = !urlParams.has("page") ? safeLocalStorageGet(LAST_PAGE_STORAGE_KEY) : null;
     let PAGE = (urlParams.get("page") || (storedLastPage || (SITE_KEY ? "home" : "bird"))).trim() || (SITE_KEY ? "home" : "bird");
 
@@ -244,10 +255,9 @@
 
     // DOM
     const columnsDiv = document.getElementById("columns");
-    const currentPageTitle = document.getElementById("current-page-title");
     const pageTabs = document.getElementById("page-tabs");
     const addPageBtn = document.getElementById("add-page-btn");
-    const checkModeBtn = document.getElementById("check-mode-btn");
+    const notesBtn = document.getElementById("notes-btn");
     const resetNowBtn = document.getElementById("reset-now-btn");
     const modal = document.getElementById("modal");
     const deleteModeBtn = document.getElementById("delete-mode-btn");
@@ -259,9 +269,6 @@
     const modalTitle = document.getElementById("modal-title");
     const inpLink = document.getElementById("inp-link");
     const inpTitle = document.getElementById("inp-title");
-    const inpThumbFrame = document.getElementById("inp-thumb-frame");
-    const inpPreviewImage = document.getElementById("inp-preview-image");
-    const inpDescription = document.getElementById("inp-description");
     const inpSections = document.getElementById("inp-sections");
     const inpGreenItem = document.getElementById("inp-green-item");
     const inpNotes = document.getElementById("inp-notes");
@@ -275,6 +282,9 @@
     const videoPromptText = document.getElementById("video-prompt-text");
     const videoPromptContinue = document.getElementById("video-prompt-continue");
     const videoPromptCancel = document.getElementById("video-prompt-cancel");
+    const notesOverlay = document.getElementById("notes-overlay");
+    const notesText = document.getElementById("notes-text");
+    let notesAutosaveTimer = null;
 
     let videoPlayer = null;
     let currentSections = [];
@@ -295,9 +305,8 @@
     let selectedItems = new Set();
     let itemButtons = new Map(); // Map of itemId -> button element
 
-    // Check mode
+    // Check mode disabled after notes button replacement
     let checkMode = false;
-    let checkedItems = new Set();
 
     // Move - selected item
     let selectedMoveItem = null;
@@ -368,11 +377,7 @@
 
       const restoreDisplay = () => {
         hostEl.dataset.editing = "0";
-        if (hostEl === currentPageTitle) {
-          updatePageTitleUI();
-        } else {
-          hostEl.textContent = pageName;
-        }
+        hostEl.textContent = pageName;
       };
 
       const commit = async () => {
@@ -438,9 +443,7 @@
       } catch {}
       return null;
     }
-    function getThumbnailUrl(link, thumbFrame, previewImage) {
-      const customPreview = (previewImage || "").trim();
-      if (customPreview) return customPreview;
+    function getThumbnailUrl(link, thumbFrame) {
       if (!link) return null;
       const ytId = extractYouTubeID(link);
       if (ytId) {
@@ -497,7 +500,6 @@
 
     // Data
     function updatePageTitleUI() {
-      currentPageTitle.textContent = PAGE;
       document.title = PAGE.charAt(0).toUpperCase() + PAGE.slice(1) + " — Template";
     }
 
@@ -580,24 +582,6 @@
       ["mouseup", "mouseleave"].forEach((ev) => el.addEventListener(ev, clearPress));
       el.addEventListener("touchstart", onPress, { passive: true });
       ["touchend", "touchcancel"].forEach((ev) => el.addEventListener(ev, clearPress));
-    }
-
-    function bindCurrentPageTitleLongPress() {
-      if (currentPageTitle.dataset.longpressBound === "1") return;
-      currentPageTitle.dataset.longpressBound = "1";
-      let pressTimer = null;
-      const onPress = () => {
-        pressTimer = setTimeout(() => {
-          startPageTitleInlineEdit(currentPageTitle, PAGE);
-        }, 700);
-      };
-      const clearPress = () => {
-        if (pressTimer) clearTimeout(pressTimer);
-      };
-      currentPageTitle.addEventListener("mousedown", onPress);
-      ["mouseup", "mouseleave"].forEach((ev) => currentPageTitle.addEventListener(ev, clearPress));
-      currentPageTitle.addEventListener("touchstart", onPress, { passive: true });
-      ["touchend", "touchcancel"].forEach((ev) => currentPageTitle.addEventListener(ev, clearPress));
     }
 
     async function switchPage(pageName) {
@@ -692,9 +676,7 @@
 
       if (activeTitleEdit && activeTitleEdit.type === "page") {
         const activePageName = activeTitleEdit.pageName;
-        const editHost = activePageName === PAGE
-          ? currentPageTitle
-          : Array.from(pageTabs.children).find((el) => el.textContent === activePageName);
+        const editHost = Array.from(pageTabs.children).find((el) => el.textContent === activePageName);
         if (editHost && editHost.dataset.editing !== "1") {
           startPageTitleInlineEdit(editHost, activePageName);
         }
@@ -706,67 +688,35 @@
       columnsDiv.innerHTML = "";
       itemButtons.clear();
       const q = query(collection(db, NOTES_COLLECTION), where("page","==", PAGE));
-      const metaQ = query(collection(db, COLUMN_META_COLLECTION), where("page","==", PAGE));
-      const [snap, metaSnap] = await Promise.all([getDocs(q), getDocs(metaQ)]);
+      const snap = await getDocs(q);
       const rows = new Map();
-      const rowTitles = new Map();
-      const collapsedByRow = new Map();
-      metaSnap.forEach(d => {
-        const meta = d.data();
-        const rowIdx = Number(meta.col ?? 0);
-        rowTitles.set(rowIdx, meta.title || "");
-        if (typeof meta.collapsed === "boolean") {
-          collapsedByRow.set(rowIdx, meta.collapsed);
-        }
-      });
       snap.forEach(d => {
         const it = d.data(); it.id = d.id;
         const row = it.col ?? 0;
         if (!rows.has(row)) rows.set(row, []);
         rows.get(row).push(it);
       });
-      [...rows.keys()].forEach(k => rows.get(k).sort((a,b) => (a.order??0)-(b.order??0)));
-
-      console.log("Found rows:", rows.size);
-      if (rows.size===0) {
-        console.log("No rows found, creating default row");
-        const { col: rowEl, addBtn, itemsWrap } = createColumn(0, 0, rowTitles.get(0) || "", false, false);
-        if (!SITE_KEY) {
-          const placeholder = renderItem({ id: `tmp_${Date.now()}`, title:"!", isText:false, order:0, col:0 });
-          itemsWrap.insertBefore(placeholder, addBtn);
-        }
-        columnsDiv.appendChild(rowEl);
-        const addRowBtn = document.createElement("button");
-        addRowBtn.className = "btn btn-add add-row-btn";
-        addRowBtn.textContent = "+ Add Row";
-        addRowBtn.addEventListener("click", async () => {
-          await addColumnRight(0);
-        });
-        columnsDiv.appendChild(addRowBtn);
-        console.log("Default row created");
-        return;
-      }
-      const allRowIdx = new Set([...rows.keys(), ...rowTitles.keys()]);
-      const maxRowIdx = Math.max(...allRowIdx);
-      for (let rowIdx = 0; rowIdx <= maxRowIdx; rowIdx++) {
-        const items = rows.get(rowIdx) || [];
-        const isCollapsed = collapsedByRow.get(rowIdx) ?? (rowIdx > 0);
-        const showHeader = rowIdx > 0;
-        const { col: rowEl, addBtn, itemsWrap } = createColumn(rowIdx, maxRowIdx, rowTitles.get(rowIdx) || "", isCollapsed, showHeader);
-        items.forEach(it => {
-          const itemEl = renderItem(it);
-          itemsWrap.insertBefore(itemEl, addBtn);
-        });
-        columnsDiv.appendChild(rowEl);
-      }
-
-      const addRowBtn = document.createElement("button");
-      addRowBtn.className = "btn btn-add add-row-btn";
-      addRowBtn.textContent = "+ Add Row";
-      addRowBtn.addEventListener("click", async () => {
-        await addColumnRight(maxRowIdx);
+      const flatItems = [];
+      [...rows.keys()].sort((a, b) => a - b).forEach((k) => {
+        const colItems = rows.get(k).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        flatItems.push(...colItems);
       });
-      columnsDiv.appendChild(addRowBtn);
+
+      const { col: rowEl, addBtn, greenWrap, normalWrap } = createColumn(0, 0, "", false, false);
+      if (flatItems.length === 0 && !SITE_KEY) {
+        const placeholder = renderItem({ id: `tmp_${Date.now()}`, title:"!", isText:false, order:0, col:0 });
+        normalWrap.insertBefore(placeholder, addBtn);
+      }
+
+      flatItems.forEach((it) => {
+        const itemEl = renderItem(it);
+        if (it.isGreen) {
+          greenWrap.appendChild(itemEl);
+        } else {
+          normalWrap.insertBefore(itemEl, addBtn);
+        }
+      });
+      columnsDiv.appendChild(rowEl);
     }
 
     // ===== Lists management =====
@@ -889,49 +839,20 @@
       col.className = "column" + (colIdx === 0 ? " default-section" : "");
       col.dataset.col = colIdx;
 
-      let collapsedState = collapsed;
-      const header = document.createElement("div");
-      header.className = "column-header";
+      const greenContent = document.createElement("div");
+      greenContent.className = "section-content";
+      const greenWrap = document.createElement("div");
+      greenWrap.className = "section-items";
+      greenContent.appendChild(greenWrap);
 
-      const titleInput = document.createElement("input");
-      titleInput.type = "text";
-      titleInput.className = "section-title-input";
-      titleInput.placeholder = colIdx === 0 ? "" : "Section name";
-      titleInput.value = columnTitle || "";
-      titleInput.addEventListener("click", (e) => e.stopPropagation());
-      titleInput.addEventListener("keydown", async (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          titleInput.blur();
-        }
-      });
-      titleInput.addEventListener("blur", async () => {
-        const trimmed = (titleInput.value || "").trim();
-        await saveColumnTitle(colIdx, trimmed, collapsedState);
-      });
+      const sep = document.createElement("div");
+      sep.className = "lane-separator";
 
-      const toggleBtn = document.createElement("button");
-      toggleBtn.className = "section-toggle-btn";
-      toggleBtn.type = "button";
-      toggleBtn.textContent = collapsed ? "▸" : "▾";
-      toggleBtn.title = collapsed ? "Expand section" : "Collapse section";
-      toggleBtn.addEventListener("click", async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        collapsedState = !collapsedState;
-        content.classList.toggle("collapsed", collapsedState);
-        toggleBtn.textContent = collapsedState ? "▸" : "▾";
-        toggleBtn.title = collapsedState ? "Expand section" : "Collapse section";
-        await saveColumnTitle(colIdx, (titleInput.value || "").trim(), collapsedState);
-      });
-
-      const content = document.createElement("div");
-      content.className = "section-content";
-      if (collapsed) content.classList.add("collapsed");
-
-      const itemsWrap = document.createElement("div");
-      itemsWrap.className = "section-items";
-      content.appendChild(itemsWrap);
+      const normalContent = document.createElement("div");
+      normalContent.className = "section-content";
+      const normalWrap = document.createElement("div");
+      normalWrap.className = "section-items";
+      normalContent.appendChild(normalWrap);
 
       const addBtn = document.createElement("button");
       addBtn.className = "btn btn-add column-add-btn";
@@ -944,7 +865,7 @@
           await deleteColumn(colIdx);
           return;
         }
-        const items = Array.from(itemsWrap.querySelectorAll('.item'));
+        const items = Array.from(normalWrap.querySelectorAll('.item'));
         let refItem = null;
         if (items.length > 0) {
           const lastItem = items[items.length - 1];
@@ -959,15 +880,12 @@
         await addItemBelow(refItem, false);
       });
 
-      if (showHeader) {
-        header.appendChild(titleInput);
-        header.appendChild(toggleBtn);
-        col.appendChild(header);
-      }
-      col.appendChild(content);
-      itemsWrap.appendChild(addBtn);
+      col.appendChild(greenContent);
+      col.appendChild(sep);
+      col.appendChild(normalContent);
+      normalWrap.appendChild(addBtn);
 
-      return { col, addBtn, itemsWrap, titleInput, toggleBtn };
+      return { col, addBtn, greenWrap, normalWrap };
     }
 
     async function saveColumnTitle(colIdx, title, collapsed = undefined) {
@@ -1063,6 +981,29 @@
       selectedMoveItem = null;
     }
 
+
+
+    
+    let hoverEditTimer = null;
+    let hoverCloseTimer = null;
+
+    function positionModalNearItem(anchorEl) {
+      if (!anchorEl) return;
+      const rect = anchorEl.getBoundingClientRect();
+      const modalContent = document.getElementById("modal-content");
+      const panelWidth = modalContent.offsetWidth || 416;
+      const gap = 8;
+      let left = rect.right + gap;
+      if (left + panelWidth > window.innerWidth - 6) {
+        left = rect.left - panelWidth - gap;
+      }
+      if (left < 6) left = 6;
+      const maxTop = Math.max(6, window.innerHeight - modalContent.offsetHeight - 6);
+      const top = Math.min(Math.max(6, rect.top), maxTop);
+      modalContent.style.left = `${left}px`;
+      modalContent.style.top = `${top}px`;
+    }
+
     function renderItem(it) {
       const wrap = document.createElement("div");
       wrap.className = "item" + (it.groupBefore?" group-gap":"");
@@ -1094,96 +1035,9 @@
         });
       }
 
-      const titleRow = document.createElement("div");
-      titleRow.style.display = "flex";
-      titleRow.style.alignItems = "center";
-      if (checkbox) titleRow.appendChild(checkbox);
+      if (checkbox) wrap.appendChild(checkbox);
 
-      const titleEl = document.createElement("a");
-      titleEl.className = "item-title" + (it.isText?" text-only":"");
-      titleEl.href = "#";
-      
-      const titleText = it.title || "!";
-      if (it.title2 !== undefined) {
-        const firstPart = document.createElement('span');
-        firstPart.textContent = titleText;
-        firstPart.style.cursor = 'pointer';
-        firstPart.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          if (it.link && (it.link.includes("youtube.com") || it.link.includes("youtu.be"))) {
-            const vid = extractYouTubeID(it.link);
-            if (vid) openVideoEmbed(vid, 0, 0, it.sections||"");
-          } else if (it.link) {
-            window.open(it.link, "_blank");
-          }
-        });
-        
-        let lpTo1;
-        firstPart.addEventListener("mousedown", (e) => { 
-          e.stopPropagation();
-          lpTo1 = setTimeout(()=>openEditModal(it, false), 1000); 
-        });
-        ["mouseup","mouseleave"].forEach(ev => firstPart.addEventListener(ev, () => { clearTimeout(lpTo1); }));
-        
-        const separator = document.createElement('span');
-        separator.className = 'split-separator';
-        separator.textContent = '/';
-        
-        const secondPart = document.createElement('span');
-        secondPart.textContent = it.title2 || '!';
-        secondPart.style.cursor = 'pointer';
-        secondPart.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          if (!it.title2 || it.title2 === '!') {
-            openEditModal(it, true);
-          } else if (it.link2 && (it.link2.includes("youtube.com") || it.link2.includes("youtu.be"))) {
-            const vid = extractYouTubeID(it.link2);
-            if (vid) openVideoEmbed(vid, 0, 0, it.sections2||"");
-          } else if (it.link2) {
-            window.open(it.link2, "_blank");
-          }
-        });
-        
-        let lpTo2;
-        secondPart.addEventListener("mousedown", (e) => { 
-          e.stopPropagation();
-          lpTo2 = setTimeout(()=>openEditModal(it, true), 1000); 
-        });
-        ["mouseup","mouseleave"].forEach(ev => secondPart.addEventListener(ev, () => { clearTimeout(lpTo2); }));
-        
-        titleEl.appendChild(firstPart);
-        titleEl.appendChild(separator);
-        titleEl.appendChild(secondPart);
-      } else {
-        titleEl.textContent = titleText;
-        let titleLpTo;
-        let isTitleLongPress = false;
-        titleEl.addEventListener("mousedown", (e) => {
-          e.stopPropagation();
-          isTitleLongPress = false;
-          titleLpTo = setTimeout(() => {
-            isTitleLongPress = true;
-            openEditModal(it, false);
-            setTimeout(() => { isTitleLongPress = false; }, 100);
-          }, 1000);
-        });
-        ["mouseup","mouseleave"].forEach(ev => titleEl.addEventListener(ev, () => {
-          clearTimeout(titleLpTo);
-        }));
-        titleEl.addEventListener("click", (e) => {
-          if (isTitleLongPress) {
-            e.preventDefault();
-            e.stopPropagation();
-          }
-        });
-      }
-
-      titleRow.appendChild(titleEl);
-      wrap.appendChild(titleRow);
-
-      const thumbUrl = getThumbnailUrl(it.link, it.thumbFrame, it.previewImage);
+      const thumbUrl = getThumbnailUrl(it.link, it.thumbFrame);
       if (thumbUrl) {
         const thumbWrap = document.createElement("div");
         thumbWrap.className = "thumbnail-crop";
@@ -1193,7 +1047,36 @@
         img.alt = "Thumbnail";
         thumbWrap.appendChild(img);
         wrap.appendChild(thumbWrap);
+      } else {
+        const thumbWrap = document.createElement("div");
+        thumbWrap.className = "thumbnail-crop";
+        wrap.appendChild(thumbWrap);
       }
+
+      wrap.addEventListener("mouseenter", () => {
+        if (deleteMode || checkMode) return;
+        if (hoverCloseTimer) {
+          clearTimeout(hoverCloseTimer);
+          hoverCloseTimer = null;
+        }
+        if (hoverEditTimer) clearTimeout(hoverEditTimer);
+        hoverEditTimer = setTimeout(() => {
+          openEditModal(it, false, wrap);
+        }, 1000);
+      });
+
+      wrap.addEventListener("mouseleave", () => {
+        if (hoverEditTimer) {
+          clearTimeout(hoverEditTimer);
+          hoverEditTimer = null;
+        }
+        hoverCloseTimer = setTimeout(() => {
+          const modalContent = document.getElementById("modal-content");
+          if (!modalContent.matches(":hover")) {
+            closeEditModal();
+          }
+        }, 120);
+      });
 
       let lpTo;
       let suppressClickUntil = 0;
@@ -1297,45 +1180,27 @@
 
     let editingItem = null;
     let editingSecondPart = false;
-    function openEditModal(it, isSecondPart = false) {
+    function openEditModal(it, isSecondPart = false, anchorEl = null) {
       editingItem = it;
       editingSecondPart = isSecondPart;
-      modalTitle.textContent = isSecondPart ? "Edit Second Title" : "Edit Item";
-      const existingAddBtn = document.getElementById('modal-add-to-lists');
-      if (existingAddBtn) existingAddBtn.remove();
-      const addToListsBtn = document.createElement('button');
-      addToListsBtn.id = 'modal-add-to-lists';
-      addToListsBtn.className = 'btn btn-add';
-      addToListsBtn.textContent = '+';
-      addToListsBtn.title = 'Add this item to lists';
-      addToListsBtn.style.marginLeft = '8px';
-      addToListsBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        openListsOverlayForItem(editingItem.id);
-      });
-      modalTitle.parentNode.insertBefore(addToListsBtn, modalTitle.nextSibling);
+      modalTitle.textContent = "";
       
       if (isSecondPart) {
         inpLink.value = it.link2 || "";
         inpTitle.value = it.title2 && it.title2 !== "!" ? it.title2 : "";
-        inpThumbFrame.value = "";
-        inpPreviewImage.value = "";
-        inpDescription.value = it.description || "";
         inpSections.value = it.sections2 || "";
         inpGreenItem.checked = !!it.isGreen;
         inpNotes.value = it.text || "";
       } else {
         inpLink.value = it.link || "";
         inpTitle.value = it.title && it.title !== "!" ? it.title : "";
-        inpThumbFrame.value = Number.isInteger(it.thumbFrame) ? String(it.thumbFrame) : "";
-        inpPreviewImage.value = it.previewImage || "";
-        inpDescription.value = it.description || "";
         inpSections.value = it.sections || "";
         inpGreenItem.checked = !!it.isGreen;
         inpNotes.value = it.text || "";
       }
       
-      modal.style.display = "flex";
+      modal.style.display = "block";
+      positionModalNearItem(anchorEl || document.querySelector(`[data-id="${it.id}"]`));
       inpTitle.focus();
       
       setTimeout(() => {
@@ -1348,15 +1213,21 @@
     btnCancel.addEventListener("click", closeEditModal);
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeEditModal(); closeVideo(); } });
 
+    inpGreenItem.addEventListener("change", async () => {
+      if (!editingItem) return;
+      const checked = inpGreenItem.checked;
+      await setDoc(doc(db, NOTES_COLLECTION, editingItem.id), { isGreen: checked }, { merge: true });
+      const card = document.querySelector(`[data-id="${editingItem.id}"]`);
+      if (card) {
+        card.classList.toggle("is-green", checked);
+      }
+      await loadPageItems();
+    });
+
     btnSave.addEventListener("click", async () => {
       if (!editingItem) return;
       const link = inpLink.value.trim();
       const title = inpTitle.value.trim();
-      let thumbFrameRaw = inpThumbFrame.value.trim();
-      let thumbFrame = parseInt(thumbFrameRaw, 10);
-      const hasThumbFrame = Number.isInteger(thumbFrame) && thumbFrame >= 0 && thumbFrame <= 3;
-      const previewImage = inpPreviewImage.value.trim();
-      const description = inpDescription.value.trim();
       const sections = inpSections.value.trim();
       const text = inpNotes.value.trim();
       const isGreen = inpGreenItem.checked;
@@ -1366,7 +1237,6 @@
         update = { 
           link2: link, 
           title2: title || (link ? "(untitled)" : "!"),
-          description: description,
           isGreen,
           sections2: sections, 
           text: text 
@@ -1375,14 +1245,11 @@
         update = { 
           link, 
           title: title || (link ? "(untitled)" : "!"),
-          previewImage,
-          description: description,
           isGreen,
           sections, 
           text 
         };
-        if (hasThumbFrame) update.thumbFrame = thumbFrame;
-        else update.thumbFrame = 0;
+        update.thumbFrame = 0;
         if (!link && title) update.isText = true; else update.isText = false;
       }
       
@@ -1630,7 +1497,6 @@
     });
 
     function updateCheckModeUI() {
-      checkModeBtn.style.outline = checkMode ? '2px solid #fff' : 'none';
       resetNowBtn.style.display = PAGE === 'Now' ? 'inline-block' : 'none';
     }
 
@@ -1649,6 +1515,7 @@
     document.addEventListener('click', (e) => {
       if (e.target.closest('#modal') || e.target.closest('#lists-overlay') || e.target.closest('#video-modal')) return;
       if (e.target.closest('#delete-mode-btn') || e.target.closest('#confirm-delete-btn')) return;
+      if (e.target.closest('.arrow-btn')) return;
       const clickedItem = e.target.closest('.item');
       if (!clickedItem) {
         if (selectedMoveItem) {
@@ -1663,20 +1530,58 @@
       }
     }, true);
 
-    checkModeBtn.addEventListener('click', async () => {
-      if (checkMode) {
-        for (const itemId of checkedItems) {
-          await setDoc(doc(db, NOTES_COLLECTION, itemId), { page: 'Now' }, { merge: true });
-        }
-        checkedItems.clear();
-        checkMode = false;
-        updateCheckModeUI();
-        await loadPageItems();
-      } else {
-        checkMode = true;
-        updateCheckModeUI();
-        await loadPageItems();
+    notesBtn.addEventListener('click', async () => {
+      const ref = doc(db, QUICK_NOTES_COLLECTION, 'main');
+      const snap = await getDoc(ref);
+      const cloudText = snap.exists() ? (snap.data().text || '') : '';
+      const draftText = safeLocalStorageGet(QUICK_NOTES_DRAFT_KEY) || '';
+      notesText.value = draftText || cloudText;
+      notesOverlay.style.display = 'flex';
+      notesText.focus();
+    });
+
+    async function saveQuickNotesNow() {
+      const ref = doc(db, QUICK_NOTES_COLLECTION, 'main');
+      const text = notesText.value || '';
+      safeLocalStorageSet(QUICK_NOTES_DRAFT_KEY, text);
+      await setDoc(ref, { text, updatedAt: Date.now() }, { merge: true });
+    }
+
+    function queueQuickNotesSave() {
+      if (notesAutosaveTimer) clearTimeout(notesAutosaveTimer);
+      notesAutosaveTimer = setTimeout(() => {
+        saveQuickNotesNow();
+      }, 350);
+    }
+
+    notesText.addEventListener('input', () => {
+      safeLocalStorageSet(QUICK_NOTES_DRAFT_KEY, notesText.value || '');
+      queueQuickNotesSave();
+    });
+
+    notesOverlay.addEventListener('click', async (e) => {
+      if (e.target !== notesOverlay) return;
+      if (notesAutosaveTimer) {
+        clearTimeout(notesAutosaveTimer);
+        notesAutosaveTimer = null;
       }
+      await saveQuickNotesNow();
+      notesOverlay.style.display = 'none';
+    });
+
+    window.addEventListener('beforeunload', () => {
+      safeLocalStorageSet(QUICK_NOTES_DRAFT_KEY, notesText.value || '');
+    });
+
+    document.addEventListener('keydown', async (e) => {
+      if (e.key !== 'Escape') return;
+      if (notesOverlay.style.display !== 'flex') return;
+      if (notesAutosaveTimer) {
+        clearTimeout(notesAutosaveTimer);
+        notesAutosaveTimer = null;
+      }
+      await saveQuickNotesNow();
+      notesOverlay.style.display = 'none';
     });
 
     resetNowBtn.addEventListener('click', async () => {
@@ -1755,35 +1660,36 @@
         allItems.push(it);
       });
 
-      if (direction === 'up') {
-        const colItems = allItems.filter(it => (it.col ?? 0) === currentCol).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-        const currentIndex = colItems.findIndex(it => it.id === itemId);
-        if (currentIndex > 0) {
-          const prevItem = colItems[currentIndex - 1];
-          await setDoc(doc(db, NOTES_COLLECTION, itemId), { order: prevItem.order ?? 0 }, { merge: true });
-          await setDoc(doc(db, NOTES_COLLECTION, prevItem.id), { order: currentOrder }, { merge: true });
-        }
-      } else if (direction === 'down') {
-        const colItems = allItems.filter(it => (it.col ?? 0) === currentCol).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-        const currentIndex = colItems.findIndex(it => it.id === itemId);
-        if (currentIndex < colItems.length - 1) {
-          const nextItem = colItems[currentIndex + 1];
-          await setDoc(doc(db, NOTES_COLLECTION, itemId), { order: nextItem.order ?? 0 }, { merge: true });
-          await setDoc(doc(db, NOTES_COLLECTION, nextItem.id), { order: currentOrder }, { merge: true });
-        }
-      } else if (direction === 'left') {
-        if (currentCol > 0) {
-          const targetCol = currentCol - 1;
-          const colItems = allItems.filter(it => (it.col ?? 0) === targetCol);
-          const minOrder = colItems.length > 0 ? Math.min(...colItems.map(it => it.order ?? 0)) : 0;
-          await setDoc(doc(db, NOTES_COLLECTION, itemId), { col: targetCol, order: minOrder - 1 }, { merge: true });
-        }
-      } else if (direction === 'right') {
-        const targetCol = currentCol + 1;
-        const colItems = allItems.filter(it => (it.col ?? 0) === targetCol);
-        const minOrder = colItems.length > 0 ? Math.min(...colItems.map(it => it.order ?? 0)) : 0;
-        await setDoc(doc(db, NOTES_COLLECTION, itemId), { col: targetCol, order: minOrder - 1 }, { merge: true });
+      const orderedItems = [...allItems].sort((a, b) => {
+        const colA = Number(a.col ?? 0);
+        const colB = Number(b.col ?? 0);
+        if (colA !== colB) return colA - colB;
+        return Number(a.order ?? 0) - Number(b.order ?? 0);
+      });
+      const idx = orderedItems.findIndex((it) => it.id === itemId);
+      if (idx < 0) return;
+
+      let targetIdx = idx;
+      if (direction === 'left' || direction === 'up') {
+        targetIdx = idx - 1;
+      } else if (direction === 'right' || direction === 'down') {
+        targetIdx = idx + 1;
       }
+
+      if (targetIdx < 0 || targetIdx >= orderedItems.length) {
+        await loadPageItems();
+        return;
+      }
+
+      const targetItem = orderedItems[targetIdx];
+      await setDoc(doc(db, NOTES_COLLECTION, itemId), {
+        col: targetItem.col ?? 0,
+        order: targetItem.order ?? 0
+      }, { merge: true });
+      await setDoc(doc(db, NOTES_COLLECTION, targetItem.id), {
+        col: currentCol,
+        order: currentOrder
+      }, { merge: true });
 
       await loadPageItems();
     }
@@ -1807,8 +1713,6 @@
         await switchPage(pageName);
       }
     });
-
-    bindCurrentPageTitleLongPress();
 
     updatePageTitleUI();
     updateCheckModeUI();
