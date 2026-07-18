@@ -35,6 +35,8 @@
     .delete-mode-btn.active { box-shadow: 0 0 0 2px #fef08a; background: #b30000; }
     .arrow-btn { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-weight: 600; cursor: pointer; font-size: 16px; }
     .arrow-btn:hover { background: #1d4ed8; }
+    .reset-page-btn { background: #6b21a8; color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-weight: 700; cursor: pointer; font-size: 13px; }
+    .reset-page-btn:hover { background: #581c87; }
     .item.move-selected { background: #eab308; box-shadow: 0 0 0 2px #fef08a; }
 
     /* Rows layout */
@@ -133,6 +135,7 @@
       <button class="arrow-btn" id="arrow-left" title="Move Left">←</button>
       <button class="arrow-btn" id="arrow-right" title="Move Right">→</button>
       <button class="arrow-btn" id="reset-now-btn" title="Reset Now">R</button>
+      <button class="reset-page-btn" id="open-reset-page-btn" title="Open the reset version of this site">Reset Page</button>
     </div>
 
     <div class="columns" id="columns"></div>
@@ -239,6 +242,7 @@
     const addPageBtn = document.getElementById("add-page-btn");
     const checkModeBtn = document.getElementById("check-mode-btn");
     const resetNowBtn = document.getElementById("reset-now-btn");
+    const openResetPageBtn = document.getElementById("open-reset-page-btn");
     const modal = document.getElementById("modal");
     const deleteModeBtn = document.getElementById("delete-mode-btn");
     const confirmDeleteBtn = document.getElementById("confirm-delete-btn");
@@ -1747,6 +1751,11 @@
         }
         await loadPageItems();
       }
+    });
+
+    openResetPageBtn.addEventListener('click', () => {
+      const siteKeyParam = SITE_KEY ? `siteKey=${encodeURIComponent(SITE_KEY)}&` : "";
+      window.location.href = `bird2 reset.html?${siteKeyParam}page=home`;
     });
 
     // Arrow button handlers
