@@ -65,11 +65,12 @@
         flex-wrap: wrap;
       }
     }
-    .item { background: rgba(255,255,255,0.08); border-radius: 5px; padding: 1px 4px; display:flex; flex-direction: column; gap:0; border: 1px solid rgba(255,255,255,0.1); }
+    .item { background: transparent; border-radius: 5px; padding: 0; display:flex; flex-direction: column; gap: 2px; border: none; overflow: visible; }
     .item-checkbox { width: 17px; height: 17px; margin-right: 6px; cursor: pointer; }
-    .item-title { color: var(--white); text-decoration:none; font-size: 14px; cursor:pointer; margin: 0; display: block; line-height: 1.15; }
+    .item-title-row { display: flex; align-items: flex-start; min-height: 34px; padding: 2px 1px 0 1px; overflow: visible; }
+    .item-title { color: var(--white); text-decoration:none; font-size: 14px; cursor:pointer; margin: 0; display: block; line-height: 1.15; white-space: normal; word-break: break-word; overflow: visible; }
     .item-title.text-only { color: var(--beige); }
-    .thumbnail-crop { width: 163px; height: 98px; margin-top: 1px; border-radius: 4px; overflow: hidden; }
+    .thumbnail-crop { width: 163px; height: 98px; margin-top: 0; border-radius: 4px; overflow: hidden; }
     .item-thumbnail { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; transform: scale(1.288); transform-origin: center; }
     /* List link style */
     .list-link { color: var(--beige); text-decoration: none; font-weight: 700; }
@@ -97,11 +98,18 @@
     .inputs-row .small-input { flex:0 0 80px; }
     .inputs-row .large-input { flex:1; }
     input, textarea { width:100%; border:none; border-radius: 6px; padding:8px; font-size: 14px; }
-    textarea { min-height: 120px; resize: vertical; font-family: system-ui, sans-serif; }
+    textarea { min-height: 120px; resize: vertical; font-family: system-ui, sans-serif; background:#1a1a1a; color:#f2f2f2; }
     input::placeholder, textarea::placeholder { color:#aaa; }
     .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:8px; }
     .btn-secondary { background:#444; color:#fff; }
     .btn-primary { background: var(--gold); color:#222; }
+    .notes-btn { background: #293241; color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-weight: 700; cursor: pointer; font-size: 14px; }
+    .notes-btn:hover { background: #1f2735; }
+
+    /* Page notepad overlay */
+    #page-notes-overlay { display:none; position:fixed; inset:0; background: transparent; align-items:center; justify-content:center; z-index:10003; }
+    #page-notes-overlay-content { background:#2a2a2a; border-radius:10px; padding:9px 10px 16px; width: 572px; max-width: calc(100vw - 16px); }
+    #page-notes-text { width:100%; min-height: 325px; border:none; resize: vertical; padding:10px; background:#1a1a1a; color:#f2f2f2; border-radius:6px; }
 
     /* Video modal */
     #video-modal { display:none; position:fixed; inset:0; background: rgba(0,0,0,0.75); align-items:center; justify-content:center; z-index:10000; }
@@ -126,6 +134,7 @@
     <div class="header">
       <div id="current-page-title" class="current-page-title"></div>
       <div id="page-tabs" class="page-tabs"></div>
+      <button id="page-notes-btn" class="notes-btn" title="Page notepad">🔧</button>
       <button id="add-page-btn" class="btn btn-add">Add Page</button>
       <button id="check-mode-btn" class="btn btn-add">N</button>
       <button class="delete-mode-btn" id="delete-mode-btn">✕</button>
@@ -177,6 +186,13 @@
         </div>
       </div>
 
+      <!-- Page notes overlay -->
+      <div id="page-notes-overlay">
+        <div id="page-notes-overlay-content">
+          <textarea id="page-notes-text" placeholder="Write notes for this page..."></textarea>
+        </div>
+      </div>
+
       <!-- Video Modal -->
     <div id="video-modal">
       <div id="video-modal-content">
@@ -213,7 +229,9 @@
     const NOTES_COLLECTION = SITE_KEY ? `${SITE_KEY}_notes` : "notes";
     const COLUMN_META_COLLECTION = SITE_KEY ? `${SITE_KEY}_columnMeta` : "columnMeta";
     const LISTS_COLLECTION = SITE_KEY ? `${SITE_KEY}_lists` : "lists";
+    const PAGE_NOTES_COLLECTION = SITE_KEY ? `${SITE_KEY}_pageNotes` : "pageNotes";
     const LAST_PAGE_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_lastPage` : "lastPage";
+    const PAGE_NOTES_DRAFT_KEY = SITE_KEY ? `${SITE_KEY}_pageNotesDraft` : "pageNotesDraft";
     const storedLastPage = !urlParams.has("page") ? safeLocalStorageGet(LAST_PAGE_STORAGE_KEY) : null;
     let PAGE = (urlParams.get("page") || (storedLastPage || (SITE_KEY ? "home" : "bird"))).trim() || (SITE_KEY ? "home" : "bird");
 
@@ -239,6 +257,7 @@
     const columnsDiv = document.getElementById("columns");
     const currentPageTitle = document.getElementById("current-page-title");
     const pageTabs = document.getElementById("page-tabs");
+    const pageNotesBtn = document.getElementById("page-notes-btn");
     const addPageBtn = document.getElementById("add-page-btn");
     const checkModeBtn = document.getElementById("check-mode-btn");
     const resetNowBtn = document.getElementById("reset-now-btn");
@@ -269,6 +288,8 @@
     const videoPromptText = document.getElementById("video-prompt-text");
     const videoPromptContinue = document.getElementById("video-prompt-continue");
     const videoPromptCancel = document.getElementById("video-prompt-cancel");
+    const pageNotesOverlay = document.getElementById("page-notes-overlay");
+    const pageNotesText = document.getElementById("page-notes-text");
 
     let videoPlayer = null;
     let currentSections = [];
@@ -277,6 +298,42 @@
     let lastCheckedTime = -1;
     let currentVideoID = null;
     let currentStartTime = 0;
+    let notesAutosaveTimer = null;
+    let openNotesPage = null;
+
+    function getPageNotesDocId(pageName) {
+      return encodeURIComponent(pageName || "");
+    }
+
+    function getPageNotesDraftStorageKey(pageName) {
+      return `${PAGE_NOTES_DRAFT_KEY}_${encodeURIComponent(pageName || "")}`;
+    }
+
+    async function savePageNotesNow() {
+      if (!openNotesPage) return;
+      const pageName = openNotesPage;
+      const text = pageNotesText.value || "";
+      safeLocalStorageSet(getPageNotesDraftStorageKey(pageName), text);
+      const ref = doc(db, PAGE_NOTES_COLLECTION, getPageNotesDocId(pageName));
+      await setDoc(ref, { page: pageName, text, updatedAt: Date.now() }, { merge: true });
+    }
+
+    function queuePageNotesSave() {
+      if (notesAutosaveTimer) clearTimeout(notesAutosaveTimer);
+      notesAutosaveTimer = setTimeout(() => {
+        savePageNotesNow();
+      }, 350);
+    }
+
+    async function closePageNotesOverlay() {
+      if (notesAutosaveTimer) {
+        clearTimeout(notesAutosaveTimer);
+        notesAutosaveTimer = null;
+      }
+      await savePageNotesNow();
+      pageNotesOverlay.style.display = "none";
+      openNotesPage = null;
+    }
 
     // Auto-resize textarea
     inpNotes.addEventListener('input', function() {
@@ -616,6 +673,9 @@
     }
 
     async function switchPage(pageName) {
+      if (pageNotesOverlay.style.display === "flex") {
+        await closePageNotesOverlay();
+      }
       PAGE = pageName;
       safeLocalStorageSet(LAST_PAGE_STORAGE_KEY, PAGE);
       updatePageTitleUI();
@@ -1114,6 +1174,7 @@
       }
 
       const titleRow = document.createElement("div");
+      titleRow.className = "item-title-row";
       titleRow.style.display = "flex";
       titleRow.style.alignItems = "center";
       if (checkbox) titleRow.appendChild(checkbox);
@@ -1207,7 +1268,6 @@
       }
 
       titleRow.appendChild(titleEl);
-      wrap.appendChild(titleRow);
 
       // Add thumbnail if link exists
       const thumbUrl = getThumbnailUrl(it.link, it.thumbFrame, it.previewImage);
@@ -1221,6 +1281,7 @@
         thumbWrap.appendChild(img);
         wrap.appendChild(thumbWrap);
       }
+      wrap.appendChild(titleRow);
 
       // Click behavior for the whole item
       let lpTo;
@@ -1389,7 +1450,14 @@
     function closeEditModal() { modal.style.display = "none"; editingItem = null; editingSecondPart = false; }
 
     btnCancel.addEventListener("click", closeEditModal);
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeEditModal(); closeVideo(); } });
+    document.addEventListener("keydown", async (e) => {
+      if (e.key !== "Escape") return;
+      closeEditModal();
+      closeVideo();
+      if (pageNotesOverlay.style.display === "flex") {
+        await closePageNotesOverlay();
+      }
+    });
 
     btnSave.addEventListener("click", async () => {
       if (!editingItem) return;
@@ -1756,6 +1824,34 @@
     openResetPageBtn.addEventListener('click', () => {
       const siteKeyParam = SITE_KEY ? `siteKey=${encodeURIComponent(SITE_KEY)}&` : "";
       window.location.href = `bird2 reset.html?${siteKeyParam}page=home`;
+    });
+
+    pageNotesBtn.addEventListener("click", async () => {
+      const currentPage = PAGE;
+      openNotesPage = currentPage;
+      const ref = doc(db, PAGE_NOTES_COLLECTION, getPageNotesDocId(currentPage));
+      const snap = await getDoc(ref);
+      const cloudText = snap.exists() ? (snap.data().text || "") : "";
+      const draftText = safeLocalStorageGet(getPageNotesDraftStorageKey(currentPage)) || "";
+      pageNotesText.value = draftText || cloudText;
+      pageNotesOverlay.style.display = "flex";
+      pageNotesText.focus();
+    });
+
+    pageNotesText.addEventListener("input", () => {
+      if (!openNotesPage) return;
+      safeLocalStorageSet(getPageNotesDraftStorageKey(openNotesPage), pageNotesText.value || "");
+      queuePageNotesSave();
+    });
+
+    pageNotesOverlay.addEventListener("click", async (e) => {
+      if (e.target !== pageNotesOverlay) return;
+      await closePageNotesOverlay();
+    });
+
+    window.addEventListener("beforeunload", () => {
+      if (!openNotesPage) return;
+      safeLocalStorageSet(getPageNotesDraftStorageKey(openNotesPage), pageNotesText.value || "");
     });
 
     // Arrow button handlers

@@ -20,7 +20,7 @@
 
     /* Header (top-left) */
     .header { display:flex; align-items:center; gap:8px; flex-wrap: wrap; padding: 0 8px; }
-    .page-tabs { display:flex; align-items:center; gap:8px; flex-wrap: wrap; margin-left: 22px; }
+    .page-tabs { display:flex; align-items:center; gap:8px; flex-wrap: wrap; margin-left: 4em; margin-right: 4px; flex: 0 1 auto; min-width: 0; }
     .page-tab { color: var(--gold); background: transparent; border: 1px solid rgba(255,215,0,0.45); border-radius: 6px; padding: 3px 8px; font-weight: 700; cursor: pointer; }
     .page-tab:hover { background: rgba(255,215,0,0.12); }
     .page-tab.active { background: rgba(255,215,0,0.28); border-color: #ffe066; box-shadow: 0 0 0 2px rgba(255,224,102,0.65); font-weight: 800; }
@@ -65,10 +65,11 @@
         flex-wrap: wrap;
       }
     }
-    .item { background: rgba(255,255,255,0.08); border-radius: 2px; padding: 0; display:flex; flex-direction: column; gap:0; border: 1px solid rgba(255,255,255,0.1); min-width: 0; max-width: none; flex: 0 0 calc((100vw - 40px) / 6); }
+    .item { background: rgba(161, 24, 48, 0.45); border-radius: 2px; padding: 0; display:flex; flex-direction: column; gap:1px; border: 1px solid rgba(148, 30, 52, 0.55); min-width: 0; max-width: none; flex: 0 0 calc((100vw - 40px) / 6); overflow: visible; }
     .item.is-green { background: rgba(43,107,43,0.82); border: 2px solid rgba(43,107,43,0.98); }
     .item-checkbox { width: 17px; height: 17px; margin-right: 6px; cursor: pointer; }
-    .item-title { color: var(--white); text-decoration:none; font-size: 14px; cursor:pointer; margin: 0; display: none; line-height: 1.15; }
+    .item-title-row { display: flex; align-items: flex-start; min-height: 0; padding: 1px 2px; overflow: visible; }
+    .item-title { color: var(--white); text-decoration:none; font-size: 14px; cursor:pointer; margin: 0; display: block; line-height: 1.15; white-space: normal; word-break: break-word; overflow: visible; }
     .item-title.text-only { color: var(--beige); }
     .thumbnail-crop { width: 100%; aspect-ratio: 16 / 9; margin-top: 0; border-radius: 0; overflow: hidden; }
     .item-thumbnail { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; transform: scale(0.95); transform-origin: center; }
@@ -107,13 +108,13 @@
     .lane-separator { height: 12px; }
     .btn-secondary { background:#444; color:#fff; }
     .btn-primary { background: var(--gold); color:#222; }
-    .notes-btn { background: #1f2937; color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-weight: 700; cursor: pointer; font-size: 14px; }
-    .notes-btn:hover { background: #111827; }
+    .notes-btn { background: #293241; color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-weight: 700; cursor: pointer; font-size: 14px; }
+    .notes-btn:hover { background: #1f2735; }
 
     /* Notes overlay */
     #notes-overlay { display:none; position:fixed; inset:0; background: transparent; align-items:center; justify-content:center; z-index:10003; }
-    #notes-overlay-content { background:#202020; border-radius:8px; padding:8px; width: 520px; max-width: calc(100vw - 16px); }
-    #notes-text { width:100%; min-height: 260px; border:none; resize: vertical; padding:8px; background:#111; color:#eee; }
+    #notes-overlay-content { background:#2a2a2a; border-radius:10px; padding:9px 10px 16px; width: 572px; max-width: calc(100vw - 16px); }
+    #notes-text { width:100%; min-height: 325px; border:none; resize: vertical; padding:10px; background:#1a1a1a; color:#f2f2f2; border-radius:6px; }
 
     /* Video modal */
     #video-modal { display:none; position:fixed; inset:0; background: rgba(0,0,0,0.75); align-items:center; justify-content:center; z-index:10000; }
@@ -143,9 +144,10 @@
       <button class="arrow-btn" id="arrow-down" title="Move Down">↓</button>
       <button class="arrow-btn" id="arrow-left" title="Move Left">←</button>
       <button class="arrow-btn" id="arrow-right" title="Move Right">→</button>
-      <button id="notes-btn" class="notes-btn" title="Notes">📝</button>
       <button class="arrow-btn" id="reset-now-btn" title="Reset Now">R</button>
+      <button id="quick-notes-btn" class="notes-btn" title="General notepad">📝</button>
       <div id="page-tabs" class="page-tabs"></div>
+      <button id="page-notes-btn" class="notes-btn" title="Page notepad">🔧</button>
     </div>
 
     <div class="columns" id="columns"></div>
@@ -228,10 +230,12 @@
     const PAGES_COLLECTION = SITE_KEY ? `${SITE_KEY}_pages` : "pages";
     const NOTES_COLLECTION = SITE_KEY ? `${SITE_KEY}_notes` : "notes";
     const QUICK_NOTES_COLLECTION = SITE_KEY ? `${SITE_KEY}_quickNotes` : "quickNotes";
+    const PAGE_NOTES_COLLECTION = SITE_KEY ? `${SITE_KEY}_pageNotes` : "pageNotes";
     const COLUMN_META_COLLECTION = SITE_KEY ? `${SITE_KEY}_columnMeta` : "columnMeta";
     const LISTS_COLLECTION = SITE_KEY ? `${SITE_KEY}_lists` : "lists";
     const LAST_PAGE_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_lastPage` : "lastPage";
     const QUICK_NOTES_DRAFT_KEY = SITE_KEY ? `${SITE_KEY}_quickNotesDraft` : "quickNotesDraft";
+    const PAGE_NOTES_DRAFT_KEY = SITE_KEY ? `${SITE_KEY}_pageNotesDraft` : "pageNotesDraft";
     const storedLastPage = !urlParams.has("page") ? safeLocalStorageGet(LAST_PAGE_STORAGE_KEY) : null;
     let PAGE = (urlParams.get("page") || (storedLastPage || (SITE_KEY ? "home" : "bird"))).trim() || (SITE_KEY ? "home" : "bird");
 
@@ -256,8 +260,9 @@
     // DOM
     const columnsDiv = document.getElementById("columns");
     const pageTabs = document.getElementById("page-tabs");
+    const quickNotesBtn = document.getElementById("quick-notes-btn");
     const addPageBtn = document.getElementById("add-page-btn");
-    const notesBtn = document.getElementById("notes-btn");
+    const pageNotesBtn = document.getElementById("page-notes-btn");
     const resetNowBtn = document.getElementById("reset-now-btn");
     const modal = document.getElementById("modal");
     const deleteModeBtn = document.getElementById("delete-mode-btn");
@@ -285,6 +290,8 @@
     const notesOverlay = document.getElementById("notes-overlay");
     const notesText = document.getElementById("notes-text");
     let notesAutosaveTimer = null;
+    let notesMode = null;
+    let openNotesPage = null;
 
     let videoPlayer = null;
     let currentSections = [];
@@ -327,6 +334,59 @@
       const ctx = activeTitleEdit || pendingArrowTitleEdit;
       pendingArrowTitleEdit = null;
       return ctx;
+    }
+
+    function getPageNotesDocId(pageName) {
+      return encodeURIComponent(pageName || "");
+    }
+
+    function getPageNotesDraftStorageKey(pageName) {
+      return `${PAGE_NOTES_DRAFT_KEY}_${encodeURIComponent(pageName || "")}`;
+    }
+
+    async function saveQuickNotesNow() {
+      const text = notesText.value || '';
+      safeLocalStorageSet(QUICK_NOTES_DRAFT_KEY, text);
+      const ref = doc(db, QUICK_NOTES_COLLECTION, 'main');
+      await setDoc(ref, { text, updatedAt: Date.now() }, { merge: true });
+    }
+
+    async function savePageNotesNow() {
+      if (!openNotesPage) return;
+      const pageName = openNotesPage;
+      const text = notesText.value || '';
+      safeLocalStorageSet(getPageNotesDraftStorageKey(pageName), text);
+      const ref = doc(db, PAGE_NOTES_COLLECTION, getPageNotesDocId(pageName));
+      await setDoc(ref, { page: pageName, text, updatedAt: Date.now() }, { merge: true });
+    }
+
+    function queuePageNotesSave() {
+      if (notesAutosaveTimer) clearTimeout(notesAutosaveTimer);
+      notesAutosaveTimer = setTimeout(() => {
+        savePageNotesNow();
+      }, 350);
+    }
+
+    function queueQuickNotesSave() {
+      if (notesAutosaveTimer) clearTimeout(notesAutosaveTimer);
+      notesAutosaveTimer = setTimeout(() => {
+        saveQuickNotesNow();
+      }, 350);
+    }
+
+    async function closeNotesOverlay() {
+      if (notesAutosaveTimer) {
+        clearTimeout(notesAutosaveTimer);
+        notesAutosaveTimer = null;
+      }
+      if (notesMode === 'page') {
+        await savePageNotesNow();
+      } else if (notesMode === 'quick') {
+        await saveQuickNotesNow();
+      }
+      notesOverlay.style.display = 'none';
+      notesMode = null;
+      openNotesPage = null;
     }
 
     function getOrderedPages(pageRows) {
@@ -585,6 +645,9 @@
     }
 
     async function switchPage(pageName) {
+      if (notesOverlay.style.display === 'flex') {
+        await closeNotesOverlay();
+      }
       PAGE = pageName;
       safeLocalStorageSet(LAST_PAGE_STORAGE_KEY, PAGE);
       updatePageTitleUI();
@@ -1052,6 +1115,23 @@
         thumbWrap.className = "thumbnail-crop";
         wrap.appendChild(thumbWrap);
       }
+
+      const titleEl = document.createElement("a");
+      titleEl.className = "item-title" + (it.isText ? " text-only" : "");
+      titleEl.href = "#";
+      titleEl.textContent = it.title || "!";
+
+      const titleRow = document.createElement("div");
+      titleRow.className = "item-title-row";
+      if (checkbox) {
+        const spacer = document.createElement("div");
+        spacer.style.width = "17px";
+        spacer.style.marginRight = "6px";
+        spacer.style.flex = "0 0 auto";
+        titleRow.appendChild(spacer);
+      }
+      titleRow.appendChild(titleEl);
+      wrap.appendChild(titleRow);
 
       wrap.addEventListener("mouseenter", () => {
         if (deleteMode || checkMode) return;
@@ -1530,7 +1610,9 @@
       }
     }, true);
 
-    notesBtn.addEventListener('click', async () => {
+    quickNotesBtn.addEventListener('click', async () => {
+      notesMode = 'quick';
+      openNotesPage = null;
       const ref = doc(db, QUICK_NOTES_COLLECTION, 'main');
       const snap = await getDoc(ref);
       const cloudText = snap.exists() ? (snap.data().text || '') : '';
@@ -1540,48 +1622,51 @@
       notesText.focus();
     });
 
-    async function saveQuickNotesNow() {
-      const ref = doc(db, QUICK_NOTES_COLLECTION, 'main');
-      const text = notesText.value || '';
-      safeLocalStorageSet(QUICK_NOTES_DRAFT_KEY, text);
-      await setDoc(ref, { text, updatedAt: Date.now() }, { merge: true });
-    }
-
-    function queueQuickNotesSave() {
-      if (notesAutosaveTimer) clearTimeout(notesAutosaveTimer);
-      notesAutosaveTimer = setTimeout(() => {
-        saveQuickNotesNow();
-      }, 350);
-    }
+    pageNotesBtn.addEventListener('click', async () => {
+      notesMode = 'page';
+      const currentPage = PAGE;
+      openNotesPage = currentPage;
+      const ref = doc(db, PAGE_NOTES_COLLECTION, getPageNotesDocId(currentPage));
+      const snap = await getDoc(ref);
+      const cloudText = snap.exists() ? (snap.data().text || '') : '';
+      const draftText = safeLocalStorageGet(getPageNotesDraftStorageKey(currentPage)) || '';
+      notesText.value = draftText || cloudText;
+      notesOverlay.style.display = 'flex';
+      notesText.focus();
+    });
 
     notesText.addEventListener('input', () => {
-      safeLocalStorageSet(QUICK_NOTES_DRAFT_KEY, notesText.value || '');
-      queueQuickNotesSave();
+      if (notesMode === 'page') {
+        if (!openNotesPage) return;
+        safeLocalStorageSet(getPageNotesDraftStorageKey(openNotesPage), notesText.value || '');
+        queuePageNotesSave();
+        return;
+      }
+      if (notesMode === 'quick') {
+        safeLocalStorageSet(QUICK_NOTES_DRAFT_KEY, notesText.value || '');
+        queueQuickNotesSave();
+      }
     });
 
     notesOverlay.addEventListener('click', async (e) => {
       if (e.target !== notesOverlay) return;
-      if (notesAutosaveTimer) {
-        clearTimeout(notesAutosaveTimer);
-        notesAutosaveTimer = null;
-      }
-      await saveQuickNotesNow();
-      notesOverlay.style.display = 'none';
+      await closeNotesOverlay();
     });
 
     window.addEventListener('beforeunload', () => {
-      safeLocalStorageSet(QUICK_NOTES_DRAFT_KEY, notesText.value || '');
+      if (notesMode === 'page' && openNotesPage) {
+        safeLocalStorageSet(getPageNotesDraftStorageKey(openNotesPage), notesText.value || '');
+        return;
+      }
+      if (notesMode === 'quick') {
+        safeLocalStorageSet(QUICK_NOTES_DRAFT_KEY, notesText.value || '');
+      }
     });
 
     document.addEventListener('keydown', async (e) => {
       if (e.key !== 'Escape') return;
       if (notesOverlay.style.display !== 'flex') return;
-      if (notesAutosaveTimer) {
-        clearTimeout(notesAutosaveTimer);
-        notesAutosaveTimer = null;
-      }
-      await saveQuickNotesNow();
-      notesOverlay.style.display = 'none';
+      await closeNotesOverlay();
     });
 
     resetNowBtn.addEventListener('click', async () => {
