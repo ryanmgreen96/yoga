@@ -98,6 +98,15 @@
     .inputs-row > * { flex:1; }
     .inputs-row .small-input { flex:0 0 80px; }
     .inputs-row .large-input { flex:1; }
+    .segment-editor { display:flex; flex-direction:column; gap:4px; padding: 4px 0 2px; }
+    .segment-row { display:grid; grid-template-columns: minmax(0, 1fr) 12px minmax(0, 1fr) auto; gap:4px; align-items:center; }
+    .segment-time { min-width:0; text-align:center; }
+    .segment-dash { color:#bbb; text-align:center; font-size:12px; line-height:1; }
+    .segment-actions { display:flex; gap:2px; }
+    .segment-action { width:26px; height:30px; border:none; border-radius:4px; font-size:16px; font-weight:700; cursor:pointer; padding:0; }
+    .segment-action-add { background:#2b6b2b; color:#fff; }
+    .segment-action:hover { filter: brightness(1.08); }
+    .segment-editor-empty { color:#bbb; font-size:12px; line-height:1.2; }
     input, textarea { width:100%; border:none; border-radius: 0; padding:6px; font-size: 14px; margin: 0; }
     textarea { min-height: 120px; resize: vertical; font-family: system-ui, sans-serif; }
     input::placeholder, textarea::placeholder { color:#aaa; }
@@ -159,7 +168,7 @@
         <div class="inputs">
           <input type="text" id="inp-link" placeholder="Paste link (YouTube/Drive) or leave blank for plain text" />
           <input type="text" id="inp-title" placeholder="Enter title or plain text" />
-          <input type="text" id="inp-sections" placeholder="Sections (e.g. 30-4:30$ or 0:30-4:30$, 10:00)" />
+          <div id="segment-editor" class="segment-editor"></div>
           <textarea id="inp-notes" placeholder="Notes (optional)"></textarea>
         </div>
         <div class="modal-actions">
@@ -274,7 +283,7 @@
     const modalTitle = document.getElementById("modal-title");
     const inpLink = document.getElementById("inp-link");
     const inpTitle = document.getElementById("inp-title");
-    const inpSections = document.getElementById("inp-sections");
+    const segmentEditor = document.getElementById("segment-editor");
     const inpGreenItem = document.getElementById("inp-green-item");
     const inpNotes = document.getElementById("inp-notes");
     const btnCancel = document.getElementById("btn-cancel");
@@ -300,6 +309,21 @@
     let lastCheckedTime = -1;
     let currentVideoID = null;
     let currentStartTime = 0;
+    let currentStructuredSections = [];
+
+    function normalizeSectionRanges(sectionsInput) {
+      if (!sectionsInput) return [];
+      if (Array.isArray(sectionsInput)) {
+        return sectionsInput
+          .map((entry) => ({
+            start: Number.isFinite(entry?.start) ? entry.start : timeToSeconds(entry?.start || ""),
+            end: Number.isFinite(entry?.end) ? entry.end : timeToSeconds(entry?.end || ""),
+            continueToNext: !!entry?.continueToNext
+          }))
+          .filter((entry) => Number.isFinite(entry.start) && Number.isFinite(entry.end) && entry.end > entry.start);
+      }
+      return parseLegacySections(sectionsInput);
+    }
 
     // Auto-resize textarea
     inpNotes.addEventListener('input', function() {
@@ -528,7 +552,7 @@
       const seconds = sec % 60;
       return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
     }
-    function parseSections(sectionsString) {
+    function parseLegacySections(sectionsString) {
       const sections = [];
       if (!sectionsString) return sections;
       const parts = sectionsString.trim().split(",").map(p => p.trim()).filter(Boolean);
@@ -556,6 +580,128 @@
         }
       }
       return sections;
+    }
+
+    function buildPlaybackSections(sectionRanges) {
+      const normalized = normalizeSectionRanges(sectionRanges);
+      if (normalized.length === 0) return [];
+      const sections = [];
+      let previousEnd = -1;
+      normalized.forEach((range) => {
+        if (previousEnd >= 0 && range.start > previousEnd) {
+          sections.push({ start: previousEnd, end: range.start, autoSkip: true, isGap: true });
+        }
+        sections.push({
+          start: range.start,
+          end: range.end,
+          autoSkip: range.continueToNext,
+          isGap: false
+        });
+        previousEnd = range.end;
+      });
+      return sections;
+    }
+
+    function formatSectionRangesForStorage(sectionRanges) {
+      const normalized = normalizeSectionRanges(sectionRanges);
+      return normalized.map((range) => {
+        const base = `${secondsToTime(range.start) || "0:00"}-${secondsToTime(range.end)}`;
+        return range.continueToNext ? `${base}$` : base;
+      }).join(", ");
+    }
+
+    function createEmptySectionRange(continueToNext = false) {
+      return { start: "", end: "", continueToNext };
+    }
+
+    function setSegmentEditorState(sectionRanges) {
+      currentStructuredSections = Array.isArray(sectionRanges) && sectionRanges.length
+        ? sectionRanges.map((range, index, arr) => ({
+            start: secondsToTime(range.start),
+            end: secondsToTime(range.end),
+            continueToNext: index < arr.length - 1 ? true : !!range.continueToNext
+          }))
+        : [createEmptySectionRange(false)];
+      renderSegmentEditor();
+    }
+
+    function readSegmentEditorState() {
+      const validRanges = currentStructuredSections
+        .map((range) => ({
+          start: timeToSeconds(range.start),
+          end: timeToSeconds(range.end)
+        }))
+        .filter((range) => range.end > range.start);
+
+      return validRanges.map((range, index) => ({
+        ...range,
+        continueToNext: index < validRanges.length - 1
+      }));
+    }
+
+    function renderSegmentEditor() {
+      segmentEditor.innerHTML = "";
+      if (!currentStructuredSections.length) {
+        currentStructuredSections = [createEmptySectionRange(false)];
+      }
+
+      currentStructuredSections.forEach((range, index) => {
+        const row = document.createElement("div");
+        row.className = "segment-row";
+
+        const startInput = document.createElement("input");
+        startInput.type = "text";
+        startInput.placeholder = "start";
+        startInput.className = "segment-time";
+        startInput.value = range.start || "";
+        startInput.addEventListener("input", () => {
+          currentStructuredSections[index].start = startInput.value;
+        });
+
+        const dash = document.createElement("div");
+        dash.className = "segment-dash";
+        dash.textContent = "-";
+
+        const endInput = document.createElement("input");
+        endInput.type = "text";
+        endInput.placeholder = "stop";
+        endInput.className = "segment-time";
+        endInput.value = range.end || "";
+        endInput.addEventListener("input", () => {
+          currentStructuredSections[index].end = endInput.value;
+        });
+
+        const isLast = index === currentStructuredSections.length - 1;
+        const actions = document.createElement("div");
+        actions.className = "segment-actions";
+
+        const addBtn = document.createElement("button");
+        addBtn.type = "button";
+        addBtn.className = "segment-action segment-action-add";
+        addBtn.textContent = "+";
+        addBtn.title = isLast ? "Add another range" : "Insert a range after this one";
+        addBtn.addEventListener("click", () => {
+          currentStructuredSections[index].continueToNext = true;
+          currentStructuredSections.splice(index + 1, 0, createEmptySectionRange(false));
+          renderSegmentEditor();
+        });
+
+        actions.appendChild(addBtn);
+
+        row.appendChild(startInput);
+        row.appendChild(dash);
+        row.appendChild(endInput);
+        row.appendChild(actions);
+        segmentEditor.appendChild(row);
+      });
+
+      const hasRealRanges = currentStructuredSections.some((range) => range.start || range.end);
+      if (!hasRealRanges) {
+        const hint = document.createElement("div");
+        hint.className = "segment-editor-empty";
+        hint.textContent = "Blank keeps normal playback.";
+        segmentEditor.appendChild(hint);
+      }
     }
 
     // Data
@@ -813,7 +959,7 @@
             const it = docSnap.data();
             if (it.link && (it.link.includes('youtube.com')||it.link.includes('youtu.be'))) {
               const vid = extractYouTubeID(it.link);
-              if (vid) openVideoEmbed(vid,0,0,it.sections||'');
+              if (vid) openVideoEmbed(vid,0,0,it.sectionRanges || it.sections || '');
             } else if (it.link) {
               window.open(it.link, '_blank');
             }
@@ -1188,7 +1334,7 @@
         }
         if (it.link && (it.link.includes("youtube.com") || it.link.includes("youtu.be"))) {
           const vid = extractYouTubeID(it.link);
-          if (vid) openVideoEmbed(vid, 0, 0, it.sections||"");
+          if (vid) openVideoEmbed(vid, 0, 0, it.sectionRanges || it.sections || "");
         } else if (it.link) {
           window.open(it.link, "_blank");
         }
@@ -1268,13 +1414,13 @@
       if (isSecondPart) {
         inpLink.value = it.link2 || "";
         inpTitle.value = it.title2 && it.title2 !== "!" ? it.title2 : "";
-        inpSections.value = it.sections2 || "";
+        setSegmentEditorState(normalizeSectionRanges(it.sectionRanges2 || it.sections2 || ""));
         inpGreenItem.checked = !!it.isGreen;
         inpNotes.value = it.text || "";
       } else {
         inpLink.value = it.link || "";
         inpTitle.value = it.title && it.title !== "!" ? it.title : "";
-        inpSections.value = it.sections || "";
+        setSegmentEditorState(normalizeSectionRanges(it.sectionRanges || it.sections || ""));
         inpGreenItem.checked = !!it.isGreen;
         inpNotes.value = it.text || "";
       }
@@ -1308,7 +1454,8 @@
       if (!editingItem) return;
       const link = inpLink.value.trim();
       const title = inpTitle.value.trim();
-      const sections = inpSections.value.trim();
+      const sectionRanges = readSegmentEditorState();
+      const sections = formatSectionRangesForStorage(sectionRanges);
       const text = inpNotes.value.trim();
       const isGreen = inpGreenItem.checked;
 
@@ -1318,7 +1465,8 @@
           link2: link, 
           title2: title || (link ? "(untitled)" : "!"),
           isGreen,
-          sections2: sections, 
+          sections2: sections,
+          sectionRanges2: sectionRanges,
           text: text 
         };
       } else {
@@ -1326,7 +1474,8 @@
           link, 
           title: title || (link ? "(untitled)" : "!"),
           isGreen,
-          sections, 
+          sections,
+          sectionRanges,
           text 
         };
         update.thumbFrame = 0;
@@ -1351,7 +1500,8 @@
         await setDoc(doc(db, NOTES_COLLECTION, editingItem.id), { 
           title2: deleteField(),
           link2: deleteField(),
-          sections2: deleteField()
+          sections2: deleteField(),
+          sectionRanges2: deleteField()
         }, { merge: true });
       } else {
         await deleteDoc(doc(db, NOTES_COLLECTION, editingItem.id));
@@ -1361,8 +1511,8 @@
       await loadPageItems();
     });
 
-    function openVideoEmbed(videoID, startTime=0, endTime=0, sectionsStr="") {
-      currentSections = parseSections(sectionsStr);
+    function openVideoEmbed(videoID, startTime=0, endTime=0, sectionsInput="") {
+      currentSections = buildPlaybackSections(sectionsInput);
       console.log("Parsed sections:", currentSections);
       const actualStartTime = currentSections.length > 0 ? currentSections[0].start : startTime;
       
@@ -1483,6 +1633,12 @@
             }
           }
           if (next) showSectionPrompt(next.start, nextIndex);
+        } else if (!sec.autoSkip) {
+          try {
+            videoPlayer.seekTo(sec.end);
+            videoPlayer.pauseVideo();
+          } catch {}
+          isPaused = true;
         }
       } else {
         for (let i = 0; i < currentSections.length; i++) {
