@@ -1,0 +1,1982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bird 2 Reset</title>
+  <style>
+    :root {
+      --bg: #c41e3a;
+      --gold: gold;
+      --white: #fff;
+      --green: #2b6b2b;
+      --green-hover: #1f4f1f;
+      --practice: #facc15;
+      --practice-border: #eab308;
+      --beige: #e8d9a7;
+      --gap: 10px;
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; background: var(--bg); color: var(--white); font-family: system-ui, sans-serif; }
+    .page { padding: 8px 0 16px 0; }
+
+    /* Header (top-left) */
+    .header { display:flex; align-items:center; gap:8px; flex-wrap: wrap; padding: 0 8px; }
+    .page-tabs { display:flex; align-items:center; gap:8px; flex-wrap: wrap; margin-left: 4em; margin-right: 4px; flex: 0 1 auto; min-width: 0; }
+    .page-tab { color: var(--gold); background: transparent; border: 1px solid rgba(255,215,0,0.45); border-radius: 6px; padding: 3px 8px; font-weight: 700; cursor: pointer; text-transform: capitalize; }
+    .page-tab:hover { background: rgba(255,215,0,0.12); }
+    .page-tab.active { background: rgba(255,215,0,0.28); border-color: #ffe066; box-shadow: 0 0 0 2px rgba(255,224,102,0.65); font-weight: 800; }
+    .header a { color: var(--gold); font-weight: 700; text-decoration: none; }
+    .header a:hover { text-decoration: underline; }
+    .delete-mode-btn { background: #8b0000; color: #fff; border: none; border-radius: 6px; padding: 4px 8px; font-weight: 600; cursor: pointer; font-size: 13px; }
+    .delete-mode-btn:hover { background: #a00000; }
+    .confirm-delete-btn { background: var(--green); color: #fff; border: none; border-radius: 6px; padding: 4px 8px; font-weight: 600; cursor: pointer; font-size: 13px; display: none; }
+    .confirm-delete-btn:hover { background: var(--green-hover); }
+    .delete-mode-active .btn-add { background: #8b0000; }
+    .delete-mode-btn.active { box-shadow: 0 0 0 2px #fef08a; background: #b30000; }
+    .arrow-btn { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-weight: 600; cursor: pointer; font-size: 16px; }
+    .arrow-btn:hover { background: #1d4ed8; }
+    .item.move-selected { background: #eab308; box-shadow: 0 0 0 2px #fef08a; }
+
+    /* Section layout */
+    .columns { display:flex; flex-direction: column; gap: 14px; margin-top: 10px; }
+    .column { display:flex; flex-direction:column; gap: 6px; padding: 0; border: none; border-radius: 0; background: transparent; }
+    .column.default-section { border-color: transparent; background: transparent; padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0; }
+    .column-header { display:flex; align-items:center; justify-content:space-between; gap: 8px; }
+    .section-title-input { flex: 1; min-width: 0; background: transparent; border: none; color: var(--beige); font-family: Georgia, "Times New Roman", serif; font-size: 18px; line-height: 1.2; padding: 2px 0; }
+    .section-title-input::placeholder { color: rgba(232,217,167,0.8); }
+    .section-toggle-btn { border: none; background: transparent; color: var(--gold); font-size: 18px; cursor: pointer; padding: 2px 6px; line-height: 1; }
+    .section-toggle-btn:hover { color: var(--white); }
+    .section-content { display:flex; align-items:flex-start; overflow-x:hidden; overflow-y:auto; max-height: calc(100vh - 120px); padding: 0 2px; }
+    .section-content.collapsed { display:none; }
+    .section-items { display:flex; flex-wrap:wrap; align-items:flex-start; gap: 6px; min-width: 0; width: 100%; }
+    .add-column-btn { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 6px 12px; font-weight: 700; cursor: pointer; font-size: 18px; line-height: 1; align-self: flex-start; margin-top: 4px; }
+    .add-column-btn:hover { background: #1d4ed8; }
+    .add-row-btn { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 8px 16px; font-weight: 700; cursor: pointer; font-size: 16px; margin-top: 6px; display: none; }
+    .add-row-btn:hover { background: #1d4ed8; }
+    
+    /* Mobile layout */
+    @media (max-width: 700px) {
+      .columns { 
+        display: flex;
+        flex-direction: column;
+        gap: 20px; 
+      }
+      .column { 
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+    }
+    .item { background: rgba(161, 24, 48, 0.45); border-radius: 2px; padding: 0; display:flex; flex-direction: column; gap:1px; border: 1px solid rgba(148, 30, 52, 0.55); min-width: 0; max-width: none; flex: 0 0 calc((100vw - 40px) / 6); overflow: visible; }
+    .item.is-practice { background: rgba(250,204,21,0.36); border: 2px solid var(--practice-border); }
+    .item-checkbox { width: 17px; height: 17px; margin-right: 6px; cursor: pointer; }
+    .item-title-row { display: flex; align-items: flex-start; min-height: 0; padding: 1px 2px; overflow: visible; }
+    .item-title { color: var(--white); text-decoration:none; font-size: 14px; cursor:pointer; margin: 0; display: block; line-height: 1.15; white-space: normal; word-break: break-word; overflow: visible; }
+    .item-title.text-only { color: var(--beige); }
+    .thumbnail-crop { width: 100%; aspect-ratio: 16 / 9; margin-top: 0; border-radius: 0; overflow: hidden; }
+    .item-thumbnail { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; transform: scale(0.95); transform-origin: center; }
+    /* List link style */
+    .list-link { color: var(--beige); text-decoration: none; font-weight: 700; }
+    .list-link:hover { text-decoration: underline; color: var(--gold); }
+    /* Make add buttons not full width and center them */
+    .add-row-btn, .add-column-btn { width: auto; align-self: center; }
+    .column-add-btn { padding: 4px 10px; }
+
+    .toolbar { display:flex; gap:6px; padding: 4px 0 0 0; }
+    .btn { border: none; border-radius: 6px; padding: 4px 8px; font-weight:600; cursor:pointer; font-size: 13px; }
+    .btn-add { background: var(--green); color: #fff; }
+    .btn-add:hover { background: var(--green-hover); }
+    .split-separator { color: rgba(255, 255, 255, 0.7); margin: 0 4px; font-weight: 900; cursor: pointer; font-size: 16px; }
+    .split-separator:hover { color: rgba(255, 255, 255, 0.9); }
+
+    .group-gap { margin-top: 0; }
+
+    /* Modal */
+    #modal { display:none; position:fixed; inset:0; background: transparent; z-index:9999; pointer-events: none; }
+    #modal-content { position: fixed; background:#222; border-radius:8px; padding: 6px; width: 416px; max-width: calc(100vw - 12px); color:#eee; pointer-events: auto; }
+    #modal h3 { display: none; }
+    .inputs { display:flex; flex-direction:column; gap:0; }
+    .inputs-row { display:flex; gap:8px; }
+    .inputs-row > * { flex:1; }
+    .inputs-row .small-input { flex:0 0 80px; }
+    .inputs-row .large-input { flex:1; }
+    .segment-editor { display:flex; flex-direction:column; gap:4px; padding: 4px 0 2px; }
+    .segment-row { display:grid; grid-template-columns: minmax(0, 1fr) 12px minmax(0, 1fr) auto; gap:4px; align-items:center; }
+    .segment-time { min-width:0; text-align:center; }
+    .segment-dash { color:#bbb; text-align:center; font-size:12px; line-height:1; }
+    .segment-actions { display:flex; gap:2px; }
+    .segment-action { width:26px; height:30px; border:none; border-radius:4px; font-size:16px; font-weight:700; cursor:pointer; padding:0; }
+    .segment-action-add { background:#2b6b2b; color:#fff; }
+    .segment-action:hover { filter: brightness(1.08); }
+    .segment-editor-empty { color:#bbb; font-size:12px; line-height:1.2; }
+    input, textarea { width:100%; border:none; border-radius: 0; padding:6px; font-size: 14px; margin: 0; }
+    textarea { min-height: 120px; resize: vertical; font-family: system-ui, sans-serif; }
+    input::placeholder, textarea::placeholder { color:#aaa; }
+    .tag-picker { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding: 6px 0 2px; }
+    .tag-chip { color: var(--beige); font-size: 13px; font-weight: 700; cursor: pointer; user-select: none; text-transform: capitalize; }
+    .tag-chip:hover { color: var(--gold); }
+    .tag-chip.active { color: var(--gold); text-decoration: underline; text-underline-offset: 2px; }
+    .modal-actions { display:flex; justify-content:flex-end; gap:6px; margin-top:0; }
+    .lane-separator { height: 12px; }
+    .btn-secondary { background:#444; color:#fff; }
+    .btn-primary { background: var(--gold); color:#222; }
+    .notes-btn { background: #293241; color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-weight: 700; cursor: pointer; font-size: 14px; }
+    .notes-btn:hover { background: #1f2735; }
+
+    /* Notes overlay */
+    #notes-overlay { display:none; position:fixed; inset:0; background: transparent; align-items:center; justify-content:center; z-index:10003; }
+    #notes-overlay-content { background:#2a2a2a; border-radius:10px; padding:9px 10px 16px; width: 572px; max-width: calc(100vw - 16px); }
+    #notes-text { width:100%; min-height: 325px; border:none; resize: vertical; padding:10px; background:#1a1a1a; color:#f2f2f2; border-radius:6px; }
+
+    /* Video modal */
+    #video-modal { display:none; position:fixed; inset:0; background: rgba(0,0,0,0.75); align-items:center; justify-content:center; z-index:10000; }
+    #video-modal-content { background:#000; border-radius:12px; padding:14px; width:90%; max-width:900px; display:flex; flex-direction:column; position:relative; }
+    #video-iframe { flex:1; min-height: 480px; border:none; border-radius:8px; }
+    #video-close { align-self:flex-end; margin-top:8px; }
+    #video-prompt { display:none; position:absolute; left:50%; transform:translateX(-50%); top:28%; background: rgba(0,0,0,0.65); color:#fff; padding:12px 16px; border-radius:10px; text-align:center; min-width:280px; }
+    #video-prompt .btn { margin-left:6px; }
+    /* Lists overlay */
+    #lists-overlay { display:none; position:fixed; inset:0; background: rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:10001; }
+    #lists-overlay-content { background:#222; border-radius:12px; padding:16px; width: 520px; max-width: 92%; color:#eee; max-height: 80vh; overflow:auto; }
+    #lists-overlay h3 { margin:0 0 8px 0; color: var(--gold); font-size: 16px; text-align:center; }
+    .lists-grid { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+    .lists-row { display:flex; align-items:center; gap:8px; }
+    .lists-row input[type="checkbox"] { width:16px; height:16px; }
+    .new-list-row { display:flex; gap:8px; margin-top:12px; }
+    .lists-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <button id="add-page-btn" class="btn btn-add" style="display:none;">Add Page</button>
+      <button class="delete-mode-btn" id="delete-mode-btn">✕</button>
+      <button class="confirm-delete-btn" id="confirm-delete-btn">+</button>
+      <button class="arrow-btn" id="arrow-up" title="Move Up">↑</button>
+      <button class="arrow-btn" id="arrow-down" title="Move Down">↓</button>
+      <button class="arrow-btn" id="arrow-left" title="Move Left">←</button>
+      <button class="arrow-btn" id="arrow-right" title="Move Right">→</button>
+      <button class="arrow-btn" id="reset-now-btn" title="Reset Now">R</button>
+      <button id="quick-notes-btn" class="notes-btn" title="General notepad">📝</button>
+      <div id="page-tabs" class="page-tabs"></div>
+      <button id="page-notes-btn" class="notes-btn" title="Page notepad" style="display:none;">🔧</button>
+    </div>
+
+    <div class="columns" id="columns"></div>
+
+    <!-- Modal for creating/editing item -->
+    <div id="modal">
+      <div id="modal-content">
+        <h3 id="modal-title">Edit Item</h3>
+        <div class="inputs">
+          <input type="text" id="inp-link" placeholder="Paste link (YouTube/Drive) or leave blank for plain text" />
+          <input type="text" id="inp-title" placeholder="Enter title or plain text" />
+          <div id="segment-editor" class="segment-editor"></div>
+          <div id="tag-picker" class="tag-picker"></div>
+          <textarea id="inp-notes" placeholder="Notes (optional)"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="btn-delete" style="margin-right: auto;">Delete</button>
+          <button class="btn btn-secondary" id="btn-cancel">Cancel</button>
+          <button class="btn btn-primary" id="btn-save">Save</button>
+        </div>
+      </div>
+    </div>
+    
+      <!-- Lists Overlay -->
+      <div id="lists-overlay">
+        <div id="lists-overlay-content">
+          <h3>Add Item To Lists</h3>
+          <div class="lists-grid" id="lists-grid"></div>
+          <div class="new-list-row">
+            <input type="text" id="new-list-name" placeholder="New list name" />
+            <button class="btn btn-primary" id="btn-create-list">Create</button>
+          </div>
+          <div class="lists-actions">
+            <button class="btn btn-secondary" id="btn-lists-cancel">Cancel</button>
+            <button class="btn btn-primary" id="btn-lists-save">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Video Modal -->
+    <div id="video-modal">
+      <div id="video-modal-content">
+        <iframe id="video-iframe" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+        <div id="video-prompt">
+          <span id="video-prompt-text">Section ended.</span>
+          <button class="btn btn-primary" id="video-prompt-continue">Jump to next</button>
+          <button class="btn btn-secondary" id="video-prompt-cancel">Keep paused</button>
+        </div>
+        <button class="btn btn-secondary" id="video-close">Close</button>
+      </div>
+    </div>
+
+    <div id="notes-overlay">
+      <div id="notes-overlay-content">
+        <textarea id="notes-text"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    // Firebase, deleteField
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import { getFirestore, collection, doc, setDoc, getDocs, getDoc, deleteDoc, deleteField, query, where } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCdzIu5PwO5KiZmdFCNCOvJY1R6JHgkKjM",
+      authDomain: "birdfood-fda27.firebaseapp.com",
+      projectId: "birdfood-fda27",
+      storageBucket: "birdfood-fda27.firebasestorage.app",
+      messagingSenderId: "340792097507",
+      appId: "1:340792097507:web:f151f0076517cc2e0323d6"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const SITE_KEY = (urlParams.get("siteKey") || "birdfresh2").trim();
+    const TAGS = ["rinse", "rise", "peace", "practice"];
+    const TAG_SET = new Set(TAGS);
+    const PAGES_COLLECTION = SITE_KEY ? `${SITE_KEY}_pages` : "pages";
+    const NOTES_COLLECTION = SITE_KEY ? `${SITE_KEY}_notes` : "notes";
+    const QUICK_NOTES_COLLECTION = SITE_KEY ? `${SITE_KEY}_quickNotes` : "quickNotes";
+    const PAGE_NOTES_COLLECTION = SITE_KEY ? `${SITE_KEY}_pageNotes` : "pageNotes";
+    const COLUMN_META_COLLECTION = SITE_KEY ? `${SITE_KEY}_columnMeta` : "columnMeta";
+    const LISTS_COLLECTION = SITE_KEY ? `${SITE_KEY}_lists` : "lists";
+    const LAST_PAGE_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_lastPage` : "lastPage";
+    const QUICK_NOTES_DRAFT_KEY = SITE_KEY ? `${SITE_KEY}_quickNotesDraft` : "quickNotesDraft";
+    const PAGE_NOTES_DRAFT_KEY = SITE_KEY ? `${SITE_KEY}_pageNotesDraft` : "pageNotesDraft";
+    let PAGE = "all";
+    let hasRunTagMigration = false;
+    const activeFilterTags = new Set();
+
+    function safeLocalStorageGet(key) {
+      try {
+        return localStorage.getItem(key);
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function safeLocalStorageSet(key, value) {
+      try {
+        localStorage.setItem(key, value);
+      } catch (error) {
+        // ignore localStorage failures
+      }
+    }
+
+    // DOM
+    const columnsDiv = document.getElementById("columns");
+    const pageTabs = document.getElementById("page-tabs");
+    const quickNotesBtn = document.getElementById("quick-notes-btn");
+    const addPageBtn = document.getElementById("add-page-btn");
+    const pageNotesBtn = document.getElementById("page-notes-btn");
+    const resetNowBtn = document.getElementById("reset-now-btn");
+    const modal = document.getElementById("modal");
+    const deleteModeBtn = document.getElementById("delete-mode-btn");
+    const confirmDeleteBtn = document.getElementById("confirm-delete-btn");
+    const arrowUp = document.getElementById("arrow-up");
+    const arrowDown = document.getElementById("arrow-down");
+    const arrowLeft = document.getElementById("arrow-left");
+    const arrowRight = document.getElementById("arrow-right");
+    const modalTitle = document.getElementById("modal-title");
+    const inpLink = document.getElementById("inp-link");
+    const inpTitle = document.getElementById("inp-title");
+    const segmentEditor = document.getElementById("segment-editor");
+    const tagPicker = document.getElementById("tag-picker");
+    const inpNotes = document.getElementById("inp-notes");
+    const btnCancel = document.getElementById("btn-cancel");
+    const btnSave = document.getElementById("btn-save");
+    const btnDelete = document.getElementById("btn-delete");
+    const videoModal = document.getElementById("video-modal");
+    const videoIframe = document.getElementById("video-iframe");
+    const videoClose = document.getElementById("video-close");
+    const videoPrompt = document.getElementById("video-prompt");
+    const videoPromptText = document.getElementById("video-prompt-text");
+    const videoPromptContinue = document.getElementById("video-prompt-continue");
+    const videoPromptCancel = document.getElementById("video-prompt-cancel");
+    const notesOverlay = document.getElementById("notes-overlay");
+    const notesText = document.getElementById("notes-text");
+    let notesAutosaveTimer = null;
+    let notesMode = null;
+    let openNotesPage = null;
+
+    let videoPlayer = null;
+    let currentSections = [];
+    let currentSectionIndex = 0;
+    let isPaused = false;
+    let lastCheckedTime = -1;
+    let currentVideoID = null;
+    let currentStartTime = 0;
+    let currentStructuredSections = [];
+    let editingTags = new Set();
+
+    function normalizeTagName(value) {
+      return String(value || "").trim().toLowerCase();
+    }
+
+    function getItemTags(item) {
+      const tags = new Set();
+      if (Array.isArray(item?.tags)) {
+        item.tags.forEach((tag) => {
+          const normalized = normalizeTagName(tag);
+          if (TAG_SET.has(normalized)) tags.add(normalized);
+        });
+      }
+      const legacyPageTag = normalizeTagName(item?.page);
+      if (TAG_SET.has(legacyPageTag)) tags.add(legacyPageTag);
+      return [...tags];
+    }
+
+    function formatTagLabel(tag) {
+      return tag.charAt(0).toUpperCase() + tag.slice(1);
+    }
+
+    function renderTagTabs() {
+      pageTabs.innerHTML = "";
+      TAGS.forEach((tag) => {
+        const tab = document.createElement("button");
+        tab.className = "page-tab" + (activeFilterTags.has(tag) ? " active" : "");
+        tab.textContent = formatTagLabel(tag);
+        tab.addEventListener("click", async () => {
+          if (activeFilterTags.has(tag)) {
+            activeFilterTags.delete(tag);
+          } else {
+            activeFilterTags.add(tag);
+          }
+          renderTagTabs();
+          await loadPageItems();
+        });
+        pageTabs.appendChild(tab);
+      });
+    }
+
+    function renderTagPicker() {
+      tagPicker.innerHTML = "";
+      TAGS.forEach((tag) => {
+        const el = document.createElement("span");
+        el.className = "tag-chip" + (editingTags.has(tag) ? " active" : "");
+        el.textContent = formatTagLabel(tag);
+        el.addEventListener("click", () => {
+          if (editingTags.has(tag)) {
+            editingTags.delete(tag);
+          } else {
+            editingTags.add(tag);
+          }
+          renderTagPicker();
+        });
+        tagPicker.appendChild(el);
+      });
+    }
+
+    function normalizeSectionRanges(sectionsInput) {
+      if (!sectionsInput) return [];
+      if (Array.isArray(sectionsInput)) {
+        return sectionsInput
+          .map((entry) => ({
+            start: Number.isFinite(entry?.start) ? entry.start : timeToSeconds(entry?.start || ""),
+            end: Number.isFinite(entry?.end) ? entry.end : timeToSeconds(entry?.end || ""),
+            continueToNext: !!entry?.continueToNext
+          }))
+          .filter((entry) => Number.isFinite(entry.start) && Number.isFinite(entry.end) && entry.end > entry.start);
+      }
+      return parseLegacySections(sectionsInput);
+    }
+
+    // Auto-resize textarea
+    inpNotes.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.max(120, this.scrollHeight) + 'px';
+    });
+
+    // Delete mode
+    let deleteMode = false;
+    let selectedItems = new Set();
+    let itemButtons = new Map(); // Map of itemId -> button element
+
+    // Check mode disabled after notes button replacement
+    let checkMode = false;
+
+    // Move - selected item
+    let selectedMoveItem = null;
+    let activeTitleEdit = null;
+    let pendingArrowTitleEdit = null;
+    let suppressTitleBlurCommit = false;
+
+    function clearActiveTitleEdit() {
+      activeTitleEdit = null;
+    }
+
+    function setPendingArrowTitleEdit() {
+      suppressTitleBlurCommit = true;
+      pendingArrowTitleEdit = activeTitleEdit ? { ...activeTitleEdit } : null;
+    }
+
+    function consumeArrowTitleEditContext() {
+      const ctx = activeTitleEdit || pendingArrowTitleEdit;
+      pendingArrowTitleEdit = null;
+      return ctx;
+    }
+
+    function getPageNotesDocId(pageName) {
+      return encodeURIComponent(pageName || "");
+    }
+
+    function getPageNotesDraftStorageKey(pageName) {
+      return `${PAGE_NOTES_DRAFT_KEY}_${encodeURIComponent(pageName || "")}`;
+    }
+
+    async function saveQuickNotesNow() {
+      const text = notesText.value || '';
+      safeLocalStorageSet(QUICK_NOTES_DRAFT_KEY, text);
+      const ref = doc(db, QUICK_NOTES_COLLECTION, 'main');
+      await setDoc(ref, { text, updatedAt: Date.now() }, { merge: true });
+    }
+
+    async function savePageNotesNow() {
+      if (!openNotesPage) return;
+      const pageName = openNotesPage;
+      const text = notesText.value || '';
+      safeLocalStorageSet(getPageNotesDraftStorageKey(pageName), text);
+      const ref = doc(db, PAGE_NOTES_COLLECTION, getPageNotesDocId(pageName));
+      await setDoc(ref, { page: pageName, text, updatedAt: Date.now() }, { merge: true });
+    }
+
+    function queuePageNotesSave() {
+      if (notesAutosaveTimer) clearTimeout(notesAutosaveTimer);
+      notesAutosaveTimer = setTimeout(() => {
+        savePageNotesNow();
+      }, 350);
+    }
+
+    function queueQuickNotesSave() {
+      if (notesAutosaveTimer) clearTimeout(notesAutosaveTimer);
+      notesAutosaveTimer = setTimeout(() => {
+        saveQuickNotesNow();
+      }, 350);
+    }
+
+    async function closeNotesOverlay() {
+      if (notesAutosaveTimer) {
+        clearTimeout(notesAutosaveTimer);
+        notesAutosaveTimer = null;
+      }
+      if (notesMode === 'page') {
+        await savePageNotesNow();
+      } else if (notesMode === 'quick') {
+        await saveQuickNotesNow();
+      }
+      notesOverlay.style.display = 'none';
+      notesMode = null;
+      openNotesPage = null;
+    }
+
+    function getOrderedPages(pageRows) {
+      const sortedByName = [...pageRows].sort((a, b) => a.name.localeCompare(b.name));
+      return sortedByName
+        .map((row, idx) => ({ ...row, normalizedOrder: Number.isFinite(row.order) ? row.order : 100000 + idx }))
+        .sort((a, b) => (a.normalizedOrder - b.normalizedOrder) || a.name.localeCompare(b.name));
+    }
+
+    async function movePage(pageName, direction) {
+      const snap = await getDocs(collection(db, PAGES_COLLECTION));
+      const rows = [];
+      snap.forEach((d) => {
+        const data = d.data();
+        const name = (data.name || d.id || "").trim();
+        if (!name) return;
+        const parsedOrder = Number(data.order);
+        rows.push({ id: d.id, name, order: Number.isFinite(parsedOrder) ? parsedOrder : null });
+      });
+      const ordered = getOrderedPages(rows);
+      const idx = ordered.findIndex((r) => r.name === pageName);
+      if (idx < 0) return;
+      const targetIdx = idx + direction;
+      if (targetIdx < 0 || targetIdx >= ordered.length) return;
+
+      const current = ordered[idx];
+      const target = ordered[targetIdx];
+      await setDoc(doc(db, PAGES_COLLECTION, current.name), { order: target.normalizedOrder }, { merge: true });
+      await setDoc(doc(db, PAGES_COLLECTION, target.name), { order: current.normalizedOrder }, { merge: true });
+
+      if (activeTitleEdit && activeTitleEdit.type === "page") {
+        activeTitleEdit.pageName = pageName;
+      }
+      await loadPages();
+    }
+
+    function startPageTitleInlineEdit(hostEl, pageName) {
+      if (!hostEl) return;
+      activeTitleEdit = { type: "page", pageName };
+      hostEl.dataset.editing = "1";
+
+      const originalText = pageName;
+      const input = document.createElement("input");
+      input.type = "text";
+      input.className = "column-title-edit";
+      input.value = originalText;
+      input.placeholder = "Page title";
+
+      const restoreDisplay = () => {
+        hostEl.dataset.editing = "0";
+        hostEl.textContent = pageName;
+      };
+
+      const commit = async () => {
+        const nextValue = (input.value || "").trim();
+        if (!nextValue) {
+          restoreDisplay();
+          clearActiveTitleEdit();
+          return;
+        }
+        if (nextValue === pageName) {
+          restoreDisplay();
+          clearActiveTitleEdit();
+          return;
+        }
+        await renamePage(pageName, nextValue);
+        clearActiveTitleEdit();
+      };
+
+      const cancel = () => {
+        restoreDisplay();
+        clearActiveTitleEdit();
+      };
+
+      input.addEventListener("keydown", async (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          await commit();
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          cancel();
+        }
+      });
+      input.addEventListener("blur", async () => {
+        if (suppressTitleBlurCommit) {
+          suppressTitleBlurCommit = false;
+          return;
+        }
+        await commit();
+      });
+
+      hostEl.replaceChildren(input);
+      input.focus();
+      input.select();
+    }
+
+    // Helpers
+    function extractYouTubeID(url) {
+      try {
+        const u = new URL(url);
+        if (u.hostname.includes("youtube.com")) return u.searchParams.get("v");
+        if (u.hostname.includes("youtu.be")) return u.pathname.slice(1);
+      } catch {}
+      return null;
+    }
+    function extractGoogleDriveID(url) {
+      try {
+        const u = new URL(url);
+        if (!u.hostname.includes("drive.google.com")) return null;
+        let m = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+        if (m) return m[1];
+        m = url.match(/id=([a-zA-Z0-9-_]+)/);
+        if (m) return m[1];
+      } catch {}
+      return null;
+    }
+    function getThumbnailUrl(link, thumbFrame) {
+      if (!link) return null;
+      const ytId = extractYouTubeID(link);
+      if (ytId) {
+        let frame = Number.isInteger(thumbFrame) ? thumbFrame : parseInt(thumbFrame, 10);
+        if (!Number.isInteger(frame) || frame < 0 || frame > 3) frame = 0;
+        return `https://img.youtube.com/vi/${ytId}/${frame}.jpg?frame=${frame}`;
+      }
+      const gdId = extractGoogleDriveID(link);
+      if (gdId) return `https://drive.google.com/thumbnail?id=${gdId}`;
+      return null;
+    }
+    function timeToSeconds(str) {
+      const s = (str || "").trim();
+      if (!s) return 0;
+      if (/^\d+$/.test(s)) return parseInt(s, 10);
+      if (s.includes(":")) { const [m, sec] = s.split(":"); return parseInt(m,10)*60 + parseInt(sec,10); }
+      return 0;
+    }
+    function secondsToTime(sec) {
+      if (!sec || sec === 0) return "";
+      const minutes = Math.floor(sec / 60);
+      const seconds = sec % 60;
+      return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+    }
+    function parseLegacySections(sectionsString) {
+      const sections = [];
+      if (!sectionsString) return sections;
+      const parts = sectionsString.trim().split(",").map(p => p.trim()).filter(Boolean);
+      let lastEnd = -1;
+      for (let i=0;i<parts.length;i++) {
+        const raw = parts[i];
+        const autoSkip = raw.endsWith("$");
+        const t = autoSkip ? raw.slice(0,-1).trim() : raw;
+        if (t.includes("-")) {
+          const [startStr, endStr] = t.split("-");
+          const startSec = startStr ? timeToSeconds(startStr) : 0;
+          const endSec = endStr && endStr.trim() ? timeToSeconds(endStr) : 999999;
+          if (lastEnd >= 0 && startSec > lastEnd) {
+            sections.push({start: lastEnd, end: startSec, autoSkip: true, isGap: true});
+          }
+          sections.push({start: startSec, end: endSec, autoSkip, isGap: false});
+          lastEnd = endSec;
+        } else {
+          const mark = timeToSeconds(t);
+          if (lastEnd >= 0 && mark > lastEnd) {
+            sections.push({start: lastEnd, end: mark, autoSkip: true, isGap: true});
+          }
+          sections.push({start: mark, end: 999999, autoSkip, isGap: false});
+          lastEnd = 999999;
+        }
+      }
+      return sections;
+    }
+
+    function buildPlaybackSections(sectionRanges) {
+      const normalized = normalizeSectionRanges(sectionRanges);
+      if (normalized.length === 0) return [];
+      const sections = [];
+      let previousEnd = -1;
+      normalized.forEach((range) => {
+        if (previousEnd >= 0 && range.start > previousEnd) {
+          sections.push({ start: previousEnd, end: range.start, autoSkip: true, isGap: true });
+        }
+        sections.push({
+          start: range.start,
+          end: range.end,
+          autoSkip: range.continueToNext,
+          isGap: false
+        });
+        previousEnd = range.end;
+      });
+      return sections;
+    }
+
+    function formatSectionRangesForStorage(sectionRanges) {
+      const normalized = normalizeSectionRanges(sectionRanges);
+      return normalized.map((range) => {
+        const base = `${secondsToTime(range.start) || "0:00"}-${secondsToTime(range.end)}`;
+        return range.continueToNext ? `${base}$` : base;
+      }).join(", ");
+    }
+
+    function createEmptySectionRange(continueToNext = false) {
+      return { start: "", end: "", continueToNext };
+    }
+
+    function setSegmentEditorState(sectionRanges) {
+      currentStructuredSections = Array.isArray(sectionRanges) && sectionRanges.length
+        ? sectionRanges.map((range, index, arr) => ({
+            start: secondsToTime(range.start),
+            end: secondsToTime(range.end),
+            continueToNext: index < arr.length - 1 ? true : !!range.continueToNext
+          }))
+        : [createEmptySectionRange(false)];
+      renderSegmentEditor();
+    }
+
+    function readSegmentEditorState() {
+      const validRanges = currentStructuredSections
+        .map((range) => ({
+          start: timeToSeconds(range.start),
+          end: timeToSeconds(range.end)
+        }))
+        .filter((range) => range.end > range.start);
+
+      return validRanges.map((range, index) => ({
+        ...range,
+        continueToNext: index < validRanges.length - 1
+      }));
+    }
+
+    function renderSegmentEditor() {
+      segmentEditor.innerHTML = "";
+      if (!currentStructuredSections.length) {
+        currentStructuredSections = [createEmptySectionRange(false)];
+      }
+
+      currentStructuredSections.forEach((range, index) => {
+        const row = document.createElement("div");
+        row.className = "segment-row";
+
+        const startInput = document.createElement("input");
+        startInput.type = "text";
+        startInput.placeholder = "start";
+        startInput.className = "segment-time";
+        startInput.value = range.start || "";
+        startInput.addEventListener("input", () => {
+          currentStructuredSections[index].start = startInput.value;
+        });
+
+        const dash = document.createElement("div");
+        dash.className = "segment-dash";
+        dash.textContent = "-";
+
+        const endInput = document.createElement("input");
+        endInput.type = "text";
+        endInput.placeholder = "stop";
+        endInput.className = "segment-time";
+        endInput.value = range.end || "";
+        endInput.addEventListener("input", () => {
+          currentStructuredSections[index].end = endInput.value;
+        });
+
+        const isLast = index === currentStructuredSections.length - 1;
+        const actions = document.createElement("div");
+        actions.className = "segment-actions";
+
+        const addBtn = document.createElement("button");
+        addBtn.type = "button";
+        addBtn.className = "segment-action segment-action-add";
+        addBtn.textContent = "+";
+        addBtn.title = isLast ? "Add another range" : "Insert a range after this one";
+        addBtn.addEventListener("click", () => {
+          currentStructuredSections[index].continueToNext = true;
+          currentStructuredSections.splice(index + 1, 0, createEmptySectionRange(false));
+          renderSegmentEditor();
+        });
+
+        actions.appendChild(addBtn);
+
+        row.appendChild(startInput);
+        row.appendChild(dash);
+        row.appendChild(endInput);
+        row.appendChild(actions);
+        segmentEditor.appendChild(row);
+      });
+
+    }
+
+    // Data
+    function updatePageTitleUI() {
+      document.title = "Bird 2 Tags — Template";
+    }
+
+    async function renamePage(oldName, newName) {
+      const trimmedNew = (newName || "").trim();
+      if (!trimmedNew || trimmedNew === oldName) return;
+
+      const oldPageSnap = await getDoc(doc(db, PAGES_COLLECTION, oldName));
+      const existingOrder = oldPageSnap.exists() ? Number(oldPageSnap.data().order) : null;
+
+      await setDoc(doc(db, PAGES_COLLECTION, trimmedNew), { name: trimmedNew, ...(Number.isFinite(existingOrder) ? { order: existingOrder } : {}) }, { merge: true });
+      await deleteDoc(doc(db, PAGES_COLLECTION, oldName));
+
+      const notesQ = query(collection(db, NOTES_COLLECTION), where("page", "==", oldName));
+      const notesSnap = await getDocs(notesQ);
+      for (const d of notesSnap.docs) {
+        await setDoc(doc(db, NOTES_COLLECTION, d.id), { page: trimmedNew }, { merge: true });
+      }
+
+      const metaQ = query(collection(db, COLUMN_META_COLLECTION), where("page", "==", oldName));
+      const metaSnap = await getDocs(metaQ);
+      const metaRows = metaSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      for (const row of metaRows) {
+        const colIdx = Number(row.col ?? 0);
+        const newId = `${trimmedNew}_${colIdx}`;
+        await setDoc(doc(db, COLUMN_META_COLLECTION, newId), { page: trimmedNew, col: colIdx, title: row.title || "" }, { merge: true });
+        if (row.id !== newId) await deleteDoc(doc(db, COLUMN_META_COLLECTION, row.id));
+      }
+
+      PAGE = trimmedNew;
+      if (activeTitleEdit && activeTitleEdit.type === "page") {
+        activeTitleEdit.pageName = trimmedNew;
+      }
+      updatePageTitleUI();
+      await loadPages();
+      await loadPageItems();
+    }
+
+    async function deletePage(pageName) {
+      const allPagesSnap = await getDocs(collection(db, PAGES_COLLECTION));
+      const pageNames = [];
+      allPagesSnap.forEach((d) => {
+        const name = d.data().name;
+        if (name) pageNames.push(name);
+      });
+      if (pageNames.length <= 1) {
+        alert("You need at least one page.");
+        return;
+      }
+
+      const notesQ = query(collection(db, NOTES_COLLECTION), where("page", "==", pageName));
+      const metaQ = query(collection(db, COLUMN_META_COLLECTION), where("page", "==", pageName));
+      const [notesSnap, metaSnap] = await Promise.all([getDocs(notesQ), getDocs(metaQ)]);
+      for (const d of notesSnap.docs) {
+        await deleteDoc(doc(db, NOTES_COLLECTION, d.id));
+      }
+      for (const d of metaSnap.docs) {
+        await deleteDoc(doc(db, COLUMN_META_COLLECTION, d.id));
+      }
+      await deleteDoc(doc(db, PAGES_COLLECTION, pageName));
+
+      const remaining = pageNames.filter((n) => n !== pageName).sort((a, b) => a.localeCompare(b));
+      PAGE = remaining[0] || (SITE_KEY ? "home" : "bird");
+      updatePageTitleUI();
+      await loadPages();
+      await loadPageItems();
+    }
+
+    function attachPageTitleLongPress(el, pageName) {
+      let pressTimer = null;
+      const onPress = () => {
+        pressTimer = setTimeout(() => {
+          startPageTitleInlineEdit(el, pageName);
+        }, 700);
+      };
+      const clearPress = () => {
+        if (pressTimer) clearTimeout(pressTimer);
+      };
+      el.addEventListener("mousedown", onPress);
+      ["mouseup", "mouseleave"].forEach((ev) => el.addEventListener(ev, clearPress));
+      el.addEventListener("touchstart", onPress, { passive: true });
+      ["touchend", "touchcancel"].forEach((ev) => el.addEventListener(ev, clearPress));
+    }
+
+    async function switchPage(pageName) {
+      if (notesOverlay.style.display === 'flex') {
+        await closeNotesOverlay();
+      }
+      PAGE = pageName;
+      safeLocalStorageSet(LAST_PAGE_STORAGE_KEY, PAGE);
+      updatePageTitleUI();
+      updateCheckModeUI();
+      await loadPages();
+      await loadPageItems();
+    }
+
+    async function copySelectedItemToPage() {
+      return false;
+    }
+
+    async function loadPages() {
+      renderTagTabs();
+      updatePageTitleUI();
+    }
+
+    function getItemDurationSeconds(item) {
+      const ranges = normalizeSectionRanges(item.sectionRanges || item.sections || "");
+      if (!ranges.length) return 0;
+      return ranges.reduce((sum, range) => {
+        const start = Number(range.start) || 0;
+        const end = Number(range.end) || 0;
+        if (end <= start) return sum;
+        return sum + (end - start);
+      }, 0);
+    }
+
+    async function migrateLegacyItemsToTags(items) {
+      const updates = [];
+      items.forEach((item) => {
+        const normalizedTags = getItemTags(item);
+        const existingTags = Array.isArray(item.tags)
+          ? item.tags.map((tag) => normalizeTagName(tag)).filter((tag) => TAG_SET.has(tag))
+          : [];
+        const normalizedExisting = [...new Set(existingTags)].sort();
+        const normalizedTarget = [...new Set(normalizedTags)].sort();
+        const tagsChanged = normalizedExisting.join("|") !== normalizedTarget.join("|");
+        const pageChanged = (item.page || "") !== "all";
+        if (!tagsChanged && !pageChanged) return;
+        const payload = {};
+        if (tagsChanged) payload.tags = normalizedTarget;
+        if (pageChanged) payload.page = "all";
+        updates.push(setDoc(doc(db, NOTES_COLLECTION, item.id), payload, { merge: true }));
+      });
+      if (updates.length) {
+        await Promise.all(updates);
+        return true;
+      }
+      return false;
+    }
+
+    function shouldShowItemByTags(itemTags) {
+      if (activeFilterTags.size === 0) return true;
+      return itemTags.some((tag) => activeFilterTags.has(tag));
+    }
+
+    async function loadPageItems() {
+      columnsDiv.innerHTML = "";
+      itemButtons.clear();
+
+      const snap = await getDocs(collection(db, NOTES_COLLECTION));
+      const allItems = [];
+      snap.forEach((d) => {
+        const it = d.data();
+        allItems.push({ ...it, id: d.id });
+      });
+
+      if (!hasRunTagMigration) {
+        hasRunTagMigration = true;
+        const didMigrate = await migrateLegacyItemsToTags(allItems);
+        if (didMigrate) {
+          await loadPageItems();
+          return;
+        }
+      }
+
+      const items = allItems
+        .map((it) => {
+          const tags = getItemTags(it);
+          const duration = getItemDurationSeconds(it);
+          const isPractice = tags.includes("practice");
+          return { ...it, tags, duration, isPractice };
+        })
+        .filter((it) => shouldShowItemByTags(it.tags))
+        .sort((a, b) => {
+          if (a.isPractice !== b.isPractice) return a.isPractice ? 1 : -1;
+          if (a.duration !== b.duration) return a.duration - b.duration;
+          const oa = Number(a.order ?? 0);
+          const ob = Number(b.order ?? 0);
+          if (oa !== ob) return oa - ob;
+          return String(a.id).localeCompare(String(b.id));
+        });
+
+      const { col: rowEl, addBtn, itemsWrap } = createColumn(0, 0, "", false, false);
+      if (items.length === 0 && !SITE_KEY) {
+        const placeholder = renderItem({ id: `tmp_${Date.now()}`, title: "!", isText: false, order: 0, col: 0, tags: [] });
+        itemsWrap.insertBefore(placeholder, addBtn);
+      }
+
+      items.forEach((it) => {
+        const itemEl = renderItem(it);
+        itemsWrap.insertBefore(itemEl, addBtn);
+      });
+      columnsDiv.appendChild(rowEl);
+    }
+
+    // ===== Lists management =====
+    async function getLists() {
+      const snap = await getDocs(collection(db, LISTS_COLLECTION));
+      return snap.docs.map(d => ({ id: d.id, ...(d.data()||{}) }));
+    }
+
+    async function loadListsPage() {
+      columnsDiv.innerHTML = '';
+      const lists = await getLists();
+      const col = document.createElement('div');
+      col.className = 'column';
+      col.style.flexDirection = 'column';
+      col.style.alignItems = 'center';
+      col.style.gap = '12px';
+      lists.forEach(list => {
+        const card = document.createElement('div');
+        card.className = 'item';
+        card.style.width = '360px';
+        const a = document.createElement('a');
+        a.href = '#';
+        a.className = 'list-link';
+        a.textContent = list.name + (Array.isArray(list.items) ? ` (${list.items.length})` : ' (0)');
+        a.addEventListener('click', async (e) => {
+          e.preventDefault();
+          if (!Array.isArray(list.items) || list.items.length===0) return;
+          const randId = list.items[Math.floor(Math.random()*list.items.length)];
+          const docSnap = await getDoc(doc(db, NOTES_COLLECTION, randId));
+          if (docSnap.exists()) {
+            const it = docSnap.data();
+            if (it.link && (it.link.includes('youtube.com')||it.link.includes('youtu.be'))) {
+              const vid = extractYouTubeID(it.link);
+              if (vid) openVideoEmbed(vid,0,0,it.sectionRanges || it.sections || '');
+            } else if (it.link) {
+              window.open(it.link, '_blank');
+            }
+          }
+        });
+        card.appendChild(a);
+        col.appendChild(card);
+      });
+
+      const addListBtn = document.createElement('button');
+      addListBtn.className = 'btn btn-add add-row-btn';
+      addListBtn.textContent = '+ Add List';
+      addListBtn.addEventListener('click', async () => {
+        const name = prompt('New list name');
+        if (!name) return;
+        const id = name.replace(/\s+/g,'_');
+        await setDoc(doc(db, LISTS_COLLECTION, id), { name, items: [] }, { merge: true });
+        await loadListsPage();
+      });
+
+      columnsDiv.appendChild(col);
+      columnsDiv.appendChild(addListBtn);
+    }
+
+    function openListsOverlayForItem(itemId) {
+      const overlay = document.getElementById('lists-overlay');
+      const grid = document.getElementById('lists-grid');
+      const newListInput = document.getElementById('new-list-name');
+      const createBtn = document.getElementById('btn-create-list');
+      const cancelBtn = document.getElementById('btn-lists-cancel');
+      const saveBtn = document.getElementById('btn-lists-save');
+
+      grid.innerHTML = '';
+      newListInput.value = '';
+
+      getLists().then(async (lists) => {
+        for (const lst of lists) {
+          const row = document.createElement('div');
+          row.className = 'lists-row';
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.dataset.listId = lst.id;
+          cb.checked = Array.isArray(lst.items) && lst.items.includes(itemId);
+          const label = document.createElement('div');
+          label.textContent = lst.name;
+          row.appendChild(cb);
+          row.appendChild(label);
+          grid.appendChild(row);
+        }
+      });
+
+      createBtn.onclick = async () => {
+        const name = (newListInput.value || '').trim();
+        if (!name) return;
+        const id = name.replace(/\s+/g,'_');
+        await setDoc(doc(db, LISTS_COLLECTION, id), { name, items: [] }, { merge: true });
+        openListsOverlayForItem(itemId);
+      };
+
+      cancelBtn.onclick = () => { overlay.style.display = 'none'; };
+
+      saveBtn.onclick = async () => {
+        const checks = Array.from(document.querySelectorAll('#lists-grid input[type=checkbox]'));
+        for (const cb of checks) {
+          const listId = cb.dataset.listId;
+          const listRef = doc(db, LISTS_COLLECTION, listId);
+          const listSnap = await getDoc(listRef);
+          const data = listSnap.exists() ? listSnap.data() : { name: listId, items: [] };
+          const itemsArr = Array.isArray(data.items) ? data.items.slice() : [];
+          const idx = itemsArr.indexOf(itemId);
+          if (cb.checked) {
+            if (idx === -1) itemsArr.push(itemId);
+          } else {
+            if (idx !== -1) itemsArr.splice(idx,1);
+          }
+          await setDoc(listRef, { name: data.name||listId, items: itemsArr }, { merge: true });
+        }
+        overlay.style.display = 'none';
+      };
+
+      overlay.style.display = 'flex';
+    }
+
+    function createColumn(colIdx, maxColIdx, columnTitle = "", collapsed = false, showHeader = false) {
+      const col = document.createElement("section");
+      col.className = "column" + (colIdx === 0 ? " default-section" : "");
+      col.dataset.col = colIdx;
+
+      const content = document.createElement("div");
+      content.className = "section-content";
+      const itemsWrap = document.createElement("div");
+      itemsWrap.className = "section-items";
+      content.appendChild(itemsWrap);
+
+      const addBtn = document.createElement("button");
+      addBtn.className = "btn btn-add column-add-btn";
+      addBtn.textContent = "+";
+      addBtn.title = deleteMode ? "Delete this section" : "Add a new item to this section";
+      
+      addBtn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        if (deleteMode) {
+          await deleteColumn(colIdx);
+          return;
+        }
+        const items = Array.from(itemsWrap.querySelectorAll('.item'));
+        let refItem = null;
+        if (items.length > 0) {
+          const lastItem = items[items.length - 1];
+          refItem = {
+            id: lastItem.dataset.id,
+            col: parseInt(lastItem.dataset.col),
+            order: parseInt(lastItem.dataset.order)
+          };
+        } else {
+          refItem = { col: colIdx, order: -1 };
+        }
+        await addItemBelow(refItem, false);
+      });
+
+      col.appendChild(content);
+      itemsWrap.appendChild(addBtn);
+
+      return { col, addBtn, itemsWrap };
+    }
+
+    async function saveColumnTitle(colIdx, title, collapsed = undefined) {
+      const id = `${PAGE}_${colIdx}`;
+      const payload = { page: PAGE, col: colIdx, title };
+      if (typeof collapsed === "boolean") payload.collapsed = collapsed;
+      await setDoc(doc(db, COLUMN_META_COLLECTION, id), payload, { merge: true });
+    }
+
+    async function addColumnRight(currentColIdx) {
+      const newColIdx = currentColIdx + 1;
+      await saveColumnTitle(newColIdx, "", true);
+      await loadPageItems();
+    }
+
+    async function moveColumn(colIdx, direction) {
+      const targetCol = colIdx + direction;
+      if (targetCol < 0) return;
+
+      const notesQ = query(collection(db, NOTES_COLLECTION), where("page", "==", PAGE));
+      const metaQ = query(collection(db, COLUMN_META_COLLECTION), where("page", "==", PAGE));
+      const [notesSnap, metaSnap] = await Promise.all([getDocs(notesQ), getDocs(metaQ)]);
+
+      const maxColInNotes = notesSnap.docs.reduce((max, d) => Math.max(max, Number(d.data().col ?? 0)), 0);
+      const maxColInMeta = metaSnap.docs.reduce((max, d) => Math.max(max, Number(d.data().col ?? 0)), 0);
+      const maxCol = Math.max(maxColInNotes, maxColInMeta);
+      if (targetCol > maxCol) return;
+
+      for (const d of notesSnap.docs) {
+        const itemCol = Number(d.data().col ?? 0);
+        if (itemCol === colIdx) {
+          await setDoc(doc(db, NOTES_COLLECTION, d.id), { col: targetCol }, { merge: true });
+        } else if (itemCol === targetCol) {
+          await setDoc(doc(db, NOTES_COLLECTION, d.id), { col: colIdx }, { merge: true });
+        }
+      }
+
+      const titleByCol = new Map();
+      metaSnap.forEach((d) => {
+        const data = d.data();
+        titleByCol.set(Number(data.col ?? 0), data.title || "");
+      });
+      const currentTitle = titleByCol.get(colIdx) || "";
+      const targetTitle = titleByCol.get(targetCol) || "";
+      await saveColumnTitle(colIdx, targetTitle);
+      await saveColumnTitle(targetCol, currentTitle);
+
+      activeTitleEdit = { type: "column", colIdx: targetCol };
+      await loadPageItems();
+    }
+
+    async function deleteColumn(colIdx) {
+      const notesQ = query(collection(db, NOTES_COLLECTION), where("page", "==", PAGE));
+      const metaQ = query(collection(db, COLUMN_META_COLLECTION), where("page", "==", PAGE));
+      const [notesSnap, metaSnap] = await Promise.all([getDocs(notesQ), getDocs(metaQ)]);
+
+      for (const d of notesSnap.docs) {
+        const it = d.data();
+        const itemCol = it.col ?? 0;
+        if (itemCol === colIdx) {
+          await deleteDoc(doc(db, NOTES_COLLECTION, d.id));
+        } else if (itemCol > colIdx) {
+          await setDoc(doc(db, NOTES_COLLECTION, d.id), { col: itemCol - 1 }, { merge: true });
+        }
+      }
+
+      const metaRows = metaSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      for (const row of metaRows) {
+        const metaCol = Number(row.col ?? 0);
+        if (metaCol === colIdx) {
+          await deleteDoc(doc(db, COLUMN_META_COLLECTION, row.id));
+        }
+      }
+      for (const row of metaRows) {
+        const metaCol = Number(row.col ?? 0);
+        if (metaCol > colIdx) {
+          const newCol = metaCol - 1;
+          const newId = `${PAGE}_${newCol}`;
+          await setDoc(doc(db, COLUMN_META_COLLECTION, newId), { page: PAGE, col: newCol, title: row.title || "" }, { merge: true });
+          if (row.id !== newId) {
+            await deleteDoc(doc(db, COLUMN_META_COLLECTION, row.id));
+          }
+        }
+      }
+
+      await loadPageItems();
+    }
+
+    function clearMoveSelection() {
+      if (!selectedMoveItem) return;
+      const selectedEl = document.querySelector(`[data-id="${selectedMoveItem}"]`);
+      if (selectedEl) selectedEl.classList.remove("move-selected");
+      selectedMoveItem = null;
+    }
+
+
+
+    
+    let hoverEditTimer = null;
+    let hoverCloseTimer = null;
+
+    function positionModalNearItem(anchorEl) {
+      if (!anchorEl) return;
+      const rect = anchorEl.getBoundingClientRect();
+      const modalContent = document.getElementById("modal-content");
+      const panelWidth = modalContent.offsetWidth || 416;
+      const gap = 8;
+      let left = rect.right + gap;
+      if (left + panelWidth > window.innerWidth - 6) {
+        left = rect.left - panelWidth - gap;
+      }
+      if (left < 6) left = 6;
+      const maxTop = Math.max(6, window.innerHeight - modalContent.offsetHeight - 6);
+      const top = Math.min(Math.max(6, rect.top), maxTop);
+      modalContent.style.left = `${left}px`;
+      modalContent.style.top = `${top}px`;
+    }
+
+    function renderItem(it) {
+      const wrap = document.createElement("div");
+      wrap.className = "item" + (it.groupBefore?" group-gap":"");
+      if (Array.isArray(it.tags) && it.tags.includes("practice")) {
+        wrap.classList.add("is-practice");
+      }
+      if (selectedMoveItem === it.id) {
+        wrap.classList.add("move-selected");
+      }
+      wrap.dataset.id = it.id;
+      wrap.dataset.col = it.col ?? 0;
+      wrap.dataset.order = it.order ?? 0;
+      wrap.dataset.tags = Array.isArray(it.tags) ? it.tags.join("|") : "";
+
+      let checkbox = null;
+      if (checkMode) {
+        checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "item-checkbox";
+        checkbox.checked = checkedItems.has(it.id);
+        checkbox.addEventListener("click", (e) => {
+          e.stopPropagation();
+        });
+        checkbox.addEventListener("change", (e) => {
+          if (checkbox.checked) {
+            checkedItems.add(it.id);
+          } else {
+            checkedItems.delete(it.id);
+          }
+        });
+      }
+
+      if (checkbox) wrap.appendChild(checkbox);
+
+      const thumbUrl = getThumbnailUrl(it.link, it.thumbFrame);
+      if (thumbUrl) {
+        const thumbWrap = document.createElement("div");
+        thumbWrap.className = "thumbnail-crop";
+        const img = document.createElement("img");
+        img.src = thumbUrl;
+        img.className = "item-thumbnail";
+        img.alt = "Thumbnail";
+        thumbWrap.appendChild(img);
+        wrap.appendChild(thumbWrap);
+      } else {
+        const thumbWrap = document.createElement("div");
+        thumbWrap.className = "thumbnail-crop";
+        wrap.appendChild(thumbWrap);
+      }
+
+      const titleEl = document.createElement("a");
+      titleEl.className = "item-title" + (it.isText ? " text-only" : "");
+      titleEl.href = "#";
+      titleEl.textContent = it.title || "!";
+
+      const titleRow = document.createElement("div");
+      titleRow.className = "item-title-row";
+      if (checkbox) {
+        const spacer = document.createElement("div");
+        spacer.style.width = "17px";
+        spacer.style.marginRight = "6px";
+        spacer.style.flex = "0 0 auto";
+        titleRow.appendChild(spacer);
+      }
+      titleRow.appendChild(titleEl);
+      wrap.appendChild(titleRow);
+
+      wrap.addEventListener("mouseenter", () => {
+        if (deleteMode || checkMode) return;
+        if (hoverCloseTimer) {
+          clearTimeout(hoverCloseTimer);
+          hoverCloseTimer = null;
+        }
+        if (hoverEditTimer) clearTimeout(hoverEditTimer);
+        hoverEditTimer = setTimeout(() => {
+          openEditModal(it, false, wrap);
+        }, 1000);
+      });
+
+      wrap.addEventListener("mouseleave", () => {
+        if (hoverEditTimer) {
+          clearTimeout(hoverEditTimer);
+          hoverEditTimer = null;
+        }
+        hoverCloseTimer = setTimeout(() => {
+          const modalContent = document.getElementById("modal-content");
+          if (!modalContent.matches(":hover")) {
+            closeEditModal();
+          }
+        }, 120);
+      });
+
+      let lpTo;
+      let suppressClickUntil = 0;
+      wrap.addEventListener("click", (e) => {
+        e.preventDefault();
+
+        if (checkMode) return;
+
+        if (Date.now() < suppressClickUntil) {
+          return;
+        }
+        
+        if (deleteMode) {
+          if (selectedItems.has(it.id)) {
+            selectedItems.delete(it.id);
+            wrap.style.background = '';
+          } else {
+            selectedItems.add(it.id);
+            wrap.style.background = '#ff0000';
+          }
+          return;
+        }
+        
+        if (it.title2 !== undefined) return;
+        
+        if (!it.link && (!it.title || it.title === "!")) {
+          openEditModal(it);
+          return;
+        }
+        if (it.link && (it.link.includes("youtube.com") || it.link.includes("youtu.be"))) {
+          const vid = extractYouTubeID(it.link);
+          if (vid) openVideoEmbed(vid, 0, 0, it.sectionRanges || it.sections || "");
+        } else if (it.link) {
+          window.open(it.link, "_blank");
+        }
+      });
+
+      wrap.addEventListener("dblclick", (e) => {
+        e.preventDefault();
+        if (deleteMode || checkMode) return;
+        openEditModal(it);
+      });
+
+      wrap.addEventListener("mousedown", (e) => { 
+        if (deleteMode || checkMode) return;
+        if (it.title2 !== undefined) return;
+        lpTo = setTimeout(()=> {
+          suppressClickUntil = Date.now() + 600;
+          if (selectedMoveItem !== it.id) {
+            if (selectedMoveItem) {
+              const prevWrap = document.querySelector(`[data-id="${selectedMoveItem}"]`);
+              if (prevWrap) prevWrap.classList.remove("move-selected");
+            }
+            selectedMoveItem = it.id;
+            wrap.classList.add("move-selected");
+            console.log("Item selected for moving:", it.id);
+          }
+        }, 1000); 
+      });
+      ["mouseup","mouseleave"].forEach(ev => wrap.addEventListener(ev, () => { 
+        clearTimeout(lpTo);
+      }));
+
+      return wrap;
+    }
+
+    async function addItemBelow(refItem, groupBefore) {
+      const colIdx = refItem.col ?? 0;
+      const refOrder = refItem.order ?? 0;
+      const snap = await getDocs(collection(db, NOTES_COLLECTION));
+      const itemsToUpdate = [];
+      snap.forEach(d => {
+        const it = d.data();
+        if ((it.col ?? 0) === colIdx && (it.order ?? 0) > refOrder) {
+          itemsToUpdate.push({ id: d.id, newOrder: (it.order ?? 0) + 1 });
+        }
+      });
+      for (const item of itemsToUpdate) {
+        await setDoc(doc(db, NOTES_COLLECTION, item.id), { order: item.newOrder }, { merge: true });
+      }
+      const id = `all_${Date.now()}`;
+      const newItem = { id, page: "all", col: colIdx, order: refOrder + 1, title: "!", isText:false, tags: [] };
+      if (groupBefore) newItem.groupBefore = true;
+      await setDoc(doc(db, NOTES_COLLECTION, id), newItem);
+      await loadPageItems();
+      const newDoc = await getDoc(doc(db, NOTES_COLLECTION, id));
+      if (newDoc.exists()) {
+        const newItemData = newDoc.data();
+        newItemData.id = newDoc.id;
+        openEditModal(newItemData);
+      }
+    }
+    async function addItemRight(refItem) {
+      const colIdx = (refItem.col ?? 0) + 1;
+      const id = `all_${Date.now()}`;
+      const newItem = { id, page: "all", col: colIdx, order: 0, title: "!", isText:false, tags: [] };
+      await setDoc(doc(db, NOTES_COLLECTION, id), newItem);
+      await loadPageItems();
+    }
+
+    let editingItem = null;
+    let editingSecondPart = false;
+    function openEditModal(it, isSecondPart = false, anchorEl = null) {
+      editingItem = it;
+      editingSecondPart = isSecondPart;
+      editingTags = new Set(getItemTags(it));
+      modalTitle.textContent = "";
+      
+      if (isSecondPart) {
+        inpLink.value = it.link2 || "";
+        inpTitle.value = it.title2 && it.title2 !== "!" ? it.title2 : "";
+        setSegmentEditorState(normalizeSectionRanges(it.sectionRanges2 || it.sections2 || ""));
+        inpNotes.value = it.text || "";
+      } else {
+        inpLink.value = it.link || "";
+        inpTitle.value = it.title && it.title !== "!" ? it.title : "";
+        setSegmentEditorState(normalizeSectionRanges(it.sectionRanges || it.sections || ""));
+        inpNotes.value = it.text || "";
+      }
+
+      renderTagPicker();
+      
+      modal.style.display = "block";
+      positionModalNearItem(anchorEl || document.querySelector(`[data-id="${it.id}"]`));
+      inpTitle.focus();
+      
+      setTimeout(() => {
+        inpNotes.style.height = 'auto';
+        inpNotes.style.height = Math.max(120, inpNotes.scrollHeight) + 'px';
+      }, 0);
+    }
+    function closeEditModal() { modal.style.display = "none"; editingItem = null; editingSecondPart = false; }
+
+    async function saveEditingItem() {
+      if (!editingItem) return;
+      const link = inpLink.value.trim();
+      const title = inpTitle.value.trim();
+      const sectionRanges = readSegmentEditorState();
+      const sections = formatSectionRangesForStorage(sectionRanges);
+      const text = inpNotes.value.trim();
+      const tags = [...editingTags];
+
+      let update;
+      if (editingSecondPart) {
+        update = {
+          link2: link,
+          title2: title || (link ? "(untitled)" : "!"),
+          tags,
+          page: "all",
+          sections2: sections,
+          sectionRanges2: sectionRanges,
+          text: text
+        };
+      } else {
+        update = {
+          link,
+          title: title || (link ? "(untitled)" : "!"),
+          tags,
+          page: "all",
+          sections,
+          sectionRanges,
+          text
+        };
+        update.thumbFrame = 0;
+        if (!link && title) update.isText = true; else update.isText = false;
+      }
+
+      if (editingItem.id.startsWith('tmp_')) {
+        update.page = PAGE;
+        update.col = editingItem.col ?? 0;
+        update.order = editingItem.order ?? 0;
+      }
+
+      await setDoc(doc(db, NOTES_COLLECTION, editingItem.id), update, { merge: true });
+      closeEditModal();
+      await loadPageItems();
+    }
+
+    btnCancel.addEventListener("click", closeEditModal);
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeEditModal(); closeVideo(); } });
+
+    document.addEventListener("mousedown", async (e) => {
+      if (modal.style.display !== "block" || !editingItem) return;
+      const modalContent = document.getElementById("modal-content");
+      if (modalContent && modalContent.contains(e.target)) return;
+      await saveEditingItem();
+    });
+
+    btnSave.addEventListener("click", async () => {
+      await saveEditingItem();
+    });
+
+    btnDelete.addEventListener("click", async () => {
+      if (!editingItem) return;
+      
+      if (editingSecondPart) {
+        await setDoc(doc(db, NOTES_COLLECTION, editingItem.id), { 
+          title2: deleteField(),
+          link2: deleteField(),
+          sections2: deleteField(),
+          sectionRanges2: deleteField()
+        }, { merge: true });
+      } else {
+        await deleteDoc(doc(db, NOTES_COLLECTION, editingItem.id));
+      }
+      
+      closeEditModal();
+      await loadPageItems();
+    });
+
+    function openVideoEmbed(videoID, startTime=0, endTime=0, sectionsInput="") {
+      currentSections = buildPlaybackSections(sectionsInput);
+      console.log("Parsed sections:", currentSections);
+      const actualStartTime = currentSections.length > 0 ? currentSections[0].start : startTime;
+      
+      currentVideoID = videoID;
+      currentStartTime = actualStartTime;
+      currentSectionIndex = 0; isPaused=false; lastCheckedTime=-1;
+      videoModal.style.display = "flex";
+      
+      setTimeout(setupYouTubeListener, 100);
+    }
+    function setupYouTubeListener() {
+      console.log("Setting up YouTube listener...");
+      if (window.YT===undefined) { 
+        const tag=document.createElement('script'); 
+        tag.src="https://www.youtube.com/iframe_api"; 
+        document.body.appendChild(tag); 
+      }
+      const iv = setInterval(()=>{
+        if (window.YT && window.YT.Player) { 
+          clearInterval(iv);
+          console.log("YouTube API ready, creating player...");
+          try { 
+            if (videoPlayer && videoPlayer.destroy) {
+              videoPlayer.destroy();
+            }
+            const oldIframe = document.getElementById('video-iframe');
+            if (oldIframe) {
+              oldIframe.remove();
+            }
+            const newIframe = document.createElement('div');
+            newIframe.id = 'video-iframe';
+            const container = document.getElementById('video-modal-content');
+            container.insertBefore(newIframe, container.firstChild);
+            videoPlayer = new YT.Player('video-iframe', { 
+              height: '480',
+              width: '100%',
+              videoId: currentVideoID,
+              playerVars: {
+                autoplay: 1,
+                start: Math.floor(currentStartTime),
+                enablejsapi: 1
+              },
+              events: { 
+                onReady: onPlayerReady, 
+                onStateChange: onPlayerStateChange 
+              } 
+            }); 
+          } catch(e) { 
+            console.error("Error creating player:", e); 
+          }
+        }
+      }, 100);
+    }
+    function onPlayerReady(e) {
+      console.log("Player ready!");
+      try { e.target.unMute(); e.target.setVolume(50); e.target.playVideo(); } catch(e) { console.error("Error in onPlayerReady:", e); }
+    }
+    function onPlayerStateChange(e) { 
+      console.log("Player state changed:", e.data);
+      if (e.data === window.YT.PlayerState.PLAYING) monitorPlayback(); 
+    }
+    function monitorPlayback() {
+      if (videoModal.style.display === 'none') {
+        console.log("Video closed, stopping monitor");
+        return;
+      }
+      if (!videoPlayer || !videoPlayer.getCurrentTime) { 
+        console.log("Player not ready yet...");
+        setTimeout(monitorPlayback,100); 
+        return; 
+      }
+      if (currentSections.length===0) { 
+        console.log("No sections, stopping monitor");
+        setTimeout(monitorPlayback,500); 
+        return; 
+      }
+      const t = videoPlayer.getCurrentTime();
+      const sec = currentSections[currentSectionIndex];
+      if (!sec) {
+        console.log("No current section found");
+        return;
+      }
+      if (Math.floor(t) !== Math.floor(lastCheckedTime)) {
+        console.log(`Time: ${t.toFixed(1)}s, Section ${currentSectionIndex}: ${sec.start}-${sec.end}, autoSkip: ${sec.autoSkip}`);
+      }
+      if (t>=sec.end && lastCheckedTime<sec.end) {
+        console.log(`Reached end of section at ${t}s. Section:`, sec, `Next index:`, currentSectionIndex + 1);
+        if (sec.autoSkip && currentSectionIndex<currentSections.length-1) {
+          currentSectionIndex++;
+          let next = currentSections[currentSectionIndex];
+          console.log("Skipping to next section:", next);
+          while (next && next.isGap && currentSectionIndex < currentSections.length - 1) {
+            const nextNext = currentSections[currentSectionIndex + 1];
+            if (nextNext && Math.abs(next.end - nextNext.start) < 1) {
+              console.log("Skipping through gap section:", next);
+              currentSectionIndex++;
+              next = currentSections[currentSectionIndex];
+            } else {
+              break;
+            }
+          }
+          console.log("Final seek to:", next.start);
+          videoPlayer.seekTo(next.start);
+          lastCheckedTime = next.start;
+        } else if (currentSectionIndex<currentSections.length-1) {
+          videoPlayer.pauseVideo(); 
+          isPaused=true; 
+          let nextIndex = currentSectionIndex + 1;
+          let next = currentSections[nextIndex];
+          while (next && next.isGap && nextIndex < currentSections.length - 1) {
+            const nextNext = currentSections[nextIndex + 1];
+            if (nextNext && Math.abs(next.end - nextNext.start) < 1) {
+              console.log("Prompt: Skipping through gap section:", next);
+              nextIndex++;
+              next = currentSections[nextIndex];
+            } else {
+              break;
+            }
+          }
+          if (next) showSectionPrompt(next.start, nextIndex);
+        } else if (!sec.autoSkip) {
+          try {
+            videoPlayer.seekTo(sec.end);
+            videoPlayer.pauseVideo();
+          } catch {}
+          isPaused = true;
+        }
+      } else {
+        for (let i = 0; i < currentSections.length; i++) {
+          const s = currentSections[i];
+          if (t >= s.start && t < s.end && i !== currentSectionIndex) {
+            currentSectionIndex = i;
+            break;
+          }
+        }
+      }
+      if (isPaused && videoPlayer.getPlayerState()===window.YT.PlayerState.PLAYING) {
+        isPaused=false; if (currentSectionIndex<currentSections.length-1) { currentSectionIndex++; const next=currentSections[currentSectionIndex]; videoPlayer.seekTo(next.start); }
+      }
+      lastCheckedTime = t;
+      setTimeout(monitorPlayback, (videoPlayer.getPlayerState()===window.YT.PlayerState.PLAYING || (isPaused && currentSections.length>0)) ? 100 : 500);
+    }
+    function showSectionPrompt(nextStart, nextIndex) {
+      videoPromptText.textContent = `Section ended. Press Enter or click to jump to ${Math.floor(nextStart)}s`;
+      videoPrompt.dataset.nextStart = nextStart; videoPrompt.dataset.nextIndex = nextIndex; videoPrompt.style.display = 'block'; setTimeout(()=>{ try{ videoPromptContinue.focus(); }catch{} }, 20);
+      document.addEventListener('keydown', promptKeyHandler);
+    }
+    function hideSectionPrompt() { videoPrompt.style.display='none'; delete videoPrompt.dataset.nextStart; delete videoPrompt.dataset.nextIndex; document.removeEventListener('keydown', promptKeyHandler); }
+    function promptKeyHandler(e){ if(e.key==='Enter' && videoPrompt.style.display==='block'){ e.preventDefault(); videoPromptContinue.click(); } if(e.key==='Escape' && videoPrompt.style.display==='block'){ e.preventDefault(); videoPromptCancel.click(); } }
+
+    videoPromptContinue.addEventListener('click', ()=>{ 
+      const nextStart=parseFloat(videoPrompt.dataset.nextStart||0); 
+      const nextIndex=parseInt(videoPrompt.dataset.nextIndex||0,10); 
+      console.log("Prompt continue clicked. Jump to:", nextStart, "Section:", nextIndex);
+      hideSectionPrompt(); 
+      if(videoPlayer){ 
+        currentSectionIndex=nextIndex; 
+        videoPlayer.seekTo(nextStart); 
+        try{
+          videoPlayer.playVideo();
+        }catch{} 
+        isPaused=false; 
+      } 
+    });
+    videoPromptCancel.addEventListener('click', hideSectionPrompt);
+
+    function closeVideo(){ 
+      videoModal.style.display='none'; 
+      if (videoPlayer && videoPlayer.destroy) {
+        videoPlayer.destroy();
+        videoPlayer = null;
+      }
+      hideSectionPrompt(); 
+    }
+    videoClose.addEventListener('click', closeVideo);
+
+    deleteModeBtn.addEventListener('mousedown', (e) => {
+      if (activeTitleEdit?.type === 'page') {
+        e.preventDefault();
+        e.stopPropagation();
+        suppressTitleBlurCommit = true;
+      }
+    });
+
+    deleteModeBtn.addEventListener('click', async (e) => {
+      if (activeTitleEdit?.type === 'page') {
+        e.preventDefault();
+        e.stopPropagation();
+        const pageName = activeTitleEdit.pageName || PAGE;
+        clearActiveTitleEdit();
+        await deletePage(pageName);
+        return;
+      }
+
+      if (!deleteMode) {
+        deleteMode = true;
+        selectedItems.clear();
+        confirmDeleteBtn.style.display = 'inline-block';
+        columnsDiv.classList.add('delete-mode-active');
+        deleteModeBtn.classList.add('active');
+        console.log('Delete mode activated');
+        await loadPageItems();
+      } else {
+        if (selectedItems.size > 0) {
+          console.log('Deleting items via X button:', Array.from(selectedItems));
+          for (const itemId of selectedItems) {
+            await deleteDoc(doc(db, NOTES_COLLECTION, itemId));
+          }
+        }
+        deleteMode = false;
+        selectedItems.clear();
+        confirmDeleteBtn.style.display = 'none';
+        columnsDiv.classList.remove('delete-mode-active');
+        deleteModeBtn.classList.remove('active');
+        await loadPageItems();
+        console.log('Delete mode exited after deletion');
+      }
+    });
+
+    function updateCheckModeUI() {
+      resetNowBtn.style.display = PAGE === 'Now' ? 'inline-block' : 'none';
+    }
+
+    confirmDeleteBtn.addEventListener('click', async () => {
+      console.log('Deleting items:', Array.from(selectedItems));
+      for (const itemId of selectedItems) {
+        await deleteDoc(doc(db, NOTES_COLLECTION, itemId));
+      }
+      deleteMode = false;
+      selectedItems.clear();
+      confirmDeleteBtn.style.display = 'none';
+      columnsDiv.classList.remove('delete-mode-active');
+      await loadPageItems();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('#modal') || e.target.closest('#lists-overlay') || e.target.closest('#video-modal')) return;
+      if (e.target.closest('#delete-mode-btn') || e.target.closest('#confirm-delete-btn')) return;
+      if (e.target.closest('.arrow-btn')) return;
+      const clickedItem = e.target.closest('.item');
+      if (!clickedItem) {
+        if (selectedMoveItem) {
+          const prev = document.querySelector(`[data-id="${selectedMoveItem}"]`);
+          if (prev) prev.classList.remove('move-selected');
+          selectedMoveItem = null;
+        }
+        if (deleteMode) {
+          selectedItems.clear();
+          document.querySelectorAll('.item').forEach(it => { it.style.background = ''; });
+        }
+      }
+    }, true);
+
+    quickNotesBtn.addEventListener('click', async () => {
+      notesMode = 'quick';
+      openNotesPage = null;
+      const ref = doc(db, QUICK_NOTES_COLLECTION, 'main');
+      const snap = await getDoc(ref);
+      const cloudText = snap.exists() ? (snap.data().text || '') : '';
+      const draftText = safeLocalStorageGet(QUICK_NOTES_DRAFT_KEY) || '';
+      notesText.value = draftText || cloudText;
+      notesOverlay.style.display = 'flex';
+      notesText.focus();
+    });
+
+    pageNotesBtn.addEventListener('click', async () => {
+      notesMode = 'page';
+      const currentPage = PAGE;
+      openNotesPage = currentPage;
+      const ref = doc(db, PAGE_NOTES_COLLECTION, getPageNotesDocId(currentPage));
+      const snap = await getDoc(ref);
+      const cloudText = snap.exists() ? (snap.data().text || '') : '';
+      const draftText = safeLocalStorageGet(getPageNotesDraftStorageKey(currentPage)) || '';
+      notesText.value = draftText || cloudText;
+      notesOverlay.style.display = 'flex';
+      notesText.focus();
+    });
+
+    notesText.addEventListener('input', () => {
+      if (notesMode === 'page') {
+        if (!openNotesPage) return;
+        safeLocalStorageSet(getPageNotesDraftStorageKey(openNotesPage), notesText.value || '');
+        queuePageNotesSave();
+        return;
+      }
+      if (notesMode === 'quick') {
+        safeLocalStorageSet(QUICK_NOTES_DRAFT_KEY, notesText.value || '');
+        queueQuickNotesSave();
+      }
+    });
+
+    notesOverlay.addEventListener('click', async (e) => {
+      if (e.target !== notesOverlay) return;
+      await closeNotesOverlay();
+    });
+
+    window.addEventListener('beforeunload', () => {
+      if (notesMode === 'page' && openNotesPage) {
+        safeLocalStorageSet(getPageNotesDraftStorageKey(openNotesPage), notesText.value || '');
+        return;
+      }
+      if (notesMode === 'quick') {
+        safeLocalStorageSet(QUICK_NOTES_DRAFT_KEY, notesText.value || '');
+      }
+    });
+
+    document.addEventListener('keydown', async (e) => {
+      if (e.key !== 'Escape') return;
+      if (notesOverlay.style.display !== 'flex') return;
+      await closeNotesOverlay();
+    });
+
+    resetNowBtn.addEventListener('click', async () => {
+      if (PAGE === 'Now') {
+        const q = query(collection(db, NOTES_COLLECTION), where("page", "==", "Now"));
+        const snap = await getDocs(q);
+        for (const d of snap.docs) {
+          await deleteDoc(doc(db, NOTES_COLLECTION, d.id));
+        }
+        await loadPageItems();
+      }
+    });
+
+    arrowUp.addEventListener('click', () => moveItem('up'));
+    arrowDown.addEventListener('click', () => moveItem('down'));
+    arrowLeft.addEventListener('mousedown', setPendingArrowTitleEdit);
+    arrowLeft.addEventListener('click', async () => {
+      if (selectedMoveItem) {
+        await moveItem('left');
+        return;
+      }
+      const titleCtx = consumeArrowTitleEditContext();
+      if (titleCtx?.type === 'column') {
+        await moveColumn(titleCtx.colIdx, -1);
+        return;
+      }
+      if (titleCtx?.type === 'page') {
+        await movePage(titleCtx.pageName, -1);
+        return;
+      }
+      await moveItem('left');
+    });
+    arrowRight.addEventListener('mousedown', setPendingArrowTitleEdit);
+    arrowRight.addEventListener('click', async () => {
+      if (selectedMoveItem) {
+        await moveItem('right');
+        return;
+      }
+      const titleCtx = consumeArrowTitleEditContext();
+      if (titleCtx?.type === 'column') {
+        await moveColumn(titleCtx.colIdx, 1);
+        return;
+      }
+      if (titleCtx?.type === 'page') {
+        await movePage(titleCtx.pageName, 1);
+        return;
+      }
+      await moveItem('right');
+    });
+    columnsDiv.addEventListener("click", (e) => {
+      if (e.target === columnsDiv) {
+        clearMoveSelection();
+      }
+    });
+
+    async function moveItem(direction) {
+      if (!selectedMoveItem) {
+        console.log('No item selected for moving');
+        return;
+      }
+      const itemId = selectedMoveItem;
+      const docRef = doc(db, NOTES_COLLECTION, itemId);
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) return;
+
+      const itemData = docSnap.data();
+      const currentCol = itemData.col ?? 0;
+      const currentOrder = itemData.order ?? 0;
+
+      const q = query(collection(db, NOTES_COLLECTION), where("page", "==", PAGE));
+      const snap = await getDocs(q);
+      const allItems = [];
+      snap.forEach(d => {
+        const it = d.data();
+        it.id = d.id;
+        allItems.push(it);
+      });
+
+      const orderedItems = [...allItems].sort((a, b) => {
+        const colA = Number(a.col ?? 0);
+        const colB = Number(b.col ?? 0);
+        if (colA !== colB) return colA - colB;
+        return Number(a.order ?? 0) - Number(b.order ?? 0);
+      });
+      const idx = orderedItems.findIndex((it) => it.id === itemId);
+      if (idx < 0) return;
+
+      let targetIdx = idx;
+      if (direction === 'left' || direction === 'up') {
+        targetIdx = idx - 1;
+      } else if (direction === 'right' || direction === 'down') {
+        targetIdx = idx + 1;
+      }
+
+      if (targetIdx < 0 || targetIdx >= orderedItems.length) {
+        await loadPageItems();
+        return;
+      }
+
+      const targetItem = orderedItems[targetIdx];
+      await setDoc(doc(db, NOTES_COLLECTION, itemId), {
+        col: targetItem.col ?? 0,
+        order: targetItem.order ?? 0
+      }, { merge: true });
+      await setDoc(doc(db, NOTES_COLLECTION, targetItem.id), {
+        col: currentCol,
+        order: currentOrder
+      }, { merge: true });
+
+      await loadPageItems();
+    }
+
+    addPageBtn.addEventListener("click", async () => {
+      const name = prompt("Enter new page name:");
+      if (name && name.trim()) {
+        const pageName = name.trim();
+        const pagesSnap = await getDocs(collection(db, PAGES_COLLECTION));
+        const rows = [];
+        pagesSnap.forEach((d) => {
+          const data = d.data();
+          const rawName = (data.name || d.id || "").trim();
+          if (!rawName) return;
+          const parsedOrder = Number(data.order);
+          rows.push({ name: rawName, order: Number.isFinite(parsedOrder) ? parsedOrder : null });
+        });
+        const ordered = getOrderedPages(rows);
+        const nextOrder = ordered.length ? ordered[ordered.length - 1].normalizedOrder + 1 : 0;
+        await setDoc(doc(db, PAGES_COLLECTION, pageName), { name: pageName, order: nextOrder }, { merge: true });
+        await switchPage(pageName);
+      }
+    });
+
+    updatePageTitleUI();
+    updateCheckModeUI();
+    loadPages().then(() => loadPageItems());
+  </script>
+</body>
+</html>
