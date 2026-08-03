@@ -273,6 +273,9 @@
     const LAST_PAGE_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_lastPage` : "lastPage";
     const QUICK_NOTES_DRAFT_KEY = SITE_KEY ? `${SITE_KEY}_quickNotesDraft` : "quickNotesDraft";
     const PAGE_NOTES_DRAFT_KEY = SITE_KEY ? `${SITE_KEY}_pageNotesDraft` : "pageNotesDraft";
+    const ACTIVE_TAGS_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_activeFilterTags` : "activeFilterTags";
+    const HIDDEN_TAGS_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_hiddenFilterTags` : "hiddenFilterTags";
+    const OPEN_ENDED_SECTION_END = 999999;
     let PAGE = "all";
     let hasRunTagMigration = false;
     const activeFilterTags = new Set();
@@ -293,6 +296,36 @@
         // ignore localStorage failures
       }
     }
+
+    function parseStoredTagList(rawValue) {
+      if (!rawValue) return [];
+      try {
+        const parsed = JSON.parse(rawValue);
+        if (!Array.isArray(parsed)) return [];
+        return parsed
+          .map((tag) => normalizeTagName(tag))
+          .filter((tag) => TAG_SET.has(tag));
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function persistTagFilterState() {
+      safeLocalStorageSet(ACTIVE_TAGS_STORAGE_KEY, JSON.stringify([...activeFilterTags]));
+      safeLocalStorageSet(HIDDEN_TAGS_STORAGE_KEY, JSON.stringify([...hiddenFilterTags]));
+    }
+
+    function loadTagFilterState() {
+      const storedActive = parseStoredTagList(safeLocalStorageGet(ACTIVE_TAGS_STORAGE_KEY));
+      const storedHidden = parseStoredTagList(safeLocalStorageGet(HIDDEN_TAGS_STORAGE_KEY));
+
+      activeFilterTags.clear();
+      hiddenFilterTags.clear();
+      storedActive.forEach((tag) => activeFilterTags.add(tag));
+      storedHidden.forEach((tag) => hiddenFilterTags.add(tag));
+    }
+
+    loadTagFilterState();
 
     // DOM
     const columnsDiv = document.getElementById("columns");
@@ -378,6 +411,7 @@
           } else {
             activeFilterTags.add(tag);
           }
+          persistTagFilterState();
           renderTagTabs();
           await loadPageItems();
         });
@@ -388,6 +422,7 @@
           } else {
             hiddenFilterTags.add(tag);
           }
+          persistTagFilterState();
           renderTagTabs();
           await loadPageItems();
         });
@@ -645,7 +680,18 @@
       const s = (str || "").trim();
       if (!s) return 0;
       if (/^\d+$/.test(s)) return parseInt(s, 10);
-      if (s.includes(":")) { const [m, sec] = s.split(":"); return parseInt(m,10)*60 + parseInt(sec,10); }
+      if (s.includes(":")) {
+        const parts = s.split(":").map((part) => parseInt(part.trim(), 10));
+        if (parts.some((part) => !Number.isFinite(part) || part < 0)) return 0;
+        if (parts.length === 2) {
+          const [m, sec] = parts;
+          return (m * 60) + sec;
+        }
+        if (parts.length === 3) {
+          const [h, m, sec] = parts;
+          return (h * 3600) + (m * 60) + sec;
+        }
+      }
       return 0;
     }
     function secondsToTime(sec) {
@@ -666,7 +712,7 @@
         if (t.includes("-")) {
           const [startStr, endStr] = t.split("-");
           const startSec = startStr ? timeToSeconds(startStr) : 0;
-          const endSec = endStr && endStr.trim() ? timeToSeconds(endStr) : 999999;
+          const endSec = endStr && endStr.trim() ? timeToSeconds(endStr) : OPEN_ENDED_SECTION_END;
           if (lastEnd >= 0 && startSec > lastEnd) {
             sections.push({start: lastEnd, end: startSec, autoSkip: true, isGap: true});
           }
@@ -677,8 +723,8 @@
           if (lastEnd >= 0 && mark > lastEnd) {
             sections.push({start: lastEnd, end: mark, autoSkip: true, isGap: true});
           }
-          sections.push({start: mark, end: 999999, autoSkip, isGap: false});
-          lastEnd = 999999;
+          sections.push({start: mark, end: OPEN_ENDED_SECTION_END, autoSkip, isGap: false});
+          lastEnd = OPEN_ENDED_SECTION_END;
         }
       }
       return sections;
@@ -707,7 +753,10 @@
     function formatSectionRangesForStorage(sectionRanges) {
       const normalized = normalizeSectionRanges(sectionRanges);
       return normalized.map((range) => {
-        const base = `${secondsToTime(range.start) || "0:00"}-${secondsToTime(range.end)}`;
+        const isOpenEnded = Number(range.end) >= OPEN_ENDED_SECTION_END;
+        const base = isOpenEnded
+          ? `${secondsToTime(range.start) || "0:00"}`
+          : `${secondsToTime(range.start) || "0:00"}-${secondsToTime(range.end)}`;
         return range.continueToNext ? `${base}$` : base;
       }).join(", ");
     }
@@ -825,7 +874,7 @@
       currentStructuredSections = Array.isArray(sectionRanges) && sectionRanges.length
         ? sectionRanges.map((range, index, arr) => ({
             start: secondsToTime(range.start),
-            end: secondsToTime(range.end),
+            end: Number(range.end) >= OPEN_ENDED_SECTION_END ? "" : secondsToTime(range.end),
             continueToNext: index < arr.length - 1 ? true : !!range.continueToNext
           }))
         : [createEmptySectionRange(false)];
@@ -835,10 +884,21 @@
     function readSegmentEditorState() {
       const validRanges = currentStructuredSections
         .map((range) => ({
-          start: timeToSeconds(range.start),
-          end: timeToSeconds(range.end)
+          startRaw: String(range.start || "").trim(),
+          endRaw: String(range.end || "").trim()
         }))
-        .filter((range) => range.end > range.start);
+        .map((range) => {
+          const hasStart = range.startRaw.length > 0;
+          const hasEnd = range.endRaw.length > 0;
+          const start = hasStart ? timeToSeconds(range.startRaw) : 0;
+          const end = hasEnd ? timeToSeconds(range.endRaw) : 0;
+
+          if (hasStart && hasEnd && end > start) return { start, end };
+          if (!hasStart && hasEnd && end > 0) return { start: 0, end };
+          if (hasStart && !hasEnd) return { start, end: OPEN_ENDED_SECTION_END };
+          return null;
+        })
+        .filter((range) => range && range.end > range.start);
 
       return validRanges.map((range, index) => ({
         ...range,
@@ -1110,9 +1170,11 @@
     }
 
     function shouldShowItemByTags(itemTags) {
-      if (itemTags.some((tag) => hiddenFilterTags.has(tag))) return false;
+      const hasHiddenTag = itemTags.some((tag) => hiddenFilterTags.has(tag));
+      const hasActiveTag = itemTags.some((tag) => activeFilterTags.has(tag));
+      if (hasHiddenTag && !hasActiveTag) return false;
       if (activeFilterTags.size === 0) return true;
-      return itemTags.some((tag) => activeFilterTags.has(tag));
+      return hasActiveTag;
     }
 
     async function loadPageItems() {
@@ -1144,8 +1206,9 @@
         })
         .filter((it) => shouldShowItemByTags(it.tags))
         .sort((a, b) => {
-          if (a.isPractice !== b.isPractice) return a.isPractice ? 1 : -1;
-          if (a.duration !== b.duration) return a.duration - b.duration;
+          const colA = Number(a.col ?? 0);
+          const colB = Number(b.col ?? 0);
+          if (colA !== colB) return colA - colB;
           const oa = Number(a.order ?? 0);
           const ob = Number(b.order ?? 0);
           if (oa !== ob) return oa - ob;
@@ -1478,13 +1541,6 @@
       if (thumbUrl) {
         const thumbWrap = document.createElement("div");
         thumbWrap.className = "thumbnail-crop";
-        const durationLabel = formatDurationLabel(it.duration);
-        if (durationLabel) {
-          const durationBadge = document.createElement("div");
-          durationBadge.className = "item-duration-badge";
-          durationBadge.textContent = durationLabel;
-          thumbWrap.appendChild(durationBadge);
-        }
         const img = document.createElement("img");
         img.src = thumbUrl;
         img.className = "item-thumbnail";
@@ -1494,13 +1550,6 @@
       } else {
         const thumbWrap = document.createElement("div");
         thumbWrap.className = "thumbnail-crop";
-        const durationLabel = formatDurationLabel(it.duration);
-        if (durationLabel) {
-          const durationBadge = document.createElement("div");
-          durationBadge.className = "item-duration-badge";
-          durationBadge.textContent = durationLabel;
-          thumbWrap.appendChild(durationBadge);
-        }
         wrap.appendChild(thumbWrap);
       }
 
