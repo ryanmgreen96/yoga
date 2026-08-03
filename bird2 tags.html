@@ -26,6 +26,7 @@
     .page-tab { color: var(--gold); background: transparent; border: 1px solid rgba(255,215,0,0.45); border-radius: 6px; padding: 3px 8px; font-weight: 700; cursor: pointer; text-transform: capitalize; }
     .page-tab:hover { background: rgba(255,215,0,0.12); }
     .page-tab.active { background: rgba(255,215,0,0.28); border-color: #ffe066; box-shadow: 0 0 0 2px rgba(255,224,102,0.65); font-weight: 800; }
+    .page-tab.hidden-tag { background: rgba(185, 28, 28, 0.25); border-color: rgba(248, 113, 113, 0.8); box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.35); }
     .header a { color: var(--gold); font-weight: 700; text-decoration: none; }
     .header a:hover { text-decoration: underline; }
     .delete-mode-btn { background: #8b0000; color: #fff; border: none; border-radius: 6px; padding: 4px 8px; font-weight: 600; cursor: pointer; font-size: 13px; }
@@ -73,8 +74,22 @@
     .item-title-row { display: flex; align-items: flex-start; min-height: 0; padding: 1px 2px; overflow: visible; }
     .item-title { color: var(--white); text-decoration:none; font-size: 14px; cursor:pointer; margin: 0; display: block; line-height: 1.15; white-space: normal; word-break: break-word; overflow: visible; }
     .item-title.text-only { color: var(--beige); }
-    .thumbnail-crop { width: 100%; aspect-ratio: 16 / 9; margin-top: 0; border-radius: 0; overflow: hidden; }
+    .thumbnail-crop { width: 100%; aspect-ratio: 16 / 9; margin-top: 0; border-radius: 0; overflow: hidden; position: relative; }
     .item-thumbnail { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center; transform: scale(0.95); transform-origin: center; }
+    .item-duration-badge {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1;
+      padding: 3px 6px;
+      border-radius: 4px;
+      pointer-events: none;
+      z-index: 2;
+    }
     /* List link style */
     .list-link { color: var(--beige); text-decoration: none; font-weight: 700; }
     .list-link:hover { text-decoration: underline; color: var(--gold); }
@@ -109,6 +124,12 @@
     .segment-action-add { background:#2b6b2b; color:#fff; }
     .segment-action:hover { filter: brightness(1.08); }
     .segment-editor-empty { color:#bbb; font-size:12px; line-height:1.2; }
+    .sections-tabs { display:none; align-items:center; gap:6px; flex-wrap:wrap; padding: 2px 0; }
+    .sections-tabs-label { color:#ddd; font-size:12px; font-weight:700; }
+    .sections-tabs-buttons { display:flex; gap:4px; flex-wrap:wrap; }
+    .section-tab-btn { border:none; border-radius:6px; padding:2px 8px; font-size:12px; font-weight:700; cursor:pointer; background:#444; color:#eee; }
+    .section-tab-btn:hover { background:#555; }
+    .section-tab-btn.active { background: var(--gold); color:#222; }
     input, textarea { width:100%; border:none; border-radius: 0; padding:6px; font-size: 14px; margin: 0; }
     textarea { min-height: 120px; resize: vertical; font-family: system-ui, sans-serif; }
     input::placeholder, textarea::placeholder { color:#aaa; }
@@ -170,7 +191,11 @@
         <h3 id="modal-title">Edit Item</h3>
         <div class="inputs">
           <input type="text" id="inp-link" placeholder="Paste link (YouTube/Drive) or leave blank for plain text" />
-          <input type="text" id="inp-title" placeholder="Enter title or plain text" />
+          <input type="text" id="inp-title" placeholder="Title (use // to split parts, e.g. Warrior // Warrior 2)" />
+          <div id="sections-tabs" class="sections-tabs">
+            <span class="sections-tabs-label">Timestamp page</span>
+            <div id="sections-tabs-buttons" class="sections-tabs-buttons"></div>
+          </div>
           <div id="segment-editor" class="segment-editor"></div>
           <div id="tag-picker" class="tag-picker"></div>
           <textarea id="inp-notes" placeholder="Notes (optional)"></textarea>
@@ -237,7 +262,7 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     const SITE_KEY = (urlParams.get("siteKey") || "birdfresh2").trim();
-    const TAGS = ["rinse", "rise", "peace", "practice"];
+    const TAGS = ["rinse", "rise", "peace", "practice", "stock"];
     const TAG_SET = new Set(TAGS);
     const PAGES_COLLECTION = SITE_KEY ? `${SITE_KEY}_pages` : "pages";
     const NOTES_COLLECTION = SITE_KEY ? `${SITE_KEY}_notes` : "notes";
@@ -251,6 +276,7 @@
     let PAGE = "all";
     let hasRunTagMigration = false;
     const activeFilterTags = new Set();
+    const hiddenFilterTags = new Set();
 
     function safeLocalStorageGet(key) {
       try {
@@ -285,6 +311,8 @@
     const modalTitle = document.getElementById("modal-title");
     const inpLink = document.getElementById("inp-link");
     const inpTitle = document.getElementById("inp-title");
+    const sectionsTabs = document.getElementById("sections-tabs");
+    const sectionsTabsButtons = document.getElementById("sections-tabs-buttons");
     const segmentEditor = document.getElementById("segment-editor");
     const tagPicker = document.getElementById("tag-picker");
     const inpNotes = document.getElementById("inp-notes");
@@ -312,7 +340,10 @@
     let currentVideoID = null;
     let currentStartTime = 0;
     let currentStructuredSections = [];
+    let currentSectionPages = [[]];
+    let activeSectionPage = 0;
     let editingTags = new Set();
+    let isSavingItem = false;
 
     function normalizeTagName(value) {
       return String(value || "").trim().toLowerCase();
@@ -339,13 +370,23 @@
       pageTabs.innerHTML = "";
       TAGS.forEach((tag) => {
         const tab = document.createElement("button");
-        tab.className = "page-tab" + (activeFilterTags.has(tag) ? " active" : "");
+        tab.className = "page-tab" + (activeFilterTags.has(tag) ? " active" : "") + (hiddenFilterTags.has(tag) ? " hidden-tag" : "");
         tab.textContent = formatTagLabel(tag);
         tab.addEventListener("click", async () => {
           if (activeFilterTags.has(tag)) {
             activeFilterTags.delete(tag);
           } else {
             activeFilterTags.add(tag);
+          }
+          renderTagTabs();
+          await loadPageItems();
+        });
+        tab.addEventListener("contextmenu", async (event) => {
+          event.preventDefault();
+          if (hiddenFilterTags.has(tag)) {
+            hiddenFilterTags.delete(tag);
+          } else {
+            hiddenFilterTags.add(tag);
           }
           renderTagTabs();
           await loadPageItems();
@@ -675,6 +716,111 @@
       return { start: "", end: "", continueToNext };
     }
 
+    function splitTitlePartsPreserveEmpty(rawTitle) {
+      const raw = String(rawTitle || "");
+      if (!raw.includes("//")) {
+        return [raw.trim() || ""];
+      }
+      return raw.split("//").map((part) => part.trim());
+    }
+
+    function getTitlePartsCount(rawTitle) {
+      return Math.max(1, splitTitlePartsPreserveEmpty(rawTitle).length);
+    }
+
+    function normalizeSectionPages(sectionPagesValue, fallbackSectionsValue) {
+      if (Array.isArray(sectionPagesValue) && sectionPagesValue.length) {
+        return sectionPagesValue.map((pageEntry) => {
+          if (Array.isArray(pageEntry)) {
+            return normalizeSectionRanges(pageEntry);
+          }
+          if (pageEntry && typeof pageEntry === "object") {
+            return normalizeSectionRanges(pageEntry.ranges || pageEntry.sectionRanges || []);
+          }
+          return [];
+        });
+      }
+      return [normalizeSectionRanges(fallbackSectionsValue)];
+    }
+
+    function ensureSectionPageCount(targetCount) {
+      const count = Math.max(1, Number(targetCount) || 1);
+      if (!Array.isArray(currentSectionPages) || currentSectionPages.length === 0) {
+        currentSectionPages = [[]];
+      }
+      if (currentSectionPages.length < count) {
+        const fill = currentSectionPages[currentSectionPages.length - 1] || [];
+        while (currentSectionPages.length < count) {
+          currentSectionPages.push([...fill]);
+        }
+      }
+      if (currentSectionPages.length > count) {
+        currentSectionPages = currentSectionPages.slice(0, count);
+      }
+      if (activeSectionPage >= currentSectionPages.length) {
+        activeSectionPage = currentSectionPages.length - 1;
+      }
+      if (activeSectionPage < 0) activeSectionPage = 0;
+    }
+
+    function saveCurrentSectionPageDraft() {
+      if (editingSecondPart) return;
+      if (!Array.isArray(currentSectionPages) || currentSectionPages.length === 0) return;
+      if (activeSectionPage < 0 || activeSectionPage >= currentSectionPages.length) return;
+      currentSectionPages[activeSectionPage] = readSegmentEditorState();
+    }
+
+    function renderSectionTabs() {
+      if (editingSecondPart) {
+        sectionsTabs.style.display = "none";
+        return;
+      }
+
+      const titleParts = splitTitlePartsPreserveEmpty(inpTitle.value);
+      const count = Math.max(1, titleParts.length);
+      ensureSectionPageCount(count);
+
+      if (count <= 1) {
+        sectionsTabs.style.display = "none";
+        return;
+      }
+
+      sectionsTabs.style.display = "flex";
+      sectionsTabsButtons.innerHTML = "";
+      for (let i = 0; i < count; i++) {
+        const label = titleParts[i] || `Page ${i + 1}`;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "section-tab-btn" + (i === activeSectionPage ? " active" : "");
+        btn.textContent = label;
+        btn.title = `Timestamp page ${i + 1}`;
+        btn.addEventListener("click", () => {
+          saveCurrentSectionPageDraft();
+          activeSectionPage = i;
+          setSegmentEditorState(currentSectionPages[activeSectionPage] || []);
+          renderSectionTabs();
+        });
+        sectionsTabsButtons.appendChild(btn);
+      }
+    }
+
+    function initializeSectionPagesForModal(item) {
+      if (editingSecondPart) {
+        currentSectionPages = [normalizeSectionRanges(item.sectionRanges2 || item.sections2 || "")];
+        activeSectionPage = 0;
+        setSegmentEditorState(currentSectionPages[0]);
+        sectionsTabs.style.display = "none";
+        return;
+      }
+
+      const count = getTitlePartsCount(item.title || "");
+      currentSectionPages = normalizeSectionPages(item.sectionPages, item.sectionRanges || item.sections || "");
+      activeSectionPage = 0;
+      ensureSectionPageCount(count);
+      setSegmentEditorState(currentSectionPages[activeSectionPage] || []);
+      renderSectionTabs();
+    }
+
     function setSegmentEditorState(sectionRanges) {
       currentStructuredSections = Array.isArray(sectionRanges) && sectionRanges.length
         ? sectionRanges.map((range, index, arr) => ({
@@ -866,14 +1012,77 @@
     }
 
     function getItemDurationSeconds(item) {
-      const ranges = normalizeSectionRanges(item.sectionRanges || item.sections || "");
-      if (!ranges.length) return 0;
-      return ranges.reduce((sum, range) => {
+      const sumRanges = (ranges) => ranges.reduce((sum, range) => {
         const start = Number(range.start) || 0;
         const end = Number(range.end) || 0;
         if (end <= start) return sum;
         return sum + (end - start);
       }, 0);
+
+      const pageRanges = normalizeSectionPages(item.sectionPages, item.sectionRanges || item.sections || "");
+      let totalFromSections = 0;
+      pageRanges.forEach((ranges) => {
+        totalFromSections += sumRanges(normalizeSectionRanges(ranges));
+      });
+      if (totalFromSections > 0) return totalFromSections;
+
+      const ranges = normalizeSectionRanges(item.sectionRanges || item.sections || "");
+      const primaryTotal = sumRanges(ranges);
+      if (primaryTotal > 0) return primaryTotal;
+
+      const numericCandidates = [
+        item.videoLengthSeconds,
+        item.videoDurationSeconds,
+        item.lengthSeconds,
+        item.durationSeconds,
+        typeof item.duration === "number" ? item.duration : null
+      ];
+      const foundNumeric = numericCandidates.find((value) => Number.isFinite(Number(value)) && Number(value) > 0);
+      if (foundNumeric) return Number(foundNumeric);
+
+      const textCandidates = [item.videoLength, item.videoDuration, item.durationText, item.duration];
+      for (const value of textCandidates) {
+        const parsed = parseDurationStringToSeconds(value);
+        if (parsed > 0) return parsed;
+      }
+
+      return 0;
+    }
+
+    function parseDurationStringToSeconds(value) {
+      const raw = String(value || "").trim();
+      if (!raw) return 0;
+      if (/^\d+$/.test(raw)) return Number(raw);
+
+      const isoMatch = raw.match(/^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/i);
+      if (isoMatch) {
+        const h = Number(isoMatch[1] || 0);
+        const m = Number(isoMatch[2] || 0);
+        const s = Number(isoMatch[3] || 0);
+        return h * 3600 + m * 60 + s;
+      }
+
+      if (raw.includes(":")) {
+        const parts = raw.split(":").map((part) => Number(part.trim()));
+        if (parts.every((part) => Number.isFinite(part) && part >= 0)) {
+          if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+          if (parts.length === 2) return parts[0] * 60 + parts[1];
+        }
+      }
+
+      return 0;
+    }
+
+    function formatDurationLabel(totalSeconds) {
+      const sec = Math.max(0, Math.floor(Number(totalSeconds) || 0));
+      if (!sec) return "";
+      const hours = Math.floor(sec / 3600);
+      const minutes = Math.floor((sec % 3600) / 60);
+      const seconds = sec % 60;
+      if (hours > 0) {
+        return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+      }
+      return `${minutes}:${String(seconds).padStart(2, "0")}`;
     }
 
     async function migrateLegacyItemsToTags(items) {
@@ -901,6 +1110,7 @@
     }
 
     function shouldShowItemByTags(itemTags) {
+      if (itemTags.some((tag) => hiddenFilterTags.has(tag))) return false;
       if (activeFilterTags.size === 0) return true;
       return itemTags.some((tag) => activeFilterTags.has(tag));
     }
@@ -1211,6 +1421,7 @@
     
     let hoverEditTimer = null;
     let hoverCloseTimer = null;
+    let modalHoverCloseTimer = null;
 
     function positionModalNearItem(anchorEl) {
       if (!anchorEl) return;
@@ -1267,6 +1478,13 @@
       if (thumbUrl) {
         const thumbWrap = document.createElement("div");
         thumbWrap.className = "thumbnail-crop";
+        const durationLabel = formatDurationLabel(it.duration);
+        if (durationLabel) {
+          const durationBadge = document.createElement("div");
+          durationBadge.className = "item-duration-badge";
+          durationBadge.textContent = durationLabel;
+          thumbWrap.appendChild(durationBadge);
+        }
         const img = document.createElement("img");
         img.src = thumbUrl;
         img.className = "item-thumbnail";
@@ -1276,13 +1494,61 @@
       } else {
         const thumbWrap = document.createElement("div");
         thumbWrap.className = "thumbnail-crop";
+        const durationLabel = formatDurationLabel(it.duration);
+        if (durationLabel) {
+          const durationBadge = document.createElement("div");
+          durationBadge.className = "item-duration-badge";
+          durationBadge.textContent = durationLabel;
+          thumbWrap.appendChild(durationBadge);
+        }
         wrap.appendChild(thumbWrap);
       }
 
       const titleEl = document.createElement("a");
       titleEl.className = "item-title" + (it.isText ? " text-only" : "");
       titleEl.href = "#";
-      titleEl.textContent = it.title || "!";
+      const titleParts = splitTitlePartsPreserveEmpty(it.title || "");
+      const hasSplitTitle = titleParts.length > 1;
+      const sectionPages = normalizeSectionPages(it.sectionPages, it.sectionRanges || it.sections || "");
+      if (hasSplitTitle) {
+        titleParts.forEach((part, index) => {
+          const partEl = document.createElement("span");
+          partEl.textContent = part || `Part ${index + 1}`;
+          partEl.style.cursor = "pointer";
+          partEl.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (it.link && (it.link.includes("youtube.com") || it.link.includes("youtu.be"))) {
+              const vid = extractYouTubeID(it.link);
+              if (vid) {
+                const ranges = sectionPages[index] || sectionPages[sectionPages.length - 1] || [];
+                openVideoEmbed(vid, 0, 0, ranges);
+              }
+            } else if (it.link) {
+              window.open(it.link, "_blank");
+            }
+          });
+
+          let titleLpTo;
+          partEl.addEventListener("mousedown", (e) => {
+            e.stopPropagation();
+            titleLpTo = setTimeout(() => openEditModal(it, false, wrap), 1000);
+          });
+          ["mouseup", "mouseleave"].forEach((ev) => partEl.addEventListener(ev, () => {
+            clearTimeout(titleLpTo);
+          }));
+
+          titleEl.appendChild(partEl);
+          if (index < titleParts.length - 1) {
+            const separator = document.createElement("span");
+            separator.className = "split-separator";
+            separator.textContent = "/";
+            titleEl.appendChild(separator);
+          }
+        });
+      } else {
+        titleEl.textContent = it.title || "!";
+      }
 
       const titleRow = document.createElement("div");
       titleRow.className = "item-title-row";
@@ -1316,7 +1582,7 @@
         hoverCloseTimer = setTimeout(() => {
           const modalContent = document.getElementById("modal-content");
           if (!modalContent.matches(":hover")) {
-            closeEditModal();
+            void saveEditingItem();
           }
         }, 120);
       });
@@ -1343,7 +1609,7 @@
           return;
         }
         
-        if (it.title2 !== undefined) return;
+        if (it.title2 !== undefined || hasSplitTitle) return;
         
         if (!it.link && (!it.title || it.title === "!")) {
           openEditModal(it);
@@ -1431,14 +1697,14 @@
       if (isSecondPart) {
         inpLink.value = it.link2 || "";
         inpTitle.value = it.title2 && it.title2 !== "!" ? it.title2 : "";
-        setSegmentEditorState(normalizeSectionRanges(it.sectionRanges2 || it.sections2 || ""));
         inpNotes.value = it.text || "";
       } else {
         inpLink.value = it.link || "";
         inpTitle.value = it.title && it.title !== "!" ? it.title : "";
-        setSegmentEditorState(normalizeSectionRanges(it.sectionRanges || it.sections || ""));
         inpNotes.value = it.text || "";
       }
+
+      initializeSectionPagesForModal(it);
 
       renderTagPicker();
       
@@ -1451,55 +1717,109 @@
         inpNotes.style.height = Math.max(120, inpNotes.scrollHeight) + 'px';
       }, 0);
     }
-    function closeEditModal() { modal.style.display = "none"; editingItem = null; editingSecondPart = false; }
+    function closeEditModal() {
+      if (modalHoverCloseTimer) {
+        clearTimeout(modalHoverCloseTimer);
+        modalHoverCloseTimer = null;
+      }
+      modal.style.display = "none";
+      editingItem = null;
+      editingSecondPart = false;
+      currentSectionPages = [[]];
+      activeSectionPage = 0;
+      isSavingItem = false;
+    }
+
+    inpTitle.addEventListener("input", () => {
+      if (!editingItem || editingSecondPart) return;
+      saveCurrentSectionPageDraft();
+      ensureSectionPageCount(getTitlePartsCount(inpTitle.value));
+      renderSectionTabs();
+    });
 
     async function saveEditingItem() {
-      if (!editingItem) return;
-      const link = inpLink.value.trim();
-      const title = inpTitle.value.trim();
-      const sectionRanges = readSegmentEditorState();
-      const sections = formatSectionRangesForStorage(sectionRanges);
-      const text = inpNotes.value.trim();
-      const tags = [...editingTags];
+      if (!editingItem || isSavingItem) return;
+      isSavingItem = true;
+      try {
+        const itemId = editingItem.id;
+        const itemCol = editingItem.col ?? 0;
+        const itemOrder = editingItem.order ?? 0;
+        const link = inpLink.value.trim();
+        const title = inpTitle.value.trim();
+        const text = inpNotes.value.trim();
+        const tags = [...editingTags];
 
-      let update;
-      if (editingSecondPart) {
-        update = {
-          link2: link,
-          title2: title || (link ? "(untitled)" : "!"),
-          tags,
-          page: "all",
-          sections2: sections,
-          sectionRanges2: sectionRanges,
-          text: text
-        };
-      } else {
-        update = {
-          link,
-          title: title || (link ? "(untitled)" : "!"),
-          tags,
-          page: "all",
-          sections,
-          sectionRanges,
-          text
-        };
-        update.thumbFrame = 0;
-        if (!link && title) update.isText = true; else update.isText = false;
+        saveCurrentSectionPageDraft();
+        ensureSectionPageCount(getTitlePartsCount(title));
+        const normalizedPages = currentSectionPages.map((pageRanges) => normalizeSectionRanges(pageRanges));
+        const sectionPages = normalizedPages.map((ranges) => ({ ranges }));
+        const primarySectionRanges = normalizeSectionRanges(normalizedPages[0] || []);
+        const sections = formatSectionRangesForStorage(primarySectionRanges);
+
+        let update;
+        if (editingSecondPart) {
+          const sectionRanges = readSegmentEditorState();
+          const sections2 = formatSectionRangesForStorage(sectionRanges);
+          update = {
+            link2: link,
+            title2: title || (link ? "(untitled)" : "!"),
+            tags,
+            page: "all",
+            sections2,
+            sectionRanges2: sectionRanges,
+            text: text
+          };
+        } else {
+          update = {
+            link,
+            title: title || (link ? "(untitled)" : "!"),
+            tags,
+            page: "all",
+            sections,
+            sectionRanges: primarySectionRanges,
+            sectionPages,
+            text
+          };
+          update.thumbFrame = 0;
+          if (!link && title) update.isText = true; else update.isText = false;
+        }
+
+        if (itemId.startsWith('tmp_')) {
+          update.page = PAGE;
+          update.col = itemCol;
+          update.order = itemOrder;
+        }
+
+        await setDoc(doc(db, NOTES_COLLECTION, itemId), update, { merge: true });
+        closeEditModal();
+        await loadPageItems();
+      } catch (error) {
+        console.error("Failed to save item:", error);
+        alert("Could not save this item. Please try again.");
+      } finally {
+        isSavingItem = false;
       }
-
-      if (editingItem.id.startsWith('tmp_')) {
-        update.page = PAGE;
-        update.col = editingItem.col ?? 0;
-        update.order = editingItem.order ?? 0;
-      }
-
-      await setDoc(doc(db, NOTES_COLLECTION, editingItem.id), update, { merge: true });
-      closeEditModal();
-      await loadPageItems();
     }
 
     btnCancel.addEventListener("click", closeEditModal);
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeEditModal(); closeVideo(); } });
+
+    const modalContentEl = document.getElementById("modal-content");
+    modalContentEl.addEventListener("mouseenter", () => {
+      if (modalHoverCloseTimer) {
+        clearTimeout(modalHoverCloseTimer);
+        modalHoverCloseTimer = null;
+      }
+    });
+    modalContentEl.addEventListener("mouseleave", () => {
+      if (modal.style.display !== "block" || !editingItem) return;
+      if (modalHoverCloseTimer) clearTimeout(modalHoverCloseTimer);
+      modalHoverCloseTimer = setTimeout(() => {
+        const stillHoveringModal = modalContentEl.matches(":hover");
+        if (stillHoveringModal) return;
+        void saveEditingItem();
+      }, 120);
+    });
 
     document.addEventListener("mousedown", async (e) => {
       if (modal.style.display !== "block" || !editingItem) return;

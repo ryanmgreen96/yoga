@@ -101,6 +101,12 @@
     textarea { min-height: 120px; resize: vertical; font-family: system-ui, sans-serif; background:#1a1a1a; color:#f2f2f2; }
     input::placeholder, textarea::placeholder { color:#aaa; }
     .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:8px; }
+    .sections-tabs { display:none; align-items:center; gap:6px; flex-wrap:wrap; }
+    .sections-tabs-label { color:#ddd; font-size:12px; font-weight:700; }
+    .sections-tabs-buttons { display:flex; gap:4px; flex-wrap:wrap; }
+    .section-tab-btn { border:none; border-radius:6px; padding:2px 8px; font-size:12px; font-weight:700; cursor:pointer; background:#444; color:#eee; }
+    .section-tab-btn:hover { background:#555; }
+    .section-tab-btn.active { background: var(--gold); color:#222; }
     .btn-secondary { background:#444; color:#fff; }
     .btn-primary { background: var(--gold); color:#222; }
     .notes-btn { background: #293241; color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-weight: 700; cursor: pointer; font-size: 14px; }
@@ -155,10 +161,14 @@
         <h3 id="modal-title">Edit Item</h3>
         <div class="inputs">
           <input type="text" id="inp-link" placeholder="Paste link (YouTube/Drive) or leave blank for plain text" />
-          <input type="text" id="inp-title" placeholder="Enter title or plain text" />
+          <input type="text" id="inp-title" placeholder="Title (use // to split parts, e.g. Warrior // Warrior 2)" />
           <input type="number" id="inp-thumb-frame" placeholder="Thumbnail frame (0-3 for YouTube)" min="0" max="3" step="1" />
           <input type="text" id="inp-preview-image" placeholder="Preview image URL (optional, overrides thumbnail)" />
-          <input type="text" id="inp-sections" placeholder="Sections (e.g. 30-4:30$ or 0:30-4:30$, 10:00)" />
+          <input type="text" id="inp-sections" placeholder="Sections (split with //, e.g. 0:10-0:40 // 0:20-0:50)" />
+          <div id="sections-tabs" class="sections-tabs">
+            <span class="sections-tabs-label">Timestamp page</span>
+            <div id="sections-tabs-buttons" class="sections-tabs-buttons"></div>
+          </div>
           <input type="text" id="inp-description" placeholder="Description (optional)" />
           <textarea id="inp-notes" placeholder="Notes (optional)"></textarea>
         </div>
@@ -276,6 +286,8 @@
     const inpPreviewImage = document.getElementById("inp-preview-image");
     const inpDescription = document.getElementById("inp-description");
     const inpSections = document.getElementById("inp-sections");
+    const sectionsTabs = document.getElementById("sections-tabs");
+    const sectionsTabsButtons = document.getElementById("sections-tabs-buttons");
     const inpNotes = document.getElementById("inp-notes");
     const btnCancel = document.getElementById("btn-cancel");
     const btnSave = document.getElementById("btn-save");
@@ -300,6 +312,8 @@
     let currentStartTime = 0;
     let notesAutosaveTimer = null;
     let openNotesPage = null;
+    let sectionPages = [""];
+    let activeSectionPage = 0;
 
     function getPageNotesDocId(pageName) {
       return encodeURIComponent(pageName || "");
@@ -553,6 +567,125 @@
         }
       }
       return sections;
+    }
+
+    function splitInlineParts(raw) {
+      return String(raw || "")
+        .split(/\s*\/\/\s*/)
+        .map((v) => v.trim())
+        .filter(Boolean);
+    }
+
+    function getTitlePartsCount(titleValue) {
+      const raw = String(titleValue || "");
+      if (!raw.includes("//")) return 1;
+      return Math.max(1, raw.split("//").length);
+    }
+
+    function parseSectionPages(rawSections) {
+      const parts = splitInlineParts(rawSections);
+      if (parts.length) return parts;
+      return [String(rawSections || "").trim()];
+    }
+
+    function saveCurrentSectionPageDraft() {
+      if (!Array.isArray(sectionPages) || sectionPages.length === 0) return;
+      if (activeSectionPage < 0 || activeSectionPage >= sectionPages.length) return;
+      sectionPages[activeSectionPage] = (inpSections.value || "").trim();
+    }
+
+    function normalizeSectionPagesCount(targetCount) {
+      const count = Math.max(1, Number(targetCount) || 1);
+      if (!Array.isArray(sectionPages) || sectionPages.length === 0) {
+        sectionPages = [""];
+      }
+      if (sectionPages.length < count) {
+        const fill = sectionPages[sectionPages.length - 1] || "";
+        while (sectionPages.length < count) sectionPages.push(fill);
+      }
+      if (sectionPages.length > count) {
+        sectionPages = sectionPages.slice(0, count);
+      }
+      if (activeSectionPage >= sectionPages.length) {
+        activeSectionPage = sectionPages.length - 1;
+      }
+      if (activeSectionPage < 0) activeSectionPage = 0;
+    }
+
+    function renderSectionTabs() {
+      if (editingSecondPart) {
+        sectionsTabs.style.display = "none";
+        return;
+      }
+
+      const titlePartCount = getTitlePartsCount(inpTitle.value);
+      normalizeSectionPagesCount(titlePartCount);
+
+      if (titlePartCount <= 1) {
+        sectionsTabs.style.display = "none";
+        inpSections.value = sectionPages[0] || "";
+        return;
+      }
+
+      sectionsTabs.style.display = "flex";
+      sectionsTabsButtons.innerHTML = "";
+      for (let i = 0; i < titlePartCount; i++) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "section-tab-btn" + (i === activeSectionPage ? " active" : "");
+        btn.textContent = String(i + 1);
+        btn.title = `Timestamp page ${i + 1}`;
+        btn.addEventListener("click", () => {
+          saveCurrentSectionPageDraft();
+          activeSectionPage = i;
+          inpSections.value = sectionPages[activeSectionPage] || "";
+          renderSectionTabs();
+          inpSections.focus();
+        });
+        sectionsTabsButtons.appendChild(btn);
+      }
+      inpSections.value = sectionPages[activeSectionPage] || "";
+    }
+
+    function initSectionPagesForModal() {
+      sectionPages = parseSectionPages(inpSections.value);
+      activeSectionPage = 0;
+      renderSectionTabs();
+    }
+
+    function buildSectionsValueForSave() {
+      saveCurrentSectionPageDraft();
+      const titlePartCount = getTitlePartsCount(inpTitle.value);
+      if (editingSecondPart || titlePartCount <= 1) {
+        return (inpSections.value || "").trim();
+      }
+      normalizeSectionPagesCount(titlePartCount);
+      return sectionPages
+        .slice(0, titlePartCount)
+        .map((s) => (s || "").trim())
+        .join(" // ");
+    }
+
+    function getInlineTitleSections(it) {
+      if (!it || it.title2 !== undefined) return [];
+      const rawTitle = String(it.title || "").trim();
+      const rawSections = String(it.sections || "").trim();
+      if (!rawTitle.includes("//") && !rawSections.includes("//")) return [];
+
+      const titleParts = splitInlineParts(rawTitle);
+      const sectionParts = splitInlineParts(rawSections);
+      const partCount = Math.max(titleParts.length, sectionParts.length);
+      if (partCount <= 1) return [];
+
+      const out = [];
+      for (let i = 0; i < partCount; i++) {
+        const fallbackTitle = titleParts[titleParts.length - 1] || "!";
+        const title = (titleParts[i] || fallbackTitle || "!").trim();
+        const fallbackSections = sectionParts[sectionParts.length - 1] || "";
+        const sections = (sectionParts[i] || fallbackSections || "").trim();
+        out.push({ title, sections });
+      }
+      return out;
     }
 
     // Data
@@ -1182,6 +1315,7 @@
       const titleEl = document.createElement("a");
       titleEl.className = "item-title" + (it.isText?" text-only":"");
       titleEl.href = "#";
+      const inlineTitleSections = getInlineTitleSections(it);
       
       // Check if item has a second title (title2 field)
       const titleText = it.title || "!";
@@ -1242,6 +1376,39 @@
         titleEl.appendChild(firstPart);
         titleEl.appendChild(separator);
         titleEl.appendChild(secondPart);
+      } else if (inlineTitleSections.length > 1) {
+        inlineTitleSections.forEach((part, index) => {
+          const partEl = document.createElement("span");
+          partEl.textContent = part.title || `Part ${index + 1}`;
+          partEl.style.cursor = "pointer";
+          partEl.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (it.link && (it.link.includes("youtube.com") || it.link.includes("youtu.be"))) {
+              const vid = extractYouTubeID(it.link);
+              if (vid) openVideoEmbed(vid, 0, 0, part.sections || "");
+            } else if (it.link) {
+              window.open(it.link, "_blank");
+            }
+          });
+
+          let partLpTo;
+          partEl.addEventListener("mousedown", (e) => {
+            e.stopPropagation();
+            partLpTo = setTimeout(() => openEditModal(it, false), 1000);
+          });
+          ["mouseup", "mouseleave"].forEach((ev) => partEl.addEventListener(ev, () => {
+            clearTimeout(partLpTo);
+          }));
+
+          titleEl.appendChild(partEl);
+          if (index < inlineTitleSections.length - 1) {
+            const separator = document.createElement("span");
+            separator.className = "split-separator";
+            separator.textContent = "/";
+            titleEl.appendChild(separator);
+          }
+        });
       } else {
         titleEl.textContent = titleText;
         // Long-pressing the title should edit, not select/move the whole item.
@@ -1307,8 +1474,8 @@
           return;
         }
         
-        // If has title2, clicking is handled by individual parts
-        if (it.title2 !== undefined) return;
+        // If split content exists, clicking is handled by individual parts.
+        if (it.title2 !== undefined || inlineTitleSections.length > 1) return;
         
         if (!it.link && (!it.title || it.title === "!")) {
           openEditModal(it);
@@ -1437,6 +1604,8 @@
         inpSections.value = it.sections || "";
         inpNotes.value = it.text || ""; // Shared notes field
       }
+
+      initSectionPagesForModal();
       
       modal.style.display = "flex";
       inpTitle.focus();
@@ -1447,7 +1616,18 @@
         inpNotes.style.height = Math.max(120, inpNotes.scrollHeight) + 'px';
       }, 0);
     }
-    function closeEditModal() { modal.style.display = "none"; editingItem = null; editingSecondPart = false; }
+    function closeEditModal() { modal.style.display = "none"; editingItem = null; editingSecondPart = false; sectionPages = [""]; activeSectionPage = 0; }
+
+    inpTitle.addEventListener("input", () => {
+      if (!editingItem || editingSecondPart) return;
+      saveCurrentSectionPageDraft();
+      renderSectionTabs();
+    });
+
+    inpSections.addEventListener("input", () => {
+      if (!editingItem || editingSecondPart) return;
+      saveCurrentSectionPageDraft();
+    });
 
     btnCancel.addEventListener("click", closeEditModal);
     document.addEventListener("keydown", async (e) => {
@@ -1468,7 +1648,7 @@
       const hasThumbFrame = Number.isInteger(thumbFrame) && thumbFrame >= 0 && thumbFrame <= 3;
       const previewImage = inpPreviewImage.value.trim();
       const description = inpDescription.value.trim();
-      const sections = inpSections.value.trim();
+      const sections = buildSectionsValueForSave();
       const text = inpNotes.value.trim();
 
       let update;
