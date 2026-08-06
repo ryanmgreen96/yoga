@@ -1177,6 +1177,40 @@
       return hasActiveTag;
     }
 
+    function getVisibleTagOrder() {
+      return TAGS.filter((tag) => {
+        if (hiddenFilterTags.has(tag) && !activeFilterTags.has(tag)) return false;
+        if (activeFilterTags.size > 0 && !activeFilterTags.has(tag)) return false;
+        return true;
+      });
+    }
+
+    function getItemGroupIndex(itemTags, visibleTagOrder) {
+      const tags = Array.isArray(itemTags) ? itemTags : [];
+      for (let i = 0; i < visibleTagOrder.length; i++) {
+        if (tags.includes(visibleTagOrder[i])) return i;
+      }
+      for (let i = 0; i < TAGS.length; i++) {
+        if (tags.includes(TAGS[i])) return visibleTagOrder.length + i;
+      }
+      return visibleTagOrder.length + TAGS.length;
+    }
+
+    function compareItemsForDisplay(a, b, visibleTagOrder = getVisibleTagOrder()) {
+      const colA = Number(a.col ?? 0);
+      const colB = Number(b.col ?? 0);
+      if (colA !== colB) return colA - colB;
+
+      const groupA = getItemGroupIndex(a.tags, visibleTagOrder);
+      const groupB = getItemGroupIndex(b.tags, visibleTagOrder);
+      if (groupA !== groupB) return groupA - groupB;
+
+      const oa = Number(a.order ?? 0);
+      const ob = Number(b.order ?? 0);
+      if (oa !== ob) return oa - ob;
+      return String(a.id).localeCompare(String(b.id));
+    }
+
     async function loadPageItems() {
       columnsDiv.innerHTML = "";
       itemButtons.clear();
@@ -1205,15 +1239,7 @@
           return { ...it, tags, duration, isPractice };
         })
         .filter((it) => shouldShowItemByTags(it.tags))
-        .sort((a, b) => {
-          const colA = Number(a.col ?? 0);
-          const colB = Number(b.col ?? 0);
-          if (colA !== colB) return colA - colB;
-          const oa = Number(a.order ?? 0);
-          const ob = Number(b.order ?? 0);
-          if (oa !== ob) return oa - ob;
-          return String(a.id).localeCompare(String(b.id));
-        });
+        .sort((a, b) => compareItemsForDisplay(a, b));
 
       const { col: rowEl, addBtn, itemsWrap } = createColumn(0, 0, "", false, false);
       if (items.length === 0 && !SITE_KEY) {
@@ -2290,10 +2316,9 @@
       });
 
       const orderedItems = [...allItems].sort((a, b) => {
-        const colA = Number(a.col ?? 0);
-        const colB = Number(b.col ?? 0);
-        if (colA !== colB) return colA - colB;
-        return Number(a.order ?? 0) - Number(b.order ?? 0);
+        const aWithTags = { ...a, tags: getItemTags(a) };
+        const bWithTags = { ...b, tags: getItemTags(b) };
+        return compareItemsForDisplay(aWithTags, bWithTags);
       });
       const idx = orderedItems.findIndex((it) => it.id === itemId);
       if (idx < 0) return;
