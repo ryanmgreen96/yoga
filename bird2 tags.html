@@ -1316,6 +1316,11 @@
       const hasActiveTag = itemTags.some((tag) => activeFilterTags.has(tag));
       const hasExplicitSelection = favoriteFilterActive || stockFilterActive || activeFilterTags.size > 0;
 
+      // Stock items never appear inside normal tag views.
+      if (!stockFilterActive && activeFilterTags.size > 0 && isStock) {
+        return false;
+      }
+
       if (hasExplicitSelection) {
         if (favoriteFilterActive && isFavorite) return true;
         if (stockFilterActive && isStock) return true;
