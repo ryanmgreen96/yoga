@@ -15,6 +15,7 @@
       --practice-border: #eab308;
       --beige: #e8d9a7;
       --gap: 10px;
+      --item-gap: 6px;
     }
     * { box-sizing: border-box; }
     body { margin:0; background: var(--bg); color: var(--white); font-family: system-ui, sans-serif; }
@@ -26,6 +27,11 @@
     .page-tab { color: var(--gold); background: transparent; border: 1px solid rgba(255,215,0,0.45); border-radius: 6px; padding: 3px 8px; font-weight: 700; cursor: pointer; text-transform: capitalize; }
     .page-tab:hover { background: rgba(255,215,0,0.12); }
     .page-tab.active { background: rgba(255,215,0,0.28); border-color: #ffe066; box-shadow: 0 0 0 2px rgba(255,224,102,0.65); font-weight: 800; }
+    .page-tab.fav-tab { color: #fff; background: rgba(43, 107, 43, 0.92); border-color: #1f4f1f; }
+    .page-tab.fav-tab:hover { background: #2f7a2f; }
+    .page-tab.fav-tab.active { background: #3f9442; border-color: #1f4f1f; box-shadow: 0 0 0 2px rgba(63, 148, 66, 0.5); }
+    .page-tab.gear-tab { color: var(--gold); background: transparent; border: none; box-shadow: none; padding: 3px 6px; }
+    .page-tab.gear-tab:hover { background: rgba(255,215,0,0.12); }
     .page-tab.hidden-tag { background: rgba(185, 28, 28, 0.25); border-color: rgba(248, 113, 113, 0.8); box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.35); }
     .header a { color: var(--gold); font-weight: 700; text-decoration: none; }
     .header a:hover { text-decoration: underline; }
@@ -50,7 +56,7 @@
     .section-toggle-btn:hover { color: var(--white); }
     .section-content { display:flex; align-items:flex-start; overflow-x:hidden; overflow-y:auto; max-height: calc(100vh - 120px); padding: 0 2px; }
     .section-content.collapsed { display:none; }
-    .section-items { display:flex; flex-wrap:wrap; align-items:flex-start; gap: 6px; min-width: 0; width: 100%; }
+    .section-items { display:flex; flex-wrap:wrap; align-items:flex-start; gap: var(--item-gap); min-width: 0; width: 100%; }
     .add-column-btn { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 6px 12px; font-weight: 700; cursor: pointer; font-size: 18px; line-height: 1; align-self: flex-start; margin-top: 4px; }
     .add-column-btn:hover { background: #1d4ed8; }
     .add-row-btn { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 8px 16px; font-weight: 700; cursor: pointer; font-size: 16px; margin-top: 6px; display: none; }
@@ -68,7 +74,7 @@
         flex-wrap: wrap;
       }
     }
-    .item { position: relative; background: rgba(161, 24, 48, 0.45); border-radius: 2px; padding: 0; display:flex; flex-direction: column; gap:1px; border: 1px solid rgba(148, 30, 52, 0.55); min-width: 0; max-width: none; flex: 0 0 calc((100vw - 40px) / 6); overflow: visible; }
+    .item { position: relative; background: rgba(161, 24, 48, 0.45); border-radius: 2px; padding: 0; display:flex; flex-direction: column; gap:1px; border: 1px solid rgba(148, 30, 52, 0.55); min-width: 0; max-width: none; flex: 0 0 calc((100% - (var(--item-gap) * 5)) / 6); overflow: visible; }
     .item.is-practice { background: rgba(250,204,21,0.36); border: 2px solid var(--practice-border); }
     .item-checkbox { width: 17px; height: 17px; margin-right: 6px; cursor: pointer; }
     .item-title-row { display: flex; align-items: flex-start; min-height: 0; padding: 1px 2px; overflow: visible; }
@@ -149,6 +155,13 @@
     .tag-chip { color: var(--beige); font-size: 13px; font-weight: 700; cursor: pointer; user-select: none; text-transform: capitalize; }
     .tag-chip:hover { color: var(--gold); }
     .tag-chip.active { color: var(--gold); text-decoration: underline; text-underline-offset: 2px; }
+    .item-toggles { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding: 4px 0 2px; }
+    .toggle-chip { border:none; border-radius:999px; padding:4px 10px; font-size:12px; font-weight:700; cursor:pointer; background:#444; color:#eee; }
+    .toggle-chip:hover { background:#555; }
+    .toggle-chip.active { background:#666; color:#fff; }
+    .toggle-chip.toggle-favorite.active { background:#2f7a2f; color:#fff; }
+    .toggle-chip.toggle-practice.active { background:#eab308; color:#222; }
+    .toggle-chip.toggle-stock.active { background:#b91c1c; color:#fff; }
     .modal-actions { display:flex; justify-content:flex-end; gap:6px; margin-top:0; }
     .lane-separator { height: 12px; }
     .btn-secondary { background:#444; color:#fff; }
@@ -209,6 +222,11 @@
             <div id="sections-tabs-buttons" class="sections-tabs-buttons"></div>
           </div>
           <div id="segment-editor" class="segment-editor"></div>
+          <div id="item-toggles" class="item-toggles">
+            <button type="button" class="toggle-chip toggle-favorite" id="toggle-favorite-btn">Favorite</button>
+            <button type="button" class="toggle-chip toggle-practice" id="toggle-practice-btn">Practice</button>
+            <button type="button" class="toggle-chip toggle-stock" id="toggle-stock-btn">Stock</button>
+          </div>
           <div id="tag-picker" class="tag-picker"></div>
           <textarea id="inp-notes" placeholder="Notes (optional)"></textarea>
         </div>
@@ -274,7 +292,7 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     const SITE_KEY = (urlParams.get("siteKey") || "birdfresh2").trim();
-    const TAGS = ["rinse", "rise", "peace", "practice", "stock"];
+    const TAGS = ["rinse", "twist", "peace", "rise"];
     const TAG_SET = new Set(TAGS);
     const PAGES_COLLECTION = SITE_KEY ? `${SITE_KEY}_pages` : "pages";
     const NOTES_COLLECTION = SITE_KEY ? `${SITE_KEY}_notes` : "notes";
@@ -287,11 +305,17 @@
     const PAGE_NOTES_DRAFT_KEY = SITE_KEY ? `${SITE_KEY}_pageNotesDraft` : "pageNotesDraft";
     const ACTIVE_TAGS_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_activeFilterTags` : "activeFilterTags";
     const HIDDEN_TAGS_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_hiddenFilterTags` : "hiddenFilterTags";
+    const FAVORITES_FILTER_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_favoriteFilter` : "favoriteFilter";
+    const HIDE_STOCK_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_hideStockItems` : "hideStockItems";
+    const STOCK_FILTER_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_stockFilter` : "stockFilter";
     const OPEN_ENDED_SECTION_END = 999999;
     let PAGE = "all";
     let hasRunTagMigration = false;
     const activeFilterTags = new Set();
     const hiddenFilterTags = new Set();
+    let favoriteFilterActive = false;
+    let hideStockItems = false;
+    let stockFilterActive = false;
 
     function safeLocalStorageGet(key) {
       try {
@@ -325,16 +349,23 @@
     function persistTagFilterState() {
       safeLocalStorageSet(ACTIVE_TAGS_STORAGE_KEY, JSON.stringify([...activeFilterTags]));
       safeLocalStorageSet(HIDDEN_TAGS_STORAGE_KEY, JSON.stringify([...hiddenFilterTags]));
+      safeLocalStorageSet(FAVORITES_FILTER_STORAGE_KEY, favoriteFilterActive ? "1" : "0");
+      safeLocalStorageSet(HIDE_STOCK_STORAGE_KEY, hideStockItems ? "1" : "0");
+      safeLocalStorageSet(STOCK_FILTER_STORAGE_KEY, stockFilterActive ? "1" : "0");
     }
 
     function loadTagFilterState() {
       const storedActive = parseStoredTagList(safeLocalStorageGet(ACTIVE_TAGS_STORAGE_KEY));
       const storedHidden = parseStoredTagList(safeLocalStorageGet(HIDDEN_TAGS_STORAGE_KEY));
+      const storedFavFilter = safeLocalStorageGet(FAVORITES_FILTER_STORAGE_KEY);
 
       activeFilterTags.clear();
       hiddenFilterTags.clear();
       storedActive.forEach((tag) => activeFilterTags.add(tag));
       storedHidden.forEach((tag) => hiddenFilterTags.add(tag));
+      favoriteFilterActive = storedFavFilter === null ? true : storedFavFilter === "1";
+      hideStockItems = safeLocalStorageGet(HIDE_STOCK_STORAGE_KEY) === "1";
+      stockFilterActive = safeLocalStorageGet(STOCK_FILTER_STORAGE_KEY) === "1";
     }
 
     loadTagFilterState();
@@ -359,6 +390,9 @@
     const sectionsTabs = document.getElementById("sections-tabs");
     const sectionsTabsButtons = document.getElementById("sections-tabs-buttons");
     const segmentEditor = document.getElementById("segment-editor");
+    const toggleFavoriteBtn = document.getElementById("toggle-favorite-btn");
+    const togglePracticeBtn = document.getElementById("toggle-practice-btn");
+    const toggleStockBtn = document.getElementById("toggle-stock-btn");
     const tagPicker = document.getElementById("tag-picker");
     const inpNotes = document.getElementById("inp-notes");
     const btnCancel = document.getElementById("btn-cancel");
@@ -387,7 +421,10 @@
     let currentStructuredSections = [];
     let currentSectionPages = [[]];
     let activeSectionPage = 0;
-    let editingTags = new Set();
+    let editingPrimaryTag = TAGS[0] || "";
+    let editingIsFavorite = false;
+    let editingIsPractice = false;
+    let editingIsStock = false;
     let isSavingItem = false;
 
     function normalizeTagName(value) {
@@ -407,20 +444,60 @@
       return [...tags];
     }
 
+    function getItemFavoriteFlag(item) {
+      if (typeof item?.isFavorite === "boolean") return item.isFavorite;
+      if (item?.favorite === true) return true;
+      if (item?.favorite === "true") return true;
+      const tags = Array.isArray(item?.tags) ? item.tags.map((tag) => normalizeTagName(tag)) : [];
+      return tags.includes("fav") || tags.includes("favorite");
+    }
+
+    function getItemPracticeFlag(item) {
+      if (typeof item?.isPractice === "boolean") return item.isPractice;
+      const tags = Array.isArray(item?.tags) ? item.tags.map((tag) => normalizeTagName(tag)) : [];
+      if (tags.includes("practice")) return true;
+      return normalizeTagName(item?.page) === "practice";
+    }
+
+    function getItemStockFlag(item) {
+      if (typeof item?.isStock === "boolean") return item.isStock;
+      const tags = Array.isArray(item?.tags) ? item.tags.map((tag) => normalizeTagName(tag)) : [];
+      if (tags.includes("stock")) return true;
+      return normalizeTagName(item?.page) === "stock";
+    }
+
     function formatTagLabel(tag) {
       return tag.charAt(0).toUpperCase() + tag.slice(1);
     }
 
     function renderTagTabs() {
       pageTabs.innerHTML = "";
+
+      const favTab = document.createElement("button");
+      favTab.className = "page-tab fav-tab" + (favoriteFilterActive ? " active" : "");
+      favTab.textContent = "Fav";
+      favTab.addEventListener("click", async () => {
+        favoriteFilterActive = !favoriteFilterActive;
+        if (favoriteFilterActive) {
+          activeFilterTags.clear();
+          stockFilterActive = false;
+        }
+        persistTagFilterState();
+        renderTagTabs();
+        await loadPageItems();
+      });
+      pageTabs.appendChild(favTab);
+
       TAGS.forEach((tag) => {
         const tab = document.createElement("button");
         tab.className = "page-tab" + (activeFilterTags.has(tag) ? " active" : "") + (hiddenFilterTags.has(tag) ? " hidden-tag" : "");
         tab.textContent = formatTagLabel(tag);
         tab.addEventListener("click", async () => {
-          if (activeFilterTags.has(tag)) {
-            activeFilterTags.delete(tag);
-          } else {
+          const isOnlyActive = activeFilterTags.size === 1 && activeFilterTags.has(tag);
+          favoriteFilterActive = isOnlyActive;
+          stockFilterActive = false;
+          activeFilterTags.clear();
+          if (!isOnlyActive) {
             activeFilterTags.add(tag);
           }
           persistTagFilterState();
@@ -440,25 +517,69 @@
         });
         pageTabs.appendChild(tab);
       });
+
+      const wrenchTab = document.createElement("button");
+      wrenchTab.className = "page-tab gear-tab" + (stockFilterActive ? " active" : "") + (hideStockItems ? " hidden-tag" : "");
+      wrenchTab.textContent = "🔧";
+      wrenchTab.title = hideStockItems ? "Stock view / stock hidden in normal view" : "Stock view";
+      wrenchTab.addEventListener("click", async () => {
+        if (stockFilterActive) {
+          stockFilterActive = false;
+          favoriteFilterActive = true;
+          activeFilterTags.clear();
+        } else {
+          stockFilterActive = true;
+          favoriteFilterActive = false;
+          activeFilterTags.clear();
+        }
+        persistTagFilterState();
+        renderTagTabs();
+        await loadPageItems();
+      });
+      wrenchTab.addEventListener("contextmenu", async (event) => {
+        event.preventDefault();
+        hideStockItems = !hideStockItems;
+        persistTagFilterState();
+        renderTagTabs();
+        await loadPageItems();
+      });
+      pageTabs.appendChild(wrenchTab);
     }
 
     function renderTagPicker() {
       tagPicker.innerHTML = "";
       TAGS.forEach((tag) => {
         const el = document.createElement("span");
-        el.className = "tag-chip" + (editingTags.has(tag) ? " active" : "");
+        el.className = "tag-chip" + (editingPrimaryTag === tag ? " active" : "");
         el.textContent = formatTagLabel(tag);
         el.addEventListener("click", () => {
-          if (editingTags.has(tag)) {
-            editingTags.delete(tag);
-          } else {
-            editingTags.add(tag);
-          }
+          editingPrimaryTag = tag;
           renderTagPicker();
         });
         tagPicker.appendChild(el);
       });
     }
+
+    function renderItemToggleButtons() {
+      toggleFavoriteBtn.classList.toggle("active", editingIsFavorite);
+      togglePracticeBtn.classList.toggle("active", editingIsPractice);
+      toggleStockBtn.classList.toggle("active", editingIsStock);
+    }
+
+    toggleFavoriteBtn.addEventListener("click", () => {
+      editingIsFavorite = !editingIsFavorite;
+      renderItemToggleButtons();
+    });
+
+    togglePracticeBtn.addEventListener("click", () => {
+      editingIsPractice = !editingIsPractice;
+      renderItemToggleButtons();
+    });
+
+    toggleStockBtn.addEventListener("click", () => {
+      editingIsStock = !editingIsStock;
+      renderItemToggleButtons();
+    });
 
     function normalizeSectionRanges(sectionsInput) {
       if (!sectionsInput) return [];
@@ -1161,6 +1282,9 @@
       const updates = [];
       items.forEach((item) => {
         const normalizedTags = getItemTags(item);
+        const legacyIsPractice = getItemPracticeFlag(item);
+        const legacyIsFavorite = getItemFavoriteFlag(item);
+        const legacyIsStock = getItemStockFlag(item);
         const existingTags = Array.isArray(item.tags)
           ? item.tags.map((tag) => normalizeTagName(tag)).filter((tag) => TAG_SET.has(tag))
           : [];
@@ -1168,10 +1292,16 @@
         const normalizedTarget = [...new Set(normalizedTags)].sort();
         const tagsChanged = normalizedExisting.join("|") !== normalizedTarget.join("|");
         const pageChanged = (item.page || "") !== "all";
-        if (!tagsChanged && !pageChanged) return;
+        const practiceChanged = item.isPractice !== legacyIsPractice;
+        const favoriteChanged = item.isFavorite !== legacyIsFavorite;
+        const stockChanged = item.isStock !== legacyIsStock;
+        if (!tagsChanged && !pageChanged && !practiceChanged && !favoriteChanged && !stockChanged) return;
         const payload = {};
         if (tagsChanged) payload.tags = normalizedTarget;
         if (pageChanged) payload.page = "all";
+        if (practiceChanged) payload.isPractice = legacyIsPractice;
+        if (favoriteChanged) payload.isFavorite = legacyIsFavorite;
+        if (stockChanged) payload.isStock = legacyIsStock;
         updates.push(setDoc(doc(db, NOTES_COLLECTION, item.id), payload, { merge: true }));
       });
       if (updates.length) {
@@ -1181,12 +1311,20 @@
       return false;
     }
 
-    function shouldShowItemByTags(itemTags) {
+    function shouldShowItemByTags(itemTags, isFavorite, isStock) {
       const hasHiddenTag = itemTags.some((tag) => hiddenFilterTags.has(tag));
       const hasActiveTag = itemTags.some((tag) => activeFilterTags.has(tag));
-      if (hasHiddenTag && !hasActiveTag) return false;
-      if (activeFilterTags.size === 0) return true;
-      return hasActiveTag;
+      const hasExplicitSelection = favoriteFilterActive || stockFilterActive || activeFilterTags.size > 0;
+
+      if (hasExplicitSelection) {
+        if (favoriteFilterActive && isFavorite) return true;
+        if (stockFilterActive && isStock) return true;
+        if (hasActiveTag) return true;
+        return false;
+      }
+
+      if (hasHiddenTag) return false;
+      return true;
     }
 
     function getVisibleTagOrder() {
@@ -1216,6 +1354,10 @@
       const groupA = getItemGroupIndex(a.tags, visibleTagOrder);
       const groupB = getItemGroupIndex(b.tags, visibleTagOrder);
       if (groupA !== groupB) return groupA - groupB;
+
+      if (!!a.isPractice !== !!b.isPractice) {
+        return a.isPractice ? 1 : -1;
+      }
 
       const oa = Number(a.order ?? 0);
       const ob = Number(b.order ?? 0);
@@ -1247,10 +1389,13 @@
         .map((it) => {
           const tags = getItemTags(it);
           const duration = getItemDurationSeconds(it);
-          const isPractice = tags.includes("practice");
-          return { ...it, tags, duration, isPractice };
+          const isPractice = getItemPracticeFlag(it);
+          const isFavorite = getItemFavoriteFlag(it);
+          const isStock = getItemStockFlag(it);
+          return { ...it, tags, duration, isPractice, isFavorite, isStock };
         })
-        .filter((it) => shouldShowItemByTags(it.tags))
+        .filter((it) => shouldShowItemByTags(it.tags, it.isFavorite, it.isStock))
+        .filter((it) => stockFilterActive || !hideStockItems || !it.isStock)
         .sort((a, b) => compareItemsForDisplay(a, b));
 
       const visibleTagOrder = getVisibleTagOrder();
@@ -1532,12 +1677,15 @@
       selectedMoveItem = null;
     }
 
+    function getDefaultPrimaryTag() {
+      const active = [...activeFilterTags].find((tag) => TAG_SET.has(tag));
+      return active || TAGS[0] || "";
+    }
+
 
 
     
     let hoverEditTimer = null;
-    let hoverCloseTimer = null;
-    let modalHoverCloseTimer = null;
 
     function positionModalNearItem(anchorEl) {
       if (!anchorEl) return;
@@ -1559,7 +1707,7 @@
     function renderItem(it) {
       const wrap = document.createElement("div");
       wrap.className = "item" + (it.groupBefore?" group-gap":"");
-      if (Array.isArray(it.tags) && it.tags.includes("practice")) {
+      if (it.isPractice) {
         wrap.classList.add("is-practice");
       }
       if (selectedMoveItem === it.id) {
@@ -1666,10 +1814,6 @@
 
       wrap.addEventListener("mouseenter", () => {
         if (deleteMode || checkMode) return;
-        if (hoverCloseTimer) {
-          clearTimeout(hoverCloseTimer);
-          hoverCloseTimer = null;
-        }
         if (hoverEditTimer) clearTimeout(hoverEditTimer);
         hoverEditTimer = setTimeout(() => {
           openEditModal(it, false, wrap);
@@ -1681,12 +1825,6 @@
           clearTimeout(hoverEditTimer);
           hoverEditTimer = null;
         }
-        hoverCloseTimer = setTimeout(() => {
-          const modalContent = document.getElementById("modal-content");
-          if (!modalContent.matches(":hover")) {
-            void saveEditingItem();
-          }
-        }, 120);
       });
 
       let lpTo;
@@ -1776,7 +1914,7 @@
         await setDoc(doc(db, NOTES_COLLECTION, item.id), { order: item.newOrder }, { merge: true });
       }
       const id = `all_${Date.now()}`;
-      const newItem = { id, page: "all", col: colIdx, order: refOrder + 1, title: "!", isText:false, tags: [] };
+      const newItem = { id, page: "all", col: colIdx, order: refOrder + 1, title: "!", isText:false, tags: [getDefaultPrimaryTag()], isFavorite: false, isPractice: false, isStock: false };
       if (groupBefore) newItem.groupBefore = true;
       await setDoc(doc(db, NOTES_COLLECTION, id), newItem);
       await loadPageItems();
@@ -1790,7 +1928,7 @@
     async function addItemRight(refItem) {
       const colIdx = (refItem.col ?? 0) + 1;
       const id = `all_${Date.now()}`;
-      const newItem = { id, page: "all", col: colIdx, order: 0, title: "!", isText:false, tags: [] };
+      const newItem = { id, page: "all", col: colIdx, order: 0, title: "!", isText:false, tags: [getDefaultPrimaryTag()], isFavorite: false, isPractice: false, isStock: false };
       await setDoc(doc(db, NOTES_COLLECTION, id), newItem);
       await loadPageItems();
     }
@@ -1800,7 +1938,11 @@
     function openEditModal(it, isSecondPart = false, anchorEl = null) {
       editingItem = it;
       editingSecondPart = isSecondPart;
-      editingTags = new Set(getItemTags(it));
+      const itemTags = getItemTags(it);
+      editingPrimaryTag = itemTags[0] || TAGS[0] || "";
+      editingIsFavorite = getItemFavoriteFlag(it);
+      editingIsPractice = getItemPracticeFlag(it);
+      editingIsStock = getItemStockFlag(it);
       modalTitle.textContent = "";
       
       if (isSecondPart) {
@@ -1815,6 +1957,7 @@
 
       initializeSectionPagesForModal(it);
 
+      renderItemToggleButtons();
       renderTagPicker();
       
       modal.style.display = "block";
@@ -1827,10 +1970,6 @@
       }, 0);
     }
     function closeEditModal() {
-      if (modalHoverCloseTimer) {
-        clearTimeout(modalHoverCloseTimer);
-        modalHoverCloseTimer = null;
-      }
       modal.style.display = "none";
       editingItem = null;
       editingSecondPart = false;
@@ -1856,7 +1995,7 @@
         const link = inpLink.value.trim();
         const title = inpTitle.value.trim();
         const text = inpNotes.value.trim();
-        const tags = [...editingTags];
+        const tags = editingPrimaryTag ? [editingPrimaryTag] : [];
 
         saveCurrentSectionPageDraft();
         ensureSectionPageCount(getTitlePartsCount(title));
@@ -1873,6 +2012,9 @@
             link2: link,
             title2: title || (link ? "(untitled)" : "!"),
             tags,
+            isFavorite: editingIsFavorite,
+            isPractice: editingIsPractice,
+            isStock: editingIsStock,
             page: "all",
             sections2,
             sectionRanges2: sectionRanges,
@@ -1883,6 +2025,9 @@
             link,
             title: title || (link ? "(untitled)" : "!"),
             tags,
+            isFavorite: editingIsFavorite,
+            isPractice: editingIsPractice,
+            isStock: editingIsStock,
             page: "all",
             sections,
             sectionRanges: primarySectionRanges,
@@ -1912,23 +2057,6 @@
 
     btnCancel.addEventListener("click", closeEditModal);
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeEditModal(); closeVideo(); } });
-
-    const modalContentEl = document.getElementById("modal-content");
-    modalContentEl.addEventListener("mouseenter", () => {
-      if (modalHoverCloseTimer) {
-        clearTimeout(modalHoverCloseTimer);
-        modalHoverCloseTimer = null;
-      }
-    });
-    modalContentEl.addEventListener("mouseleave", () => {
-      if (modal.style.display !== "block" || !editingItem) return;
-      if (modalHoverCloseTimer) clearTimeout(modalHoverCloseTimer);
-      modalHoverCloseTimer = setTimeout(() => {
-        const stillHoveringModal = modalContentEl.matches(":hover");
-        if (stillHoveringModal) return;
-        void saveEditingItem();
-      }, 120);
-    });
 
     document.addEventListener("mousedown", async (e) => {
       if (modal.style.display !== "block" || !editingItem) return;
@@ -2350,8 +2478,8 @@
       });
 
       const orderedItems = [...allItems].sort((a, b) => {
-        const aWithTags = { ...a, tags: getItemTags(a) };
-        const bWithTags = { ...b, tags: getItemTags(b) };
+        const aWithTags = { ...a, tags: getItemTags(a), isPractice: getItemPracticeFlag(a) };
+        const bWithTags = { ...b, tags: getItemTags(b), isPractice: getItemPracticeFlag(b) };
         return compareItemsForDisplay(aWithTags, bWithTags);
       });
       const idx = orderedItems.findIndex((it) => it.id === itemId);
@@ -2403,7 +2531,7 @@
         const tags = getItemTags(data);
         const groupIndex = getItemGroupIndex(tags, visibleTagOrder);
         if (groupIndex !== targetGroup) return;
-        groupItems.push({ ...data, id: d.id, tags });
+        groupItems.push({ ...data, id: d.id, tags, isPractice: getItemPracticeFlag(data) });
       });
 
       if (groupItems.length <= 1) return;
