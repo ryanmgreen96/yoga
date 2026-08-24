@@ -109,7 +109,147 @@
     .btn-add:hover { background: var(--green-hover); }
     .split-separator { color: rgba(255, 255, 255, 0.7); margin: 0 4px; font-weight: 900; cursor: pointer; font-size: 16px; }
     .split-separator:hover { color: rgba(255, 255, 255, 0.9); }
-
+    .thumbnail-crop { position: relative; }
+    .partition-icons-overlay {
+      position: absolute;
+      right: 8px;
+      bottom: 7px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 2px;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      z-index: 4;
+    }
+    .partition-icon-trigger {
+      border: none;
+      outline: none;
+      background: transparent;
+      color: #fff;
+      padding: 0;
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1;
+      cursor: pointer;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.95), 0 0 2px #000;
+      font-family: "Segoe UI Symbol", "Noto Sans Symbols", sans-serif;
+    }
+    .partition-icon-trigger[data-partition-key="heart"] { color: #ff6b81; }
+    .partition-icon-trigger[data-partition-key="gear"] { color: #8ec5ff; }
+    .partition-icon-trigger[data-partition-key="complex"] { color: #c7a6ff; }
+    .partition-icon-trigger[data-partition-key="clock"] { color: #ffd166; }
+    .partition-icon-trigger[data-partition-key="arrow"] { color: #72e0b8; }
+    .partition-icon-trigger:hover,
+    .partition-icon-trigger:focus-visible { color: var(--gold); }
+    .partition-plus-btn {
+      position: absolute;
+      right: 8px;
+      bottom: 8px;
+      width: 30px;
+      height: 30px;
+      border: 1px solid rgba(255,255,255,0.45);
+      background: rgba(0,0,0,0.72);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 22px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 4;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+      pointer-events: auto;
+    }
+    .partition-plus-btn:hover { background: rgba(0,0,0,0.9); }
+    .partition-menu {
+      position: absolute;
+      right: 8px;
+      bottom: 38px;
+      display: flex;
+      gap: 6px;
+      padding: 6px;
+      border-radius: 999px;
+      background: rgba(17, 24, 39, 0.9);
+      border: 1px solid rgba(255,255,255,0.15);
+      z-index: 5;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    }
+    .partition-menu.hidden { display: none; }
+    .partition-menu-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 0;
+      border: none;
+      background: transparent;
+      color: #fff;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Segoe UI Symbol", "Noto Sans Symbols", sans-serif;
+    }
+    .partition-menu-btn:hover { color: var(--gold); }
+    .partition-menu-btn[data-partition-key="heart"] { color: #ff6b81; }
+    .partition-menu-btn[data-partition-key="gear"] { color: #8ec5ff; }
+    .partition-menu-btn[data-partition-key="complex"] { color: #c7a6ff; }
+    .partition-menu-btn[data-partition-key="clock"] { color: #ffd166; }
+    .partition-menu-btn[data-partition-key="arrow"] { color: #72e0b8; }
+    .hover-card {
+      position: fixed;
+      z-index: 10002;
+      background: rgba(30, 30, 30, 0.96);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 12px;
+      padding: 10px 12px;
+      width: 340px;
+      max-width: calc(100vw - 16px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.35);
+      color: #fff;
+    }
+    .hover-card-row {
+      display: grid;
+      grid-template-columns: 26px 1fr;
+      gap: 8px;
+      align-items: center;
+      padding: 4px 0;
+      min-height: 30px;
+    }
+    .hover-card-row .icon-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      font-size: 14px;
+    }
+    .hover-card-row input,
+    .hover-card-row textarea {
+      width: 100%;
+      min-width: 0;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 4px;
+      color: #fff;
+      padding: 3px 6px;
+      font-size: 12px;
+    }
+    .hover-card-row textarea {
+      min-height: 24px;
+      line-height: 1.25;
+      overflow: hidden;
+      resize: none;
+      overflow-wrap: anywhere;
+    }
+    .hover-card-row input::placeholder,
+    .hover-card-row textarea::placeholder { color: #c9c9c9; }
     .group-gap { margin-top: 0; }
     .item.group-gap::before {
       content: "";
@@ -134,6 +274,11 @@
     .inputs-row .small-input { flex:0 0 80px; }
     .inputs-row .large-input { flex:1; }
     .segment-editor { display:flex; flex-direction:column; gap:4px; padding: 4px 0 2px; }
+    .segment-editor-header { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .segment-editor-actions { display:flex; gap:4px; }
+    .segment-copy-btn { border:1px solid rgba(255,255,255,0.25); background:rgba(255,255,255,0.08); color:#fff; border-radius:4px; padding:2px 6px; font-size:11px; cursor:pointer; }
+    .segment-copy-btn:hover { background:rgba(255,215,0,0.2); color:var(--gold); }
+    .segment-copy-btn:disabled { opacity:0.45; cursor:not-allowed; }
     .segment-row { display:grid; grid-template-columns: minmax(0, 1fr) 12px minmax(0, 1fr) auto; gap:4px; align-items:center; }
     .segment-time { min-width:0; text-align:center; }
     .segment-dash { color:#bbb; text-align:center; font-size:12px; line-height:1; }
@@ -144,10 +289,33 @@
     .segment-editor-empty { color:#bbb; font-size:12px; line-height:1.2; }
     .sections-tabs { display:none; align-items:center; gap:6px; flex-wrap:wrap; padding: 2px 0; }
     .sections-tabs-label { color:#ddd; font-size:12px; font-weight:700; }
-    .sections-tabs-buttons { display:flex; gap:4px; flex-wrap:wrap; }
-    .section-tab-btn { border:none; border-radius:6px; padding:2px 8px; font-size:12px; font-weight:700; cursor:pointer; background:#444; color:#eee; }
-    .section-tab-btn:hover { background:#555; }
-    .section-tab-btn.active { background: var(--gold); color:#222; }
+    .sections-tabs-buttons { display:flex; gap:4px; flex-wrap:wrap; align-items:center; }
+    .section-tab-btn {
+      border:none; border-radius:0;
+      width:26px; height:26px;
+      padding:0; font-size:16px; font-weight:700; cursor:pointer;
+      background:transparent; color:#eee; display:flex; align-items:center; justify-content:center;
+    }
+    .section-tab-btn:hover { color:var(--gold); }
+    .section-tab-btn.active { background:transparent; color:var(--gold); }
+    .section-tab-btn[data-partition-key="heart"] { color: #ff6b81; }
+    .section-tab-btn[data-partition-key="gear"] { color: #8ec5ff; }
+    .section-tab-btn[data-partition-key="complex"] { color: #c7a6ff; }
+    .section-tab-btn[data-partition-key="clock"] { color: #ffd166; }
+    .section-tab-btn[data-partition-key="arrow"] { color: #72e0b8; }
+    .section-tab-add {
+      border:none; border-radius:0; width:22px; height:22px; padding:0; font-size:16px; font-weight:700;
+      cursor:pointer; background:transparent; color:#fff; display:flex; align-items:center; justify-content:center;
+    }
+    .section-tab-add:hover { color:var(--gold); }
+    .section-tab-menu {
+      display:none; position:absolute; z-index:10; margin-top:36px; margin-left:-6px; gap:6px; padding:6px; border-radius:999px; background: rgba(17,24,39,0.92); border:1px solid rgba(255,255,255,0.18); box-shadow:0 8px 20px rgba(0,0,0,0.25);
+    }
+    .section-tab-menu.visible { display:flex; }
+    .section-tab-menu-btn {
+      width:30px; height:30px; border:none; border-radius:0; background: transparent; color:#fff; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    }
+    .section-tab-menu-btn:hover { color:var(--gold); }
     input, textarea { width:100%; border:none; border-radius: 0; padding:6px; font-size: 14px; margin: 0; }
     textarea { min-height: 120px; resize: vertical; font-family: system-ui, sans-serif; }
     input::placeholder, textarea::placeholder { color:#aaa; }
@@ -218,7 +386,6 @@
           <input type="text" id="inp-link" placeholder="Paste link (YouTube/Drive) or leave blank for plain text" />
           <input type="text" id="inp-title" placeholder="Title (use // to split parts, e.g. Warrior // Warrior 2)" />
           <div id="sections-tabs" class="sections-tabs">
-            <span class="sections-tabs-label">Timestamp page</span>
             <div id="sections-tabs-buttons" class="sections-tabs-buttons"></div>
           </div>
           <div id="segment-editor" class="segment-editor"></div>
@@ -308,6 +475,7 @@
     const FAVORITES_FILTER_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_favoriteFilter` : "favoriteFilter";
     const HIDE_STOCK_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_hideStockItems` : "hideStockItems";
     const STOCK_FILTER_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_stockFilter` : "stockFilter";
+    const TIMESTAMP_SETUP_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_timestampSetup` : "timestampSetup";
     const OPEN_ENDED_SECTION_END = 999999;
     let PAGE = "all";
     let hasRunTagMigration = false;
@@ -958,24 +1126,63 @@
         return;
       }
 
-      const titleParts = splitTitlePartsPreserveEmpty(inpTitle.value);
-      const count = Math.max(1, titleParts.length);
+      const count = Math.max(1, Array.isArray(currentSectionPages) ? currentSectionPages.length : 1);
       ensureSectionPageCount(count);
 
-      if (count <= 1) {
-        sectionsTabs.style.display = "none";
-        return;
-      }
+      const iconKeys = getPartitionKeys(editingItem, count - 1);
 
       sectionsTabs.style.display = "flex";
       sectionsTabsButtons.innerHTML = "";
-      for (let i = 0; i < count; i++) {
-        const label = titleParts[i] || `Page ${i + 1}`;
+
+      const homeBtn = document.createElement("button");
+      homeBtn.type = "button";
+      homeBtn.className = "section-tab-btn" + (activeSectionPage === 0 ? " active" : "");
+      homeBtn.textContent = "⌂";
+      homeBtn.title = "Home";
+      homeBtn.addEventListener("click", () => {
+        saveCurrentSectionPageDraft();
+        activeSectionPage = 0;
+        setSegmentEditorState(currentSectionPages[activeSectionPage] || []);
+        renderSectionTabs();
+      });
+      sectionsTabsButtons.appendChild(homeBtn);
+
+      const menu = document.createElement("div");
+      menu.className = "section-tab-menu";
+      PARTITION_ICONS.forEach((iconMeta) => {
+        if (iconMeta.key === "home") return;
+        const iconBtn = document.createElement("button");
+        iconBtn.type = "button";
+        iconBtn.className = "section-tab-menu-btn";
+        iconBtn.dataset.partitionKey = iconMeta.key;
+        iconBtn.textContent = iconMeta.symbol;
+        iconBtn.title = iconMeta.label;
+        iconBtn.addEventListener("click", () => {
+          saveCurrentSectionPageDraft();
+          const nextKey = iconMeta.key;
+          const existingKeys = Array.isArray(editingItem?.partitionIcons)
+            ? editingItem.partitionIcons.filter((key) => key && key !== "home")
+            : [];
+          existingKeys.push(nextKey);
+          if (editingItem) editingItem.partitionIcons = ["home", ...existingKeys];
+          const basePage = currentSectionPages[0] ? currentSectionPages[0].map((range) => ({ ...range })) : [];
+          currentSectionPages.push(basePage);
+          activeSectionPage = currentSectionPages.length - 1;
+          setSegmentEditorState(currentSectionPages[activeSectionPage]);
+          renderSectionTabs();
+          menu.classList.remove("visible");
+        });
+        menu.appendChild(iconBtn);
+      });
+
+      for (let i = 1; i < count; i++) {
+        const iconMeta = getPartitionMeta(iconKeys[i - 1] || PARTITION_ICONS[(i % (PARTITION_ICONS.length - 1)) + 1].key);
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "section-tab-btn" + (i === activeSectionPage ? " active" : "");
-        btn.textContent = label;
-        btn.title = `Timestamp page ${i + 1}`;
+        btn.dataset.partitionKey = iconMeta.key;
+        btn.textContent = iconMeta.symbol;
+        btn.title = `${iconMeta.label} partition`;
         btn.addEventListener("click", () => {
           saveCurrentSectionPageDraft();
           activeSectionPage = i;
@@ -984,6 +1191,19 @@
         });
         sectionsTabsButtons.appendChild(btn);
       }
+
+      const addBtn = document.createElement("button");
+      addBtn.type = "button";
+      addBtn.className = "section-tab-add";
+      addBtn.textContent = "+";
+      addBtn.title = "Add partition";
+      addBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        menu.classList.toggle("visible");
+      });
+      sectionsTabsButtons.appendChild(addBtn);
+      sectionsTabsButtons.appendChild(menu);
     }
 
     function initializeSectionPagesForModal(item) {
@@ -995,7 +1215,10 @@
         return;
       }
 
-      const count = getTitlePartsCount(item.title || "");
+      const savedPartitionCount = Array.isArray(item.partitionIcons)
+        ? item.partitionIcons.filter((key) => key && key !== "home").length + 1
+        : 1;
+      const count = Math.max(getTitlePartsCount(item.title || ""), savedPartitionCount);
       currentSectionPages = normalizeSectionPages(item.sectionPages, item.sectionRanges || item.sections || "");
       activeSectionPage = 0;
       ensureSectionPageCount(count);
@@ -1045,13 +1268,29 @@
         currentStructuredSections = [createEmptySectionRange(false)];
       }
 
+      const editorHeader = document.createElement("div");
+      editorHeader.className = "segment-editor-header";
+      const editorActions = document.createElement("div");
+      editorActions.className = "segment-editor-actions";
+      [{ label: "Copy", title: "Copy this partition's timestamp setup", handler: copyTimestampSetup }, { label: "Paste", title: "Paste into this partition", handler: pasteTimestampSetup }].forEach((action) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "segment-copy-btn";
+        button.textContent = action.label;
+        button.title = action.title;
+        button.disabled = editingSecondPart;
+        button.addEventListener("click", action.handler);
+        editorActions.appendChild(button);
+      });
+      editorHeader.appendChild(editorActions);
+      segmentEditor.appendChild(editorHeader);
+
       currentStructuredSections.forEach((range, index) => {
         const row = document.createElement("div");
         row.className = "segment-row";
 
         const startInput = document.createElement("input");
         startInput.type = "text";
-        startInput.placeholder = "start";
         startInput.className = "segment-time";
         startInput.value = range.start || "";
         startInput.addEventListener("input", () => {
@@ -1064,7 +1303,6 @@
 
         const endInput = document.createElement("input");
         endInput.type = "text";
-        endInput.placeholder = "stop";
         endInput.className = "segment-time";
         endInput.value = range.end || "";
         endInput.addEventListener("input", () => {
@@ -1687,10 +1925,198 @@
       return active || TAGS[0] || "";
     }
 
+    const PARTITION_ICONS = [
+      { key: "home", symbol: "⌂", label: "Home" },
+      { key: "heart", symbol: "♥", label: "Heart" },
+      { key: "gear", symbol: "🔧", label: "Tool" },
+      { key: "complex", symbol: "⛭", label: "Complex" },
+      { key: "clock", symbol: "⏰", label: "Clock" },
+      { key: "arrow", symbol: "↔", label: "Arrow" }
+    ];
 
+    function getPartitionMeta(key) {
+      return PARTITION_ICONS.find((icon) => icon.key === key) || PARTITION_ICONS[0];
+    }
 
-    
+    function getPartitionKeys(item, partitionCount) {
+      const savedKeys = Array.isArray(item?.partitionIcons)
+        ? item.partitionIcons.filter((key) => key && key !== "home")
+        : [];
+      return Array.from({ length: Math.max(0, Number(partitionCount) || 0) }, (_, index) => {
+        return savedKeys[index] || PARTITION_ICONS[(index % (PARTITION_ICONS.length - 1)) + 1].key;
+      });
+    }
+
+    function getPrimaryTimestampSeconds(item) {
+      const sectionPages = normalizeSectionPages(item.sectionPages, item.sectionRanges || item.sections || "");
+      const firstPage = Array.isArray(sectionPages) && sectionPages.length ? sectionPages[0] : [];
+      const ranges = normalizeSectionRanges(firstPage);
+      if (ranges.length > 0 && Number(ranges[0].start) >= 0) return Number(ranges[0].start) || 0;
+      return 0;
+    }
+
+    function copyTimestampSetup() {
+      if (!editingItem || editingSecondPart) return;
+      saveCurrentSectionPageDraft();
+      const copiedRanges = normalizeSectionRanges(currentSectionPages[activeSectionPage] || []).map((range) => ({ ...range }));
+      const copiedTime = Number(Array.isArray(editingItem.partitionTimes) ? editingItem.partitionTimes[activeSectionPage] : 0) || (copiedRanges[0]?.start || 0);
+      safeLocalStorageSet(TIMESTAMP_SETUP_STORAGE_KEY, JSON.stringify({
+        version: 2,
+        ranges: copiedRanges,
+        time: copiedTime
+      }));
+    }
+
+    function pasteTimestampSetup() {
+      if (!editingItem || editingSecondPart) return;
+      const rawSetup = safeLocalStorageGet(TIMESTAMP_SETUP_STORAGE_KEY);
+      if (!rawSetup) return;
+      try {
+        const setup = JSON.parse(rawSetup);
+        if (!Array.isArray(setup.ranges)) return;
+        const pastedRanges = normalizeSectionRanges(setup.ranges).map((range) => ({ ...range }));
+        currentSectionPages[activeSectionPage] = pastedRanges;
+        if (!Array.isArray(editingItem.partitionTimes)) editingItem.partitionTimes = [];
+        editingItem.partitionTimes[activeSectionPage] = Number(setup.time) || 0;
+        setSegmentEditorState(pastedRanges);
+      } catch (error) {
+        return;
+      }
+    }
+
+    function normalizePartitionRecords(item) {
+      const icons = Array.isArray(item.partitionIcons) ? item.partitionIcons : [];
+      const notes = Array.isArray(item.partitionNotes) ? item.partitionNotes : [];
+      const times = Array.isArray(item.partitionTimes) ? item.partitionTimes : [];
+      const baseLength = Math.max(icons.length, notes.length, times.length, 1);
+      const records = [];
+      for (let i = 0; i < baseLength; i++) {
+        const key = icons[i] || (i === 0 ? "home" : "heart");
+        records.push({
+          key,
+          note: String(notes[i] || ""),
+          time: Number(times[i] || getPrimaryTimestampSeconds(item) || 0)
+        });
+      }
+      return records;
+    }
+
+    function persistPartitionRecords(item, records) {
+      if (!item || !item.id) return Promise.resolve(false);
+      const payload = {
+        partitionIcons: records.map((entry) => entry.key || "home"),
+        partitionNotes: records.map((entry) => String(entry.note || "")),
+        partitionTimes: records.map((entry) => Number(entry.time) || 0)
+      };
+      return setDoc(doc(db, NOTES_COLLECTION, item.id), payload, { merge: true });
+    }
+
     let hoverEditTimer = null;
+    let hoverCardCloseTimer = null;
+    let activeTitleHoverCard = null;
+
+    function closeTitleHoverCard() {
+      if (hoverCardCloseTimer) {
+        clearTimeout(hoverCardCloseTimer);
+        hoverCardCloseTimer = null;
+      }
+      if (activeTitleHoverCard) {
+        activeTitleHoverCard.remove();
+        activeTitleHoverCard = null;
+      }
+    }
+
+    function showTitleHoverCard(item, anchorEl) {
+      const existing = document.querySelector(".hover-card[data-item-id='" + item.id + "']");
+      if (existing) return;
+      closeTitleHoverCard();
+      const records = normalizePartitionRecords(item);
+      const card = document.createElement("div");
+      card.className = "hover-card";
+      card.dataset.itemId = item.id;
+      card.setAttribute("role", "dialog");
+      card.addEventListener("mouseenter", () => {
+        if (hoverCardCloseTimer) {
+          clearTimeout(hoverCardCloseTimer);
+          hoverCardCloseTimer = null;
+        }
+      });
+      card.addEventListener("mouseleave", () => {
+        hoverCardCloseTimer = setTimeout(closeTitleHoverCard, 180);
+      });
+
+      const draft = records.map((entry) => ({ ...entry }));
+      let changed = false;
+      let autosaveTimer = null;
+      let autosavePromise = Promise.resolve();
+
+      const scheduleAutosave = () => {
+        if (autosaveTimer) clearTimeout(autosaveTimer);
+        autosaveTimer = setTimeout(() => {
+          autosaveTimer = null;
+          autosavePromise = autosavePromise.then(() => persistPartitionRecords(item, draft));
+        }, 350);
+      };
+
+      records.forEach((entry, index) => {
+        const row = document.createElement("div");
+        row.className = "hover-card-row";
+
+        const icon = document.createElement("span");
+        icon.className = "icon-badge";
+        icon.textContent = getPartitionMeta(entry.key).symbol;
+
+        const noteInput = document.createElement("textarea");
+        noteInput.value = entry.note || "";
+        noteInput.rows = 1;
+        const resizeNoteInput = () => {
+          noteInput.style.height = "auto";
+          noteInput.style.height = `${noteInput.scrollHeight}px`;
+        };
+        resizeNoteInput();
+        noteInput.addEventListener("input", () => {
+          draft[index].note = noteInput.value;
+          changed = true;
+          resizeNoteInput();
+          scheduleAutosave();
+        });
+
+        row.appendChild(icon);
+        row.appendChild(noteInput);
+        card.appendChild(row);
+      });
+
+      const closeCard = async () => {
+        if (autosaveTimer) {
+          clearTimeout(autosaveTimer);
+          autosaveTimer = null;
+          autosavePromise = autosavePromise.then(() => persistPartitionRecords(item, draft));
+        }
+        await autosavePromise;
+        if (changed) {
+          await loadPageItems();
+        }
+        closeTitleHoverCard();
+      };
+
+      card.addEventListener("mousedown", (event) => event.stopPropagation());
+      card.addEventListener("click", (event) => event.stopPropagation());
+      document.body.appendChild(card);
+      activeTitleHoverCard = card;
+
+      const rect = anchorEl && anchorEl.getBoundingClientRect ? anchorEl.getBoundingClientRect() : { left: 0, top: 0, width: 0, height: 0 };
+      card.style.left = `${Math.max(8, Math.min(rect.left + 8, window.innerWidth - 348))}px`;
+      card.style.top = `${Math.min(rect.top + 26, window.innerHeight - 200)}px`;
+
+      setTimeout(() => {
+        document.addEventListener("mousedown", function onDocClick(event) {
+          if (!card.contains(event.target)) {
+            document.removeEventListener("mousedown", onDocClick);
+            void closeCard();
+          }
+        }, { once: true });
+      }, 0);
+    }
 
     function positionModalNearItem(anchorEl) {
       if (!anchorEl) return;
@@ -1711,7 +2137,7 @@
 
     function renderItem(it) {
       const wrap = document.createElement("div");
-      wrap.className = "item" + (it.groupBefore?" group-gap":"");
+      wrap.className = "item" + (it.groupBefore ? " group-gap" : "");
       if (it.isPractice) {
         wrap.classList.add("is-practice");
       }
@@ -1744,66 +2170,58 @@
       if (checkbox) wrap.appendChild(checkbox);
 
       const thumbUrl = getThumbnailUrl(it.link, it.thumbFrame);
+      const thumbWrap = document.createElement("div");
+      thumbWrap.className = "thumbnail-crop";
       if (thumbUrl) {
-        const thumbWrap = document.createElement("div");
-        thumbWrap.className = "thumbnail-crop";
         const img = document.createElement("img");
         img.src = thumbUrl;
         img.className = "item-thumbnail";
         img.alt = "Thumbnail";
         thumbWrap.appendChild(img);
-        wrap.appendChild(thumbWrap);
-      } else {
-        const thumbWrap = document.createElement("div");
-        thumbWrap.className = "thumbnail-crop";
-        wrap.appendChild(thumbWrap);
       }
+
+      const sectionPages = normalizeSectionPages(it.sectionPages, it.sectionRanges || it.sections || "");
+      const savedPartitionCount = Array.isArray(it.partitionIcons)
+        ? it.partitionIcons.filter((key) => key && key !== "home").length
+        : 0;
+      const partitionCount = Math.max(0, sectionPages.length - 1, getTitlePartsCount(it.title || "") - 1, savedPartitionCount);
+      const partitionKeys = getPartitionKeys(it, partitionCount);
+      if (partitionKeys.length && it.link) {
+        const partitionPages = sectionPages;
+        const partitionTimes = Array.isArray(it.partitionTimes) ? it.partitionTimes : [];
+        const iconOverlay = document.createElement("div");
+        iconOverlay.className = "partition-icons-overlay";
+        partitionKeys.forEach((key, index) => {
+          const iconMeta = getPartitionMeta(key);
+          const iconButton = document.createElement("button");
+          iconButton.type = "button";
+          iconButton.className = "partition-icon-trigger";
+          iconButton.dataset.partitionKey = key;
+          iconButton.textContent = iconMeta.symbol;
+          iconButton.title = `${iconMeta.label} partition`;
+          iconButton.setAttribute("aria-label", `${iconMeta.label} partition`);
+          iconButton.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const videoId = extractYouTubeID(it.link);
+            if (!videoId) return;
+            const page = partitionPages[index + 1] || [];
+            const ranges = normalizeSectionRanges(page);
+            const savedTime = Number(partitionTimes[index + 1]);
+            const startTime = Number.isFinite(savedTime) ? savedTime : getPrimaryTimestampSeconds({ sectionPages: [ranges] });
+            openVideoEmbed(videoId, startTime, 0, formatSectionRangesForStorage(ranges));
+          });
+          iconOverlay.appendChild(iconButton);
+        });
+        thumbWrap.appendChild(iconOverlay);
+      }
+
+      wrap.appendChild(thumbWrap);
 
       const titleEl = document.createElement("a");
       titleEl.className = "item-title" + (it.isText ? " text-only" : "");
       titleEl.href = "#";
-      const titleParts = splitTitlePartsPreserveEmpty(it.title || "");
-      const hasSplitTitle = titleParts.length > 1;
-      const sectionPages = normalizeSectionPages(it.sectionPages, it.sectionRanges || it.sections || "");
-      if (hasSplitTitle) {
-        titleParts.forEach((part, index) => {
-          const partEl = document.createElement("span");
-          partEl.textContent = part || `Part ${index + 1}`;
-          partEl.style.cursor = "pointer";
-          partEl.addEventListener("click", (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (it.link && (it.link.includes("youtube.com") || it.link.includes("youtu.be"))) {
-              const vid = extractYouTubeID(it.link);
-              if (vid) {
-                const ranges = sectionPages[index] || sectionPages[sectionPages.length - 1] || [];
-                openVideoEmbed(vid, 0, 0, ranges);
-              }
-            } else if (it.link) {
-              window.open(it.link, "_blank");
-            }
-          });
-
-          let titleLpTo;
-          partEl.addEventListener("mousedown", (e) => {
-            e.stopPropagation();
-            titleLpTo = setTimeout(() => openEditModal(it, false, wrap), 1000);
-          });
-          ["mouseup", "mouseleave"].forEach((ev) => partEl.addEventListener(ev, () => {
-            clearTimeout(titleLpTo);
-          }));
-
-          titleEl.appendChild(partEl);
-          if (index < titleParts.length - 1) {
-            const separator = document.createElement("span");
-            separator.className = "split-separator";
-            separator.textContent = "/";
-            titleEl.appendChild(separator);
-          }
-        });
-      } else {
-        titleEl.textContent = it.title || "!";
-      }
+      titleEl.textContent = it.title || "!";
 
       const titleRow = document.createElement("div");
       titleRow.className = "item-title-row";
@@ -1817,7 +2235,17 @@
       titleRow.appendChild(titleEl);
       wrap.appendChild(titleRow);
 
-      wrap.addEventListener("mouseenter", () => {
+      titleRow.addEventListener("mouseenter", () => {
+        if (deleteMode || checkMode) return;
+        showTitleHoverCard(it, titleRow);
+      });
+      titleRow.addEventListener("mouseleave", () => {
+        if (activeTitleHoverCard) {
+          hoverCardCloseTimer = setTimeout(closeTitleHoverCard, 180);
+        }
+      });
+
+      thumbWrap.addEventListener("mouseenter", () => {
         if (deleteMode || checkMode) return;
         if (hoverEditTimer) clearTimeout(hoverEditTimer);
         hoverEditTimer = setTimeout(() => {
@@ -1825,7 +2253,7 @@
         }, 1000);
       });
 
-      wrap.addEventListener("mouseleave", () => {
+      thumbWrap.addEventListener("mouseleave", () => {
         if (hoverEditTimer) {
           clearTimeout(hoverEditTimer);
           hoverEditTimer = null;
@@ -1842,7 +2270,7 @@
         if (Date.now() < suppressClickUntil) {
           return;
         }
-        
+
         if (deleteMode) {
           if (selectedItems.has(it.id)) {
             selectedItems.delete(it.id);
@@ -1853,9 +2281,9 @@
           }
           return;
         }
-        
-        if (it.title2 !== undefined || hasSplitTitle) return;
-        
+
+        if (it.title2 !== undefined) return;
+
         if (!it.link && (!it.title || it.title === "!")) {
           openEditModal(it);
           return;
@@ -1881,10 +2309,10 @@
         void moveItemToFrontOfGroup(it.id);
       });
 
-      wrap.addEventListener("mousedown", (e) => { 
+      wrap.addEventListener("mousedown", (e) => {
         if (deleteMode || checkMode) return;
         if (it.title2 !== undefined) return;
-        lpTo = setTimeout(()=> {
+        lpTo = setTimeout(() => {
           suppressClickUntil = Date.now() + 600;
           if (selectedMoveItem !== it.id) {
             if (selectedMoveItem) {
@@ -1893,11 +2321,10 @@
             }
             selectedMoveItem = it.id;
             wrap.classList.add("move-selected");
-            console.log("Item selected for moving:", it.id);
           }
-        }, 1000); 
+        }, 1000);
       });
-      ["mouseup","mouseleave"].forEach(ev => wrap.addEventListener(ev, () => { 
+      ["mouseup","mouseleave"].forEach(ev => wrap.addEventListener(ev, () => {
         clearTimeout(lpTo);
       }));
 
@@ -1961,10 +2388,11 @@
       }
 
       initializeSectionPagesForModal(it);
+      modalBaseline = captureModalBaseline();
 
       renderItemToggleButtons();
       renderTagPicker();
-      
+
       modal.style.display = "block";
       positionModalNearItem(anchorEl || document.querySelector(`[data-id="${it.id}"]`));
       inpTitle.focus();
@@ -1981,17 +2409,48 @@
       currentSectionPages = [[]];
       activeSectionPage = 0;
       isSavingItem = false;
+      modalBaseline = null;
+    }
+
+    let modalBaseline = null;
+
+    function captureModalBaseline() {
+      if (!editingItem) return null;
+      const sectionRanges = readSegmentEditorState();
+      return JSON.stringify({
+        link: inpLink.value.trim(),
+        title: inpTitle.value.trim(),
+        notes: inpNotes.value.trim(),
+        sectionRanges,
+        partitionIcons: Array.isArray(editingItem.partitionIcons) ? [...editingItem.partitionIcons] : [],
+        tag: editingPrimaryTag || "",
+        favorite: editingIsFavorite,
+        practice: editingIsPractice,
+        stock: editingIsStock
+      });
+    }
+
+    function modalHasChanges() {
+      if (!editingItem) return false;
+      saveCurrentSectionPageDraft();
+      const current = captureModalBaseline();
+      return current !== modalBaseline;
     }
 
     inpTitle.addEventListener("input", () => {
       if (!editingItem || editingSecondPart) return;
       saveCurrentSectionPageDraft();
-      ensureSectionPageCount(getTitlePartsCount(inpTitle.value));
+      ensureSectionPageCount(Math.max(1, currentSectionPages.length || getTitlePartsCount(inpTitle.value)));
       renderSectionTabs();
     });
 
     async function saveEditingItem() {
       if (!editingItem || isSavingItem) return;
+      saveCurrentSectionPageDraft();
+      if (!modalHasChanges()) {
+        closeEditModal();
+        return;
+      }
       isSavingItem = true;
       try {
         const itemId = editingItem.id;
@@ -2001,11 +2460,12 @@
         const title = inpTitle.value.trim();
         const text = inpNotes.value.trim();
         const tags = editingPrimaryTag ? [editingPrimaryTag] : [];
+        const partitionRecords = normalizePartitionRecords(editingItem);
 
-        saveCurrentSectionPageDraft();
-        ensureSectionPageCount(getTitlePartsCount(title));
+        ensureSectionPageCount(Math.max(1, currentSectionPages.length || getTitlePartsCount(title)));
         const normalizedPages = currentSectionPages.map((pageRanges) => normalizeSectionRanges(pageRanges));
         const sectionPages = normalizedPages.map((ranges) => ({ ranges }));
+        const partitionIcons = ["home", ...getPartitionKeys(editingItem, Math.max(0, normalizedPages.length - 1))];
         const primarySectionRanges = normalizeSectionRanges(normalizedPages[0] || []);
         const sections = formatSectionRangesForStorage(primarySectionRanges);
 
@@ -2017,6 +2477,9 @@
             link2: link,
             title2: title || (link ? "(untitled)" : "!"),
             tags,
+            partitionIcons,
+            partitionNotes: partitionRecords.map((entry) => String(entry.note || "")),
+            partitionTimes: partitionRecords.map((entry) => Number(entry.time) || 0),
             isFavorite: editingIsFavorite,
             isPractice: editingIsPractice,
             isStock: editingIsStock,
@@ -2030,6 +2493,9 @@
             link,
             title: title || (link ? "(untitled)" : "!"),
             tags,
+            partitionIcons,
+            partitionNotes: partitionRecords.map((entry) => String(entry.note || "")),
+            partitionTimes: partitionRecords.map((entry) => Number(entry.time) || 0),
             isFavorite: editingIsFavorite,
             isPractice: editingIsPractice,
             isStock: editingIsStock,
@@ -2060,14 +2526,24 @@
       }
     }
 
-    btnCancel.addEventListener("click", closeEditModal);
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeEditModal(); closeVideo(); } });
+    btnCancel.addEventListener("click", () => {
+      if (modalHasChanges()) {
+        void saveEditingItem();
+      } else {
+        closeEditModal();
+      }
+    });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") { if (modal.style.display === "block") { if (modalHasChanges()) { void saveEditingItem(); } else { closeEditModal(); } } closeVideo(); } });
 
     document.addEventListener("mousedown", async (e) => {
       if (modal.style.display !== "block" || !editingItem) return;
       const modalContent = document.getElementById("modal-content");
       if (modalContent && modalContent.contains(e.target)) return;
-      await saveEditingItem();
+      if (modalHasChanges()) {
+        await saveEditingItem();
+      } else {
+        closeEditModal();
+      }
     });
 
     btnSave.addEventListener("click", async () => {
