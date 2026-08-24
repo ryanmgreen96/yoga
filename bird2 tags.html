@@ -138,8 +138,8 @@
       font-family: "Segoe UI Symbol", "Noto Sans Symbols", sans-serif;
     }
     .partition-icon-trigger[data-partition-key="heart"] { color: #ff6b81; }
-    .partition-icon-trigger[data-partition-key="gear"] { color: #8ec5ff; }
-    .partition-icon-trigger[data-partition-key="complex"] { color: #c7a6ff; }
+    .partition-icon-trigger[data-partition-key="gear"] { color: #6fa9d8; }
+    .partition-icon-trigger[data-partition-key="complex"] { color: #249a3d; }
     .partition-icon-trigger[data-partition-key="clock"] { color: #ffd166; }
     .partition-icon-trigger[data-partition-key="arrow"] { color: #72e0b8; }
     .partition-icon-trigger:hover,
@@ -196,8 +196,8 @@
     }
     .partition-menu-btn:hover { color: var(--gold); }
     .partition-menu-btn[data-partition-key="heart"] { color: #ff6b81; }
-    .partition-menu-btn[data-partition-key="gear"] { color: #8ec5ff; }
-    .partition-menu-btn[data-partition-key="complex"] { color: #c7a6ff; }
+    .partition-menu-btn[data-partition-key="gear"] { color: #6fa9d8; }
+    .partition-menu-btn[data-partition-key="complex"] { color: #249a3d; }
     .partition-menu-btn[data-partition-key="clock"] { color: #ffd166; }
     .partition-menu-btn[data-partition-key="arrow"] { color: #72e0b8; }
     .hover-card {
@@ -230,6 +230,18 @@
       background: rgba(255,255,255,0.08);
       font-size: 14px;
     }
+    .hover-card-row button.icon-badge {
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      padding: 0;
+    }
+    .hover-card-row button.icon-badge:hover { background: rgba(255,255,255,0.2); }
+    .hover-card-row button.icon-badge[data-partition-key="heart"] { color: #ff6b81; }
+    .hover-card-row button.icon-badge[data-partition-key="gear"] { color: #6fa9d8; }
+    .hover-card-row button.icon-badge[data-partition-key="complex"] { color: #249a3d; }
+    .hover-card-row button.icon-badge[data-partition-key="clock"] { color: #ffd166; }
+    .hover-card-row button.icon-badge[data-partition-key="arrow"] { color: #72e0b8; }
     .hover-card-row input,
     .hover-card-row textarea {
       width: 100%;
@@ -299,8 +311,8 @@
     .section-tab-btn:hover { color:var(--gold); }
     .section-tab-btn.active { background:transparent; color:var(--gold); }
     .section-tab-btn[data-partition-key="heart"] { color: #ff6b81; }
-    .section-tab-btn[data-partition-key="gear"] { color: #8ec5ff; }
-    .section-tab-btn[data-partition-key="complex"] { color: #c7a6ff; }
+    .section-tab-btn[data-partition-key="gear"] { color: #6fa9d8; }
+    .section-tab-btn[data-partition-key="complex"] { color: #249a3d; }
     .section-tab-btn[data-partition-key="clock"] { color: #ffd166; }
     .section-tab-btn[data-partition-key="arrow"] { color: #72e0b8; }
     .section-tab-add {
@@ -2011,7 +2023,19 @@
       return setDoc(doc(db, NOTES_COLLECTION, item.id), payload, { merge: true });
     }
 
+    function openPartitionTimestamp(item, partitionIndex) {
+      const videoId = extractYouTubeID(item.link);
+      if (!videoId) return;
+      const sectionPages = normalizeSectionPages(item.sectionPages, item.sectionRanges || item.sections || "");
+      const ranges = normalizeSectionRanges(sectionPages[partitionIndex] || []);
+      const partitionTimes = Array.isArray(item.partitionTimes) ? item.partitionTimes : [];
+      const savedTime = Number(partitionTimes[partitionIndex]);
+      const startTime = Number.isFinite(savedTime) ? savedTime : getPrimaryTimestampSeconds({ sectionPages: [ranges] });
+      openVideoEmbed(videoId, startTime, 0, formatSectionRangesForStorage(ranges));
+    }
+
     let hoverEditTimer = null;
+    let titleHoverTimer = null;
     let hoverCardCloseTimer = null;
     let activeTitleHoverCard = null;
 
@@ -2042,7 +2066,7 @@
         }
       });
       card.addEventListener("mouseleave", () => {
-        hoverCardCloseTimer = setTimeout(closeTitleHoverCard, 180);
+        hoverCardCloseTimer = setTimeout(() => void closeCard(), 650);
       });
 
       const draft = records.map((entry) => ({ ...entry }));
@@ -2062,9 +2086,19 @@
         const row = document.createElement("div");
         row.className = "hover-card-row";
 
-        const icon = document.createElement("span");
+        const icon = document.createElement("button");
+        icon.type = "button";
         icon.className = "icon-badge";
+        icon.dataset.partitionKey = entry.key;
         icon.textContent = getPartitionMeta(entry.key).symbol;
+        icon.title = `Open ${getPartitionMeta(entry.key).label} timestamp`;
+        icon.setAttribute("aria-label", `Open ${getPartitionMeta(entry.key).label} timestamp`);
+        icon.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          openPartitionTimestamp(item, index);
+          void closeCard();
+        });
 
         const noteInput = document.createElement("textarea");
         noteInput.value = entry.note || "";
@@ -2098,11 +2132,18 @@
         }
         closeTitleHoverCard();
       };
+      card._closeCard = closeCard;
 
       card.addEventListener("mousedown", (event) => event.stopPropagation());
       card.addEventListener("click", (event) => event.stopPropagation());
       document.body.appendChild(card);
       activeTitleHoverCard = card;
+      requestAnimationFrame(() => {
+        card.querySelectorAll("textarea").forEach((textarea) => {
+          textarea.style.height = "auto";
+          textarea.style.height = `${textarea.scrollHeight}px`;
+        });
+      });
 
       const rect = anchorEl && anchorEl.getBoundingClientRect ? anchorEl.getBoundingClientRect() : { left: 0, top: 0, width: 0, height: 0 };
       card.style.left = `${Math.max(8, Math.min(rect.left + 8, window.innerWidth - 348))}px`;
@@ -2186,10 +2227,9 @@
         : 0;
       const partitionCount = Math.max(0, sectionPages.length - 1, getTitlePartsCount(it.title || "") - 1, savedPartitionCount);
       const partitionKeys = getPartitionKeys(it, partitionCount);
+      let iconOverlay = null;
       if (partitionKeys.length && it.link) {
-        const partitionPages = sectionPages;
-        const partitionTimes = Array.isArray(it.partitionTimes) ? it.partitionTimes : [];
-        const iconOverlay = document.createElement("div");
+        iconOverlay = document.createElement("div");
         iconOverlay.className = "partition-icons-overlay";
         partitionKeys.forEach((key, index) => {
           const iconMeta = getPartitionMeta(key);
@@ -2203,13 +2243,7 @@
           iconButton.addEventListener("click", (event) => {
             event.preventDefault();
             event.stopPropagation();
-            const videoId = extractYouTubeID(it.link);
-            if (!videoId) return;
-            const page = partitionPages[index + 1] || [];
-            const ranges = normalizeSectionRanges(page);
-            const savedTime = Number(partitionTimes[index + 1]);
-            const startTime = Number.isFinite(savedTime) ? savedTime : getPrimaryTimestampSeconds({ sectionPages: [ranges] });
-            openVideoEmbed(videoId, startTime, 0, formatSectionRangesForStorage(ranges));
+            openPartitionTimestamp(it, index + 1);
           });
           iconOverlay.appendChild(iconButton);
         });
@@ -2237,11 +2271,26 @@
 
       titleRow.addEventListener("mouseenter", () => {
         if (deleteMode || checkMode) return;
-        showTitleHoverCard(it, titleRow);
+        if (titleHoverTimer) clearTimeout(titleHoverTimer);
+        if (hoverCardCloseTimer) {
+          clearTimeout(hoverCardCloseTimer);
+          hoverCardCloseTimer = null;
+        }
+        titleHoverTimer = setTimeout(() => {
+          titleHoverTimer = null;
+          showTitleHoverCard(it, titleRow);
+        }, 550);
       });
       titleRow.addEventListener("mouseleave", () => {
+        if (titleHoverTimer) {
+          clearTimeout(titleHoverTimer);
+          titleHoverTimer = null;
+        }
         if (activeTitleHoverCard) {
-          hoverCardCloseTimer = setTimeout(closeTitleHoverCard, 180);
+          hoverCardCloseTimer = setTimeout(() => {
+            const card = activeTitleHoverCard;
+            if (card && !card.matches(":hover")) void card._closeCard();
+          }, 650);
         }
       });
 
@@ -2249,6 +2298,10 @@
         if (deleteMode || checkMode) return;
         if (hoverEditTimer) clearTimeout(hoverEditTimer);
         hoverEditTimer = setTimeout(() => {
+          if (iconOverlay?.matches(":hover")) {
+            hoverEditTimer = null;
+            return;
+          }
           openEditModal(it, false, wrap);
         }, 1000);
       });
@@ -2258,6 +2311,16 @@
           clearTimeout(hoverEditTimer);
           hoverEditTimer = null;
         }
+      });
+      const cancelThumbnailEdit = () => {
+        if (hoverEditTimer) {
+          clearTimeout(hoverEditTimer);
+          hoverEditTimer = null;
+        }
+      };
+      iconOverlay?.addEventListener("mouseenter", () => {
+        cancelThumbnailEdit();
+        if (editingItem?.id === it.id) closeEditModal();
       });
 
       let lpTo;
