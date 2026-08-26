@@ -200,6 +200,24 @@
     .partition-menu-btn[data-partition-key="complex"] { color: #249a3d; }
     .partition-menu-btn[data-partition-key="clock"] { color: #ffd166; }
     .partition-menu-btn[data-partition-key="arrow"] { color: #72e0b8; }
+    .partition-context-menu {
+      position: fixed;
+      z-index: 10020;
+      padding: 4px;
+      background: #202020;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 4px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.45);
+    }
+    .partition-context-menu button {
+      border: none;
+      background: transparent;
+      color: #fff;
+      padding: 7px 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .partition-context-menu button:hover { background: #8b0000; }
     .hover-card {
       position: fixed;
       z-index: 10002;
@@ -1712,7 +1730,7 @@
             const it = docSnap.data();
             if (it.link && (it.link.includes('youtube.com')||it.link.includes('youtu.be'))) {
               const vid = extractYouTubeID(it.link);
-              if (vid) openVideoEmbed(vid,0,0,it.sectionRanges || it.sections || '');
+              if (vid) openVideoEmbed(vid,null,0,it.sectionRanges || it.sections || '');
             } else if (it.link) {
               window.open(it.link, '_blank');
             }
@@ -2023,15 +2041,50 @@
       return setDoc(doc(db, NOTES_COLLECTION, item.id), payload, { merge: true });
     }
 
+    async function deletePartition(item, partitionIndex) {
+      if (!item || !item.id || partitionIndex < 1) return;
+      const sectionPages = normalizeSectionPages(item.sectionPages, item.sectionRanges || item.sections || "");
+      const partitionIcons = Array.isArray(item.partitionIcons) ? [...item.partitionIcons] : ["home"];
+      const partitionNotes = Array.isArray(item.partitionNotes) ? [...item.partitionNotes] : [];
+      const partitionTimes = Array.isArray(item.partitionTimes) ? [...item.partitionTimes] : [];
+      const titleParts = splitTitlePartsPreserveEmpty(item.title || "");
+
+      sectionPages.splice(partitionIndex, 1);
+      partitionIcons.splice(partitionIndex, 1);
+      partitionNotes.splice(partitionIndex, 1);
+      partitionTimes.splice(partitionIndex, 1);
+      if (titleParts.length > partitionIndex) titleParts.splice(partitionIndex, 1);
+
+      await setDoc(doc(db, NOTES_COLLECTION, item.id), {
+        title: titleParts.join(" // ").trim(),
+        sectionPages: sectionPages.map((ranges) => ({ ranges })),
+        partitionIcons: partitionIcons.length ? partitionIcons : ["home"],
+        partitionNotes,
+        partitionTimes
+      }, { merge: true });
+      await loadPageItems();
+    }
+
     function openPartitionTimestamp(item, partitionIndex) {
       const videoId = extractYouTubeID(item.link);
       if (!videoId) return;
       const sectionPages = normalizeSectionPages(item.sectionPages, item.sectionRanges || item.sections || "");
-      const ranges = normalizeSectionRanges(sectionPages[partitionIndex] || []);
       const partitionTimes = Array.isArray(item.partitionTimes) ? item.partitionTimes : [];
+      const selectedRanges = normalizeSectionRanges(sectionPages[partitionIndex] || []);
       const savedTime = Number(partitionTimes[partitionIndex]);
-      const startTime = Number.isFinite(savedTime) ? savedTime : getPrimaryTimestampSeconds({ sectionPages: [ranges] });
-      openVideoEmbed(videoId, startTime, 0, formatSectionRangesForStorage(ranges));
+      const rangeStart = Number(selectedRanges[0]?.start);
+      const startTime = Number.isFinite(rangeStart)
+        ? rangeStart
+        : (Number.isFinite(savedTime) ? savedTime : 0);
+      const playbackRanges = selectedRanges.map((range, index) => {
+        if (index !== 0) return range;
+        return {
+          ...range,
+          start: startTime,
+          end: range.end > startTime ? range.end : OPEN_ENDED_SECTION_END
+        };
+      });
+      openVideoEmbed(videoId, startTime, 0, playbackRanges);
     }
 
     let hoverEditTimer = null;
@@ -2245,6 +2298,36 @@
             event.stopPropagation();
             openPartitionTimestamp(it, index + 1);
           });
+          iconButton.addEventListener("contextmenu", async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            document.querySelector(".partition-context-menu")?.remove();
+            const contextMenu = document.createElement("div");
+            contextMenu.className = "partition-context-menu";
+            const deleteButton = document.createElement("button");
+            deleteButton.type = "button";
+            deleteButton.textContent = `Delete ${iconMeta.label} icon`;
+            deleteButton.addEventListener("click", async () => {
+              contextMenu.remove();
+              try {
+                await deletePartition(it, index + 1);
+              } catch (error) {
+                console.error("Failed to delete partition", error);
+                window.alert("The partition could not be deleted.");
+              }
+            });
+            contextMenu.appendChild(deleteButton);
+            contextMenu.style.left = `${Math.min(event.clientX, window.innerWidth - 180)}px`;
+            contextMenu.style.top = `${Math.min(event.clientY, window.innerHeight - 44)}px`;
+            document.body.appendChild(contextMenu);
+            const closeContextMenu = (closeEvent) => {
+              if (!contextMenu.contains(closeEvent.target)) {
+                contextMenu.remove();
+                document.removeEventListener("mousedown", closeContextMenu);
+              }
+            };
+            document.addEventListener("mousedown", closeContextMenu);
+          });
           iconOverlay.appendChild(iconButton);
         });
         thumbWrap.appendChild(iconOverlay);
@@ -2353,7 +2436,7 @@
         }
         if (it.link && (it.link.includes("youtube.com") || it.link.includes("youtu.be"))) {
           const vid = extractYouTubeID(it.link);
-          if (vid) openVideoEmbed(vid, 0, 0, it.sectionRanges || it.sections || "");
+          if (vid) openVideoEmbed(vid, null, 0, it.sectionRanges || it.sections || "");
         } else if (it.link) {
           window.open(it.link, "_blank");
         }
@@ -2631,10 +2714,12 @@
       await loadPageItems();
     });
 
-    function openVideoEmbed(videoID, startTime=0, endTime=0, sectionsInput="") {
+    function openVideoEmbed(videoID, startTime=null, endTime=0, sectionsInput="") {
       currentSections = buildPlaybackSections(sectionsInput);
       console.log("Parsed sections:", currentSections);
-      const actualStartTime = currentSections.length > 0 ? currentSections[0].start : startTime;
+      const actualStartTime = startTime === null
+        ? (currentSections.length > 0 ? currentSections[0].start : 0)
+        : Number(startTime) || 0;
       
       currentVideoID = videoID;
       currentStartTime = actualStartTime;
@@ -2688,7 +2773,17 @@
     }
     function onPlayerReady(e) {
       console.log("Player ready!");
-      try { e.target.unMute(); e.target.setVolume(50); e.target.playVideo(); } catch(e) { console.error("Error in onPlayerReady:", e); }
+      try {
+        e.target.unMute();
+        e.target.setVolume(50);
+        e.target.seekTo(Math.floor(currentStartTime), true);
+        e.target.playVideo();
+        const playerFrame = e.target.getIframe();
+        if (playerFrame) {
+          playerFrame.setAttribute("tabindex", "0");
+          playerFrame.focus();
+        }
+      } catch(e) { console.error("Error in onPlayerReady:", e); }
     }
     function onPlayerStateChange(e) { 
       console.log("Player state changed:", e.data);
@@ -2738,21 +2833,24 @@
           videoPlayer.seekTo(next.start);
           lastCheckedTime = next.start;
         } else if (currentSectionIndex<currentSections.length-1) {
-          videoPlayer.pauseVideo(); 
-          isPaused=true; 
           let nextIndex = currentSectionIndex + 1;
           let next = currentSections[nextIndex];
           while (next && next.isGap && nextIndex < currentSections.length - 1) {
             const nextNext = currentSections[nextIndex + 1];
             if (nextNext && Math.abs(next.end - nextNext.start) < 1) {
-              console.log("Prompt: Skipping through gap section:", next);
+              console.log("Automatically skipping through gap section:", next);
               nextIndex++;
               next = currentSections[nextIndex];
             } else {
               break;
             }
           }
-          if (next) showSectionPrompt(next.start, nextIndex);
+          if (next) {
+            currentSectionIndex = nextIndex;
+            videoPlayer.seekTo(next.start);
+            videoPlayer.playVideo();
+            lastCheckedTime = next.start;
+          }
         } else if (!sec.autoSkip) {
           try {
             videoPlayer.seekTo(sec.end);
