@@ -75,6 +75,16 @@
       }
     }
     .item { position: relative; background: rgba(161, 24, 48, 0.45); border-radius: 2px; padding: 0; display:flex; flex-direction: column; gap:1px; border: 1px solid rgba(148, 30, 52, 0.55); min-width: 0; max-width: none; flex: 0 0 calc((100% - (var(--item-gap) * 5)) / 6); overflow: visible; }
+    @media (max-width: 599px) {
+      .section-items {
+        width: 100%;
+      }
+      .item {
+        flex: 0 0 100%;
+        width: 100%;
+        max-width: 100%;
+      }
+    }
     .item.is-practice { background: rgba(250,204,21,0.36); border: 2px solid var(--practice-border); }
     .item-checkbox { width: 17px; height: 17px; margin-right: 6px; cursor: pointer; }
     .item-title-row { display: flex; align-items: flex-start; min-height: 0; padding: 1px 2px; overflow: visible; }
@@ -136,6 +146,16 @@
       cursor: pointer;
       text-shadow: 0 1px 3px rgba(0,0,0,0.95), 0 0 2px #000;
       font-family: "Segoe UI Symbol", "Noto Sans Symbols", sans-serif;
+    }
+    @media (max-width: 599px) {
+      .partition-icons-overlay {
+        right: 12px;
+        bottom: 10px;
+        gap: 18px;
+      }
+      .partition-icon-trigger {
+        font-size: 153px;
+      }
     }
     .partition-icon-trigger[data-partition-key="heart"] { color: #ff6b81; }
     .partition-icon-trigger[data-partition-key="gear"] { color: #6fa9d8; }
