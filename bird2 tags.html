@@ -2321,32 +2321,13 @@
           iconButton.addEventListener("contextmenu", async (event) => {
             event.preventDefault();
             event.stopPropagation();
-            document.querySelector(".partition-context-menu")?.remove();
-            const contextMenu = document.createElement("div");
-            contextMenu.className = "partition-context-menu";
-            const deleteButton = document.createElement("button");
-            deleteButton.type = "button";
-            deleteButton.textContent = `Delete ${iconMeta.label} icon`;
-            deleteButton.addEventListener("click", async () => {
-              contextMenu.remove();
-              try {
-                await deletePartition(it, index + 1);
-              } catch (error) {
-                console.error("Failed to delete partition", error);
-                window.alert("The partition could not be deleted.");
-              }
-            });
-            contextMenu.appendChild(deleteButton);
-            contextMenu.style.left = `${Math.min(event.clientX, window.innerWidth - 180)}px`;
-            contextMenu.style.top = `${Math.min(event.clientY, window.innerHeight - 44)}px`;
-            document.body.appendChild(contextMenu);
-            const closeContextMenu = (closeEvent) => {
-              if (!contextMenu.contains(closeEvent.target)) {
-                contextMenu.remove();
-                document.removeEventListener("mousedown", closeContextMenu);
-              }
-            };
-            document.addEventListener("mousedown", closeContextMenu);
+            if (!window.confirm(`Delete the ${iconMeta.label} icon and its section?`)) return;
+            try {
+              await deletePartition(it, index + 1);
+            } catch (error) {
+              console.error("Failed to delete partition", error);
+              window.alert("The partition could not be deleted.");
+            }
           });
           iconOverlay.appendChild(iconButton);
         });
