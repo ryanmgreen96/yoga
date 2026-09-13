@@ -30,8 +30,9 @@
     .page-tab.fav-tab { color: #fff; background: rgba(43, 107, 43, 0.92); border-color: #1f4f1f; }
     .page-tab.fav-tab:hover { background: #2f7a2f; }
     .page-tab.fav-tab.active { background: #3f9442; border-color: #1f4f1f; box-shadow: 0 0 0 2px rgba(63, 148, 66, 0.5); }
-    .page-tab.gear-tab { color: var(--gold); background: transparent; border: none; box-shadow: none; padding: 3px 6px; }
+    .page-tab.gear-tab { color: var(--gold); background: transparent; border: 1px solid transparent; border-radius: 6px; box-shadow: none; padding: 3px 6px; }
     .page-tab.gear-tab:hover { background: rgba(255,215,0,0.12); }
+    .page-tab.gear-tab.active { background: rgba(255,215,0,0.28); border-color: #ffe066; box-shadow: 0 0 0 2px rgba(255,224,102,0.65); }
     .page-tab.hidden-tag { background: rgba(185, 28, 28, 0.25); border-color: rgba(248, 113, 113, 0.8); box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.35); }
     .header a { color: var(--gold); font-weight: 700; text-decoration: none; }
     .header a:hover { text-decoration: underline; }
@@ -509,7 +510,7 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     const SITE_KEY = (urlParams.get("siteKey") || "birdfresh2").trim();
-    const TAGS = ["rinse", "twist", "peace", "rise"];
+    const TAGS = ["rinse", "foundation", "peace", "rise"];
     const TAG_SET = new Set(TAGS);
     const PAGES_COLLECTION = SITE_KEY ? `${SITE_KEY}_pages` : "pages";
     const NOTES_COLLECTION = SITE_KEY ? `${SITE_KEY}_notes` : "notes";
@@ -523,7 +524,6 @@
     const ACTIVE_TAGS_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_activeFilterTags` : "activeFilterTags";
     const HIDDEN_TAGS_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_hiddenFilterTags` : "hiddenFilterTags";
     const FAVORITES_FILTER_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_favoriteFilter` : "favoriteFilter";
-    const HIDE_STOCK_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_hideStockItems` : "hideStockItems";
     const STOCK_FILTER_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_stockFilter` : "stockFilter";
     const TIMESTAMP_SETUP_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_timestampSetup` : "timestampSetup";
     const OPEN_ENDED_SECTION_END = 999999;
@@ -532,7 +532,6 @@
     const activeFilterTags = new Set();
     const hiddenFilterTags = new Set();
     let favoriteFilterActive = false;
-    let hideStockItems = false;
     let stockFilterActive = false;
 
     function safeLocalStorageGet(key) {
@@ -568,7 +567,6 @@
       safeLocalStorageSet(ACTIVE_TAGS_STORAGE_KEY, JSON.stringify([...activeFilterTags]));
       safeLocalStorageSet(HIDDEN_TAGS_STORAGE_KEY, JSON.stringify([...hiddenFilterTags]));
       safeLocalStorageSet(FAVORITES_FILTER_STORAGE_KEY, favoriteFilterActive ? "1" : "0");
-      safeLocalStorageSet(HIDE_STOCK_STORAGE_KEY, hideStockItems ? "1" : "0");
       safeLocalStorageSet(STOCK_FILTER_STORAGE_KEY, stockFilterActive ? "1" : "0");
     }
 
@@ -582,7 +580,6 @@
       storedActive.forEach((tag) => activeFilterTags.add(tag));
       storedHidden.forEach((tag) => hiddenFilterTags.add(tag));
       favoriteFilterActive = storedFavFilter === null ? true : storedFavFilter === "1";
-      hideStockItems = safeLocalStorageGet(HIDE_STOCK_STORAGE_KEY) === "1";
       stockFilterActive = safeLocalStorageGet(STOCK_FILTER_STORAGE_KEY) === "1";
     }
 
@@ -630,6 +627,8 @@
     let openNotesPage = null;
 
     let videoPlayer = null;
+    let youtubeSetupTimer = null;
+    let youtubeSetupInterval = null;
     let currentSections = [];
     let currentSectionIndex = 0;
     let isPaused = false;
@@ -698,7 +697,6 @@
         favoriteFilterActive = !favoriteFilterActive;
         if (favoriteFilterActive) {
           activeFilterTags.clear();
-          stockFilterActive = false;
         }
         persistTagFilterState();
         renderTagTabs();
@@ -713,7 +711,6 @@
         tab.addEventListener("click", async () => {
           const isOnlyActive = activeFilterTags.size === 1 && activeFilterTags.has(tag);
           favoriteFilterActive = isOnlyActive;
-          stockFilterActive = false;
           activeFilterTags.clear();
           if (!isOnlyActive) {
             activeFilterTags.add(tag);
@@ -737,29 +734,17 @@
       });
 
       const wrenchTab = document.createElement("button");
-      wrenchTab.className = "page-tab gear-tab" + (stockFilterActive ? " active" : "") + (hideStockItems ? " hidden-tag" : "");
+      wrenchTab.className = "page-tab gear-tab" + (stockFilterActive ? " active" : "");
       wrenchTab.textContent = "🔧";
-      wrenchTab.title = hideStockItems ? "Stock view / stock hidden in normal view" : "Stock view";
+      wrenchTab.title = "Stock view";
       wrenchTab.addEventListener("click", async () => {
-        if (stockFilterActive) {
-          stockFilterActive = false;
-          favoriteFilterActive = true;
-          activeFilterTags.clear();
-        } else {
-          stockFilterActive = true;
-          favoriteFilterActive = false;
-          activeFilterTags.clear();
-        }
+        stockFilterActive = !stockFilterActive;
         persistTagFilterState();
         renderTagTabs();
         await loadPageItems();
       });
-      wrenchTab.addEventListener("contextmenu", async (event) => {
+      wrenchTab.addEventListener("contextmenu", (event) => {
         event.preventDefault();
-        hideStockItems = !hideStockItems;
-        persistTagFilterState();
-        renderTagTabs();
-        await loadPageItems();
       });
       pageTabs.appendChild(wrenchTab);
     }
@@ -1600,18 +1585,16 @@
     }
 
     function shouldShowItemByTags(itemTags, isFavorite, isStock) {
-      const hasHiddenTag = itemTags.some((tag) => hiddenFilterTags.has(tag));
-      const hasActiveTag = itemTags.some((tag) => activeFilterTags.has(tag));
-      const hasExplicitSelection = favoriteFilterActive || stockFilterActive || activeFilterTags.size > 0;
-
-      // Stock items never appear inside normal tag views.
-      if (!stockFilterActive && activeFilterTags.size > 0 && isStock) {
+      if (stockFilterActive !== !!isStock) {
         return false;
       }
 
+      const hasHiddenTag = itemTags.some((tag) => hiddenFilterTags.has(tag));
+      const hasActiveTag = itemTags.some((tag) => activeFilterTags.has(tag));
+      const hasExplicitSelection = favoriteFilterActive || activeFilterTags.size > 0;
+
       if (hasExplicitSelection) {
         if (favoriteFilterActive && isFavorite) return true;
-        if (stockFilterActive && isStock) return true;
         if (hasActiveTag) return true;
         return false;
       }
@@ -1658,11 +1641,14 @@
       return String(a.id).localeCompare(String(b.id));
     }
 
+    let pageItemsLoadRequest = 0;
     async function loadPageItems() {
+      const requestId = ++pageItemsLoadRequest;
       columnsDiv.innerHTML = "";
       itemButtons.clear();
 
       const snap = await getDocs(collection(db, NOTES_COLLECTION));
+      if (requestId !== pageItemsLoadRequest) return;
       const allItems = [];
       snap.forEach((d) => {
         const it = d.data();
@@ -1677,6 +1663,7 @@
           return;
         }
       }
+      if (requestId !== pageItemsLoadRequest) return;
 
       const items = allItems
         .map((it) => {
@@ -1688,7 +1675,6 @@
           return { ...it, tags, duration, isPractice, isFavorite, isStock };
         })
         .filter((it) => shouldShowItemByTags(it.tags, it.isFavorite, it.isStock))
-        .filter((it) => stockFilterActive || !hideStockItems || !it.isStock)
         .sort((a, b) => compareItemsForDisplay(a, b));
 
       const visibleTagOrder = getVisibleTagOrder();
@@ -2493,7 +2479,7 @@
         await setDoc(doc(db, NOTES_COLLECTION, item.id), { order: item.newOrder }, { merge: true });
       }
       const id = `all_${Date.now()}`;
-      const newItem = { id, page: "all", col: colIdx, order: refOrder + 1, title: "!", isText:false, tags: [getDefaultPrimaryTag()], isFavorite: false, isPractice: false, isStock: false };
+      const newItem = { id, page: "all", col: colIdx, order: refOrder + 1, title: "!", isText:false, tags: [getDefaultPrimaryTag()], isFavorite: false, isPractice: false, isStock: stockFilterActive };
       if (groupBefore) newItem.groupBefore = true;
       await setDoc(doc(db, NOTES_COLLECTION, id), newItem);
       await loadPageItems();
@@ -2507,7 +2493,7 @@
     async function addItemRight(refItem) {
       const colIdx = (refItem.col ?? 0) + 1;
       const id = `all_${Date.now()}`;
-      const newItem = { id, page: "all", col: colIdx, order: 0, title: "!", isText:false, tags: [getDefaultPrimaryTag()], isFavorite: false, isPractice: false, isStock: false };
+      const newItem = { id, page: "all", col: colIdx, order: 0, title: "!", isText:false, tags: [getDefaultPrimaryTag()], isFavorite: false, isPractice: false, isStock: stockFilterActive };
       await setDoc(doc(db, NOTES_COLLECTION, id), newItem);
       await loadPageItems();
     }
@@ -2727,18 +2713,24 @@
       currentSectionIndex = 0; isPaused=false; lastCheckedTime=-1;
       videoModal.style.display = "flex";
       
-      setTimeout(setupYouTubeListener, 100);
+      if (youtubeSetupTimer) clearTimeout(youtubeSetupTimer);
+      youtubeSetupTimer = setTimeout(() => {
+        youtubeSetupTimer = null;
+        setupYouTubeListener();
+      }, 100);
     }
     function setupYouTubeListener() {
       console.log("Setting up YouTube listener...");
-      if (window.YT===undefined) { 
+      if (youtubeSetupInterval) clearInterval(youtubeSetupInterval);
+      if (window.YT===undefined && !document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
         const tag=document.createElement('script'); 
         tag.src="https://www.youtube.com/iframe_api"; 
         document.body.appendChild(tag); 
       }
-      const iv = setInterval(()=>{
+      youtubeSetupInterval = setInterval(()=>{
         if (window.YT && window.YT.Player) { 
-          clearInterval(iv);
+          clearInterval(youtubeSetupInterval);
+          youtubeSetupInterval = null;
           console.log("YouTube API ready, creating player...");
           try { 
             if (videoPlayer && videoPlayer.destroy) {
@@ -2900,6 +2892,14 @@
 
     function closeVideo(){ 
       videoModal.style.display='none'; 
+      if (youtubeSetupTimer) {
+        clearTimeout(youtubeSetupTimer);
+        youtubeSetupTimer = null;
+      }
+      if (youtubeSetupInterval) {
+        clearInterval(youtubeSetupInterval);
+        youtubeSetupInterval = null;
+      }
       if (videoPlayer && videoPlayer.destroy) {
         videoPlayer.destroy();
         videoPlayer = null;
