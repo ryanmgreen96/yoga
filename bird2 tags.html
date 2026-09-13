@@ -443,7 +443,7 @@
           <div id="item-toggles" class="item-toggles">
             <button type="button" class="toggle-chip toggle-favorite" id="toggle-favorite-btn">Favorite</button>
             <button type="button" class="toggle-chip toggle-practice" id="toggle-practice-btn">Practice</button>
-            <button type="button" class="toggle-chip toggle-stock" id="toggle-stock-btn">Stock</button>
+            <button type="button" class="toggle-chip toggle-stock" id="toggle-stock-btn">🔧 Stock</button>
           </div>
           <div id="tag-picker" class="tag-picker"></div>
           <textarea id="inp-notes" placeholder="Notes (optional)"></textarea>
@@ -2240,6 +2240,9 @@
       wrap.className = "item" + (it.groupBefore ? " group-gap" : "");
       if (it.isPractice) {
         wrap.classList.add("is-practice");
+      }
+      if (it.isStock) {
+        wrap.classList.add("is-stock");
       }
       if (selectedMoveItem === it.id) {
         wrap.classList.add("move-selected");
