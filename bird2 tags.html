@@ -388,25 +388,26 @@
     .notes-btn { background: #293241; color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-weight: 700; cursor: pointer; font-size: 14px; }
     .notes-btn:hover { background: #1f2735; }
     .audio-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.72); align-items:center; justify-content:center; z-index:10004; padding:12px; }
-    .audio-overlay-content { width:560px; max-width:100%; max-height:85vh; overflow:auto; padding:16px; background:#242424; color:#fff; border:1px solid rgba(255,255,255,0.18); border-radius:8px; }
+    .audio-overlay-content { width:min(1100px, calc(100vw - 24px)); height:min(90vh, 900px); max-height:calc(100dvh - 24px); min-width:min(280px, calc(100vw - 24px)); min-height:240px; overflow:auto; resize:both; padding:16px; background:#242424; color:#fff; border:1px solid rgba(255,255,255,0.18); border-radius:8px; overscroll-behavior:contain; }
     .audio-overlay-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
     .audio-overlay-header h2 { margin:0; font-size:18px; }
-    .audio-add-row { display:flex; gap:8px; margin-bottom:12px; }
-    .audio-add-row input, .audio-add-row select { min-width:0; flex:1; background:#171717; color:#fff; border:1px solid #555; border-radius:4px; }
-    .audio-browse-btn { flex:0 0 36px; width:36px; height:36px; padding:0; font-size:22px; }
-    .audio-items { display:flex; flex-direction:column; gap:8px; }
-    .audio-item { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:8px; padding:8px; background:#191919; border:1px solid #444; border-radius:4px; }
-    .audio-item-title { min-width:0; margin:0 0 5px; overflow-wrap:anywhere; font-size:14px; font-weight:700; }
-    .audio-item-player { display:block; width:100%; height:36px; }
-    .audio-item-delete { width:32px; height:32px; border:0; border-radius:4px; background:#444; color:#fff; cursor:pointer; font-size:20px; }
+    .audio-overlay-actions { display:flex; gap:8px; }
+    .audio-add-toggle { width:36px; height:32px; padding:0; font-size:22px; line-height:1; }
+    .audio-add-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; margin-bottom:12px; }
+    .audio-add-row[hidden] { display:none; }
+    .audio-add-row input { min-width:0; background:#171717; color:#fff; border:1px solid #555; border-radius:4px; }
+    .audio-items { display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap:12px; align-items:start; }
+    .audio-item { position:relative; min-width:0; overflow:hidden; aspect-ratio:16 / 9; background:#191919; border:1px solid #444; border-radius:4px; }
+    .audio-item-link, .audio-item-thumbnail { display:block; width:100%; height:100%; }
+    .audio-item-thumbnail { object-fit:cover; }
+    .audio-item-delete { position:absolute; top:5px; right:5px; width:30px; height:30px; border:0; border-radius:50%; background:rgba(0,0,0,0.75); color:#fff; cursor:pointer; font-size:20px; line-height:1; opacity:0; }
+    .audio-item:hover .audio-item-delete, .audio-item-delete:focus-visible { opacity:1; }
     .audio-item-delete:hover { background:#8b0000; }
     .audio-status { min-height:1.4em; margin:8px 0 0; color:#facc15; font-size:13px; }
-    @media (max-width:480px) {
+    @media (max-width:600px) {
       .audio-overlay-content { padding:12px; }
-      .audio-add-row { display:grid; grid-template-columns:36px minmax(0,1fr) auto; align-items:stretch; }
-      .audio-add-row select { grid-column:2 / -1; grid-row:1; }
-      .audio-add-row input { grid-column:1 / 3; grid-row:2; }
-      .audio-add-row button[type="submit"] { grid-column:3; grid-row:2; }
+      .audio-items { grid-template-columns:repeat(auto-fill, minmax(min(100%, 130px), 1fr)); gap:8px; }
+      .audio-item-delete { opacity:1; }
     }
 
     /* Notes overlay */
@@ -444,7 +445,7 @@
       <button class="arrow-btn" id="arrow-right" title="Move Right">→</button>
       <button class="arrow-btn" id="reset-now-btn" title="Reset Now">R</button>
       <button id="quick-notes-btn" class="notes-btn" title="General notepad">📝</button>
-      <button id="audio-library-btn" class="notes-btn" title="Audio practice" aria-label="Open audio practice">♫</button>
+      <button id="audio-library-btn" class="notes-btn" title="Music videos" aria-label="Open music videos">♫</button>
       <div id="page-tabs" class="page-tabs"></div>
       <button id="page-notes-btn" class="notes-btn" title="Page notepad" style="display:none;">🔧</button>
     </div>
@@ -516,16 +517,15 @@
     <div id="audio-overlay" class="audio-overlay" aria-hidden="true">
       <section class="audio-overlay-content" role="dialog" aria-modal="true" aria-labelledby="audio-overlay-title">
         <div class="audio-overlay-header">
-          <h2 id="audio-overlay-title">Audio Practice</h2>
-          <button type="button" class="btn btn-secondary" id="audio-close-btn" aria-label="Close audio practice">Close</button>
+          <h2 id="audio-overlay-title">Music</h2>
+          <div class="audio-overlay-actions">
+            <button type="button" class="btn btn-primary audio-add-toggle" id="audio-add-toggle" aria-label="Add YouTube video" aria-expanded="false">+</button>
+            <button type="button" class="btn btn-secondary" id="audio-close-btn" aria-label="Close music">Close</button>
+          </div>
         </div>
-        <form id="audio-add-form" class="audio-add-row">
-          <button type="button" class="btn btn-primary audio-browse-btn" id="audio-browse-btn" title="Browse MP3 files in the GitHub audio folder" aria-label="Browse MP3 files">+</button>
-          <select id="audio-file-select" aria-label="Choose an MP3 file" hidden disabled>
-            <option value="">Choose an MP3 file</option>
-          </select>
-          <input type="text" id="audio-title-input" autocomplete="off" aria-label="Audio display title" placeholder="Display title" required disabled />
-          <button type="submit" class="btn btn-primary" id="audio-add-btn" disabled>Add</button>
+        <form id="audio-add-form" class="audio-add-row" hidden>
+          <input type="url" id="audio-link-input" autocomplete="url" aria-label="YouTube video link" placeholder="Paste a YouTube video link" required />
+          <button type="submit" class="btn btn-primary" id="audio-add-btn">Add</button>
         </form>
         <div id="audio-items" class="audio-items" aria-live="polite"></div>
         <p id="audio-status" class="audio-status" role="status"></p>
@@ -558,7 +558,7 @@
     const QUICK_NOTES_COLLECTION = SITE_KEY ? `${SITE_KEY}_quickNotes` : "quickNotes";
     const PAGE_NOTES_COLLECTION = SITE_KEY ? `${SITE_KEY}_pageNotes` : "pageNotes";
     const AUDIO_COLLECTION = SITE_KEY ? `${SITE_KEY}_audio` : "audio";
-    const AUDIO_GITHUB_CONTENTS_URL = "https://api.github.com/repos/ryanmgreen96/yoga/contents/audio?ref=main";
+    const AUDIO_VIDEO_CACHE_KEY = SITE_KEY ? `${SITE_KEY}_musicVideoCache` : "musicVideoCache";
     const COLUMN_META_COLLECTION = SITE_KEY ? `${SITE_KEY}_columnMeta` : "columnMeta";
     const LISTS_COLLECTION = SITE_KEY ? `${SITE_KEY}_lists` : "lists";
     const LAST_PAGE_STORAGE_KEY = SITE_KEY ? `${SITE_KEY}_lastPage` : "lastPage";
@@ -635,13 +635,13 @@
     const audioLibraryBtn = document.getElementById("audio-library-btn");
     const audioOverlay = document.getElementById("audio-overlay");
     const audioCloseBtn = document.getElementById("audio-close-btn");
+    const audioAddToggleBtn = document.getElementById("audio-add-toggle");
     const audioAddForm = document.getElementById("audio-add-form");
-    const audioBrowseBtn = document.getElementById("audio-browse-btn");
-    const audioFileSelect = document.getElementById("audio-file-select");
-    const audioTitleInput = document.getElementById("audio-title-input");
+    const audioLinkInput = document.getElementById("audio-link-input");
     const audioAddBtn = document.getElementById("audio-add-btn");
     const audioItemsDiv = document.getElementById("audio-items");
     const audioStatus = document.getElementById("audio-status");
+    let cachedAudioItems = null;
     const addPageBtn = document.getElementById("add-page-btn");
     const pageNotesBtn = document.getElementById("page-notes-btn");
     const resetNowBtn = document.getElementById("reset-now-btn");
@@ -678,8 +678,6 @@
     let notesAutosaveTimer = null;
     let notesMode = null;
     let openNotesPage = null;
-    let availableAudioFiles = [];
-
     let videoPlayer = null;
     let youtubeSetupTimer = null;
     let youtubeSetupInterval = null;
@@ -940,110 +938,101 @@
       openNotesPage = null;
     }
 
-    function getAudioFileName(title) {
-      const stem = String(title || "").trim().replace(/\.mp3$/i, "");
-      if (!stem || /[\\/]/.test(stem)) return "";
-      return `${stem}.mp3`;
-    }
-
-    function getAudioFileUrl(fileName) {
-      return new URL(`./audio/${encodeURIComponent(fileName)}`, document.baseURI).href;
-    }
-
     function renderAudioItems(items) {
       audioItemsDiv.replaceChildren();
       if (!items.length) {
         const emptyState = document.createElement("p");
-        emptyState.textContent = "No audio items yet.";
+        emptyState.textContent = "No videos yet. Use + to add a YouTube link.";
         audioItemsDiv.append(emptyState);
         return;
       }
 
       items.forEach((item) => {
-        const row = document.createElement("article");
-        row.className = "audio-item";
-        const details = document.createElement("div");
-        const title = document.createElement("p");
-        title.className = "audio-item-title";
-        title.textContent = item.title;
-        const player = document.createElement("audio");
-        player.className = "audio-item-player";
-        player.controls = true;
-        player.preload = "none";
-        player.src = item.fileUrl || getAudioFileUrl(item.fileName);
-        player.addEventListener("error", () => {
-          audioStatus.textContent = `Couldn't load audio/${item.fileName}. Check the filename and GitHub Pages deployment.`;
-        });
-        details.append(title, player);
+        const card = document.createElement("article");
+        card.className = "audio-item";
+        card.dataset.videoId = item.videoId;
+
+        const link = document.createElement("a");
+        link.className = "audio-item-link";
+        link.href = item.url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.setAttribute("aria-label", "Open YouTube video in a new tab");
+
+        const thumbnail = document.createElement("img");
+        thumbnail.className = "audio-item-thumbnail";
+        thumbnail.src = `https://img.youtube.com/vi/${item.videoId}/hqdefault.jpg`;
+        thumbnail.alt = "YouTube video thumbnail";
+        thumbnail.loading = "lazy";
+        thumbnail.decoding = "async";
+        link.append(thumbnail);
 
         const removeButton = document.createElement("button");
         removeButton.type = "button";
         removeButton.className = "audio-item-delete";
         removeButton.textContent = "×";
-        removeButton.title = `Remove ${item.title}`;
-        removeButton.setAttribute("aria-label", `Remove ${item.title}`);
+        removeButton.title = "Remove video";
+        removeButton.setAttribute("aria-label", "Remove video");
         removeButton.addEventListener("click", async () => {
-          await deleteDoc(doc(db, AUDIO_COLLECTION, item.id));
-          await loadAudioItems();
+          removeButton.disabled = true;
+          try {
+            await deleteDoc(doc(db, AUDIO_COLLECTION, item.id));
+            await loadAudioItems();
+          } catch (error) {
+            audioStatus.textContent = "Couldn't remove the video. Check the Firestore permissions.";
+            console.error("Unable to remove YouTube video:", error);
+            removeButton.disabled = false;
+          }
         });
-        row.append(details, removeButton);
-        audioItemsDiv.append(row);
+
+        card.append(link, removeButton);
+        audioItemsDiv.append(card);
       });
     }
 
     async function loadAudioItems() {
-      audioStatus.textContent = "";
+      if (cachedAudioItems === null) {
+        const cachedValue = safeLocalStorageGet(AUDIO_VIDEO_CACHE_KEY);
+        if (cachedValue) {
+          try {
+            const parsed = JSON.parse(cachedValue);
+            if (Array.isArray(parsed)) {
+              cachedAudioItems = parsed
+                .filter((item) => item && typeof item.videoId === "string" && /^[\w-]{11}$/.test(item.videoId))
+                .map((item) => ({
+                  id: typeof item.id === "string" ? item.id : `youtube_${item.videoId}`,
+                  videoId: item.videoId,
+                  url: `https://www.youtube.com/watch?v=${item.videoId}`
+                }));
+            }
+          } catch (error) {
+            console.warn("Ignoring invalid cached music video list.", error);
+          }
+        }
+      }
+      if (cachedAudioItems !== null) renderAudioItems(cachedAudioItems);
+      audioStatus.textContent = cachedAudioItems === null ? "Loading video links..." : "Refreshing video links...";
       try {
         const snapshot = await getDocs(collection(db, AUDIO_COLLECTION));
         const items = snapshot.docs.map((audioDoc) => {
           const data = audioDoc.data();
-          const fileName = getAudioFileName(data.fileName || data.title);
-          return fileName ? { id: audioDoc.id, title: data.title || fileName.replace(/\.mp3$/i, ""), fileName } : null;
-        }).filter(Boolean).sort((a, b) => a.title.localeCompare(b.title));
+          const videoId = data.videoId || extractYouTubeID(data.url || data.link || "");
+          return typeof videoId === "string" && /^[\w-]{11}$/.test(videoId)
+            ? { id: audioDoc.id, videoId, url: `https://www.youtube.com/watch?v=${videoId}` }
+            : null;
+        }).filter(Boolean);
+        cachedAudioItems = items;
+        safeLocalStorageSet(AUDIO_VIDEO_CACHE_KEY, JSON.stringify(items));
         renderAudioItems(items);
+        audioStatus.textContent = "";
       } catch (error) {
-        audioItemsDiv.replaceChildren();
-        audioStatus.textContent = "Couldn't load audio items. Check the Firestore permissions.";
-        console.error("Unable to load audio items:", error);
-      }
-    }
-
-    async function browseAudioFiles() {
-      audioStatus.textContent = "Looking for MP3 files in the GitHub audio folder...";
-      audioBrowseBtn.disabled = true;
-      try {
-        const response = await fetch(AUDIO_GITHUB_CONTENTS_URL, {
-          headers: { Accept: "application/vnd.github+json" }
-        });
-        if (response.status === 404) {
-          availableAudioFiles = [];
-          audioFileSelect.hidden = true;
-          audioStatus.textContent = "No audio folder found yet. Add an MP3 to the repository's audio/ folder, then browse again.";
-          return;
+        if (cachedAudioItems === null) {
+          audioItemsDiv.replaceChildren();
+          audioStatus.textContent = "Couldn't load videos. Check the Firestore permissions.";
+        } else {
+          audioStatus.textContent = "Couldn't refresh videos; showing previously loaded thumbnails.";
         }
-        if (!response.ok) throw new Error(`GitHub returned ${response.status}`);
-
-        const contents = await response.json();
-        availableAudioFiles = contents
-          .filter((entry) => entry.type === "file" && entry.name.toLowerCase().endsWith(".mp3"))
-          .map((entry) => ({ fileName: entry.name, fileUrl: entry.download_url || "" }))
-          .sort((a, b) => a.fileName.localeCompare(b.fileName));
-
-        audioFileSelect.replaceChildren(new Option("Choose an MP3 file", ""));
-        availableAudioFiles.forEach((file) => audioFileSelect.add(new Option(file.fileName, file.fileName)));
-        audioFileSelect.hidden = availableAudioFiles.length === 0;
-        audioFileSelect.disabled = availableAudioFiles.length === 0;
-        audioTitleInput.disabled = true;
-        audioAddBtn.disabled = true;
-        audioTitleInput.value = "";
-        audioStatus.textContent = availableAudioFiles.length
-          ? `${availableAudioFiles.length} MP3 file${availableAudioFiles.length === 1 ? "" : "s"} found.`
-          : "No MP3 files found in the repository's audio/ folder.";
-      } catch (error) {
-        audioStatus.textContent = "Couldn't read the GitHub audio folder. Check the connection and try again.";
-        console.error("Unable to browse GitHub audio folder:", error);
-      } finally {
-        audioBrowseBtn.disabled = false;
+        console.error("Unable to load YouTube videos:", error);
       }
     }
 
@@ -1056,57 +1045,52 @@
     function closeAudioOverlay() {
       audioOverlay.style.display = "none";
       audioOverlay.setAttribute("aria-hidden", "true");
+      audioAddForm.hidden = true;
+      audioAddToggleBtn.setAttribute("aria-expanded", "false");
+      audioLinkInput.value = "";
+      audioStatus.textContent = "";
     }
 
     audioLibraryBtn.addEventListener("click", openAudioOverlay);
     audioCloseBtn.addEventListener("click", closeAudioOverlay);
-    audioBrowseBtn.addEventListener("click", browseAudioFiles);
-    audioFileSelect.addEventListener("change", () => {
-      const selectedFile = availableAudioFiles.find((file) => file.fileName === audioFileSelect.value);
-      audioTitleInput.value = selectedFile ? selectedFile.fileName.replace(/\.mp3$/i, "") : "";
-      audioTitleInput.disabled = !selectedFile;
-      audioAddBtn.disabled = !selectedFile || !audioTitleInput.value.trim();
-      if (selectedFile) {
-        audioStatus.textContent = "Edit the display title if needed, then add it to the audio list.";
-        audioTitleInput.focus();
-        audioTitleInput.select();
-      }
-    });
-    audioTitleInput.addEventListener("input", () => {
-      audioAddBtn.disabled = !audioFileSelect.value || !audioTitleInput.value.trim();
+    audioAddToggleBtn.addEventListener("click", () => {
+      audioAddForm.hidden = !audioAddForm.hidden;
+      audioAddToggleBtn.setAttribute("aria-expanded", String(!audioAddForm.hidden));
+      if (!audioAddForm.hidden) audioLinkInput.focus();
     });
     audioOverlay.addEventListener("click", (event) => {
       if (event.target === audioOverlay) closeAudioOverlay();
     });
     audioAddForm.addEventListener("submit", async (event) => {
       event.preventDefault();
-      const title = audioTitleInput.value.trim();
-      const selectedFile = availableAudioFiles.find((file) => file.fileName === audioFileSelect.value);
-      if (!title || !selectedFile) {
-        audioStatus.textContent = "Choose an MP3 file and enter a display title.";
+      const url = audioLinkInput.value.trim();
+      const videoId = extractYouTubeID(url);
+      if (!videoId || !/^[\w-]{11}$/.test(videoId)) {
+        audioStatus.textContent = "Enter a valid YouTube video link.";
         return;
       }
-      const fileName = selectedFile.fileName;
+      if (audioItemsDiv.querySelector(`[data-video-id="${videoId}"]`)) {
+        audioStatus.textContent = "That video is already in the grid.";
+        return;
+      }
+
       audioAddBtn.disabled = true;
       audioStatus.textContent = "";
       try {
-        const snapshot = await getDocs(collection(db, AUDIO_COLLECTION));
-        const exists = snapshot.docs.some((audioDoc) => getAudioFileName(audioDoc.data().fileName || audioDoc.data().title)?.toLowerCase() === fileName.toLowerCase());
-        if (exists) {
-          audioStatus.textContent = "That audio item is already in the list.";
-          return;
-        }
-        const id = `audio_${Date.now()}`;
-        await setDoc(doc(db, AUDIO_COLLECTION, id), { title, fileName, fileUrl: selectedFile.fileUrl, createdAt: Date.now() });
-        audioFileSelect.value = "";
-        audioTitleInput.value = "";
-        audioTitleInput.disabled = true;
+        await setDoc(doc(db, AUDIO_COLLECTION, `youtube_${videoId}`), {
+          videoId,
+          url: `https://www.youtube.com/watch?v=${videoId}`,
+          createdAt: Date.now()
+        });
+        audioLinkInput.value = "";
+        audioAddForm.hidden = true;
+        audioAddToggleBtn.setAttribute("aria-expanded", "false");
         await loadAudioItems();
       } catch (error) {
-        audioStatus.textContent = "Couldn't save the audio item. Check the Firestore permissions.";
-        console.error("Unable to add audio item:", error);
+        audioStatus.textContent = "Couldn't save the video. Check the Firestore permissions.";
+        console.error("Unable to add YouTube video:", error);
       } finally {
-        audioAddBtn.disabled = true;
+        audioAddBtn.disabled = false;
       }
     });
 
@@ -1208,8 +1192,14 @@
     function extractYouTubeID(url) {
       try {
         const u = new URL(url);
-        if (u.hostname.includes("youtube.com")) return u.searchParams.get("v");
-        if (u.hostname.includes("youtu.be")) return u.pathname.slice(1);
+        const host = u.hostname.toLowerCase().replace(/^www\./, "");
+        if (host === "youtu.be") return u.pathname.split("/").filter(Boolean)[0] || null;
+        if (host === "youtube.com" || host.endsWith(".youtube.com")) {
+          const videoId = u.searchParams.get("v");
+          if (videoId) return videoId;
+          const pathParts = u.pathname.split("/").filter(Boolean);
+          if (["embed", "shorts", "live"].includes(pathParts[0])) return pathParts[1] || null;
+        }
       } catch {}
       return null;
     }
@@ -1230,7 +1220,7 @@
       if (ytId) {
         let frame = Number.isInteger(thumbFrame) ? thumbFrame : parseInt(thumbFrame, 10);
         if (!Number.isInteger(frame) || frame < 0 || frame > 3) frame = 0;
-        return `https://img.youtube.com/vi/${ytId}/${frame}.jpg?frame=${frame}`;
+        return `https://img.youtube.com/vi/${ytId}/${frame}.jpg`;
       }
       const gdId = extractGoogleDriveID(link);
       if (gdId) return `https://drive.google.com/thumbnail?id=${gdId}`;
@@ -2504,6 +2494,8 @@
         img.src = thumbUrl;
         img.className = "item-thumbnail";
         img.alt = "Thumbnail";
+        img.loading = "lazy";
+        img.decoding = "async";
         thumbWrap.appendChild(img);
       }
 
@@ -3195,7 +3187,7 @@
     });
 
     document.addEventListener('click', (e) => {
-      if (e.target.closest('#modal') || e.target.closest('#lists-overlay') || e.target.closest('#video-modal')) return;
+      if (e.target.closest('#modal') || e.target.closest('#lists-overlay') || e.target.closest('#video-modal') || e.target.closest('#audio-overlay')) return;
       if (e.target.closest('#delete-mode-btn') || e.target.closest('#confirm-delete-btn')) return;
       if (e.target.closest('.arrow-btn')) return;
       const clickedItem = e.target.closest('.item');
