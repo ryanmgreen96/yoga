@@ -393,10 +393,33 @@
     .audio-overlay-header h2 { margin:0; font-size:18px; }
     .audio-overlay-actions { display:flex; gap:8px; }
     .audio-add-toggle { width:36px; height:32px; padding:0; font-size:22px; line-height:1; }
+    .audio-section { margin-top:16px; padding-top:14px; border-top:1px solid #4a4a4a; }
+    .audio-section-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; }
+    .audio-section-heading h3 { margin:0; font-size:15px; }
+    .audio-refresh { padding:5px 8px; }
     .audio-add-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; margin-bottom:12px; }
     .audio-add-row[hidden] { display:none; }
     .audio-add-row input { min-width:0; background:#171717; color:#fff; border:1px solid #555; border-radius:4px; }
-    .audio-items { display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap:12px; align-items:start; }
+    .audio-mp3-form { display:grid; grid-template-columns:minmax(150px,1fr) minmax(150px,1fr); gap:9px; margin:12px 0; padding:12px; background:#292929; border-radius:8px; }
+    .audio-mp3-form[hidden] { display:none; }
+    .audio-mp3-form label, .audio-edit-form label { display:flex; flex-direction:column; gap:5px; color:#ddd; font-size:13px; font-weight:600; }
+    .audio-mp3-form input, .audio-mp3-form select, .audio-edit-form input, .audio-edit-form select { width:100%; min-width:0; padding:8px; border:1px solid #555; border-radius:6px; background:#181818; color:#fff; }
+    .audio-mp3-form textarea { min-height:76px; }
+    .audio-mp3-script-field, .audio-mp3-form-actions { grid-column:1 / -1; }
+    .audio-mp3-form-actions { display:flex; justify-content:flex-end; gap:8px; }
+    .audio-player { width:100%; height:40px; margin-top:10px; }
+    .audio-script-display { margin-top:10px; padding:10px 12px; border-left:3px solid var(--gold); border-radius:4px; background:#292929; line-height:1.5; overflow-wrap:anywhere; }
+    .audio-script-body { white-space:pre-wrap; }
+    .audio-script-edited { color:var(--gold); }
+    .audio-mp3-items { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px; margin-top:12px; }
+    .audio-mp3-item { display:flex; align-items:center; gap:3px; padding:3px; border:1px solid transparent; border-radius:8px; background:#303030; }
+    .audio-mp3-item.selected { border-color:var(--gold); background:#403a22; }
+    .audio-mp3-item-play { max-width:260px; border:0; padding:6px 9px; background:transparent; color:#fff; font:inherit; text-align:left; overflow-wrap:anywhere; cursor:pointer; }
+    .audio-mp3-item-play:hover, .audio-mp3-item.selected .audio-mp3-item-play { color:var(--gold); }
+    .audio-mp3-item-action { border:0; padding:5px; border-radius:5px; background:transparent; color:#bbb; font-size:12px; cursor:pointer; }
+    .audio-mp3-item-action:hover, .audio-mp3-item-action:focus-visible { background:#505050; color:#fff; }
+    .audio-mp3-empty { width:100%; margin:4px 0; color:#bbb; font-size:14px; }
+    .audio-items { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 150px), 190px)); justify-content:center; gap:12px; align-items:start; }
     .audio-item { position:relative; min-width:0; overflow:hidden; aspect-ratio:16 / 9; background:#191919; border:1px solid #444; border-radius:4px; }
     .audio-item-link, .audio-item-thumbnail { display:block; width:100%; height:100%; }
     .audio-item-thumbnail { object-fit:cover; }
@@ -404,10 +427,22 @@
     .audio-item:hover .audio-item-delete, .audio-item-delete:focus-visible { opacity:1; }
     .audio-item-delete:hover { background:#8b0000; }
     .audio-status { min-height:1.4em; margin:8px 0 0; color:#facc15; font-size:13px; }
+    .audio-mp3-status { min-height:1.4em; margin:8px 0 0; color:#facc15; font-size:13px; }
+    .audio-edit-overlay { display:none; position:fixed; inset:0; z-index:10005; align-items:center; justify-content:center; padding:12px; background:rgba(0,0,0,0.72); }
+    .audio-edit-dialog { width:min(520px, 100%); max-height:calc(100dvh - 24px); overflow:auto; padding:16px; border-radius:10px; background:#242424; color:#eee; box-shadow:0 12px 40px rgba(0,0,0,0.55); }
+    .audio-edit-dialog h2 { margin:0 0 14px; color:var(--gold); font-size:18px; }
+    .audio-edit-form { display:flex; flex-direction:column; gap:12px; }
+    .audio-script-editor { min-height:180px; padding:10px; border:1px solid #555; border-radius:6px; background:#181818; color:#fff; font-size:14px; font-weight:400; line-height:1.5; }
+    .audio-script-editor:focus-within { border-color:var(--gold); outline:1px solid var(--gold); }
+    .audio-script-original-edit { min-height:1em; color:#fff; white-space:pre-wrap; overflow-wrap:anywhere; outline:none; }
+    .audio-edit-actions { display:flex; justify-content:flex-end; gap:8px; }
     @media (max-width:600px) {
       .audio-overlay-content { padding:12px; }
-      .audio-items { grid-template-columns:repeat(auto-fill, minmax(min(100%, 130px), 1fr)); gap:8px; }
+      .audio-items { grid-template-columns:repeat(auto-fit, minmax(min(100%, 130px), 170px)); gap:8px; }
       .audio-item-delete { opacity:1; }
+      .audio-mp3-form { grid-template-columns:1fr; }
+      .audio-mp3-script-field, .audio-mp3-form-actions { grid-column:auto; }
+      .audio-mp3-item-play { max-width:calc(100vw - 140px); }
     }
 
     /* Notes overlay */
@@ -519,16 +554,68 @@
         <div class="audio-overlay-header">
           <h2 id="audio-overlay-title">Music</h2>
           <div class="audio-overlay-actions">
-            <button type="button" class="btn btn-primary audio-add-toggle" id="audio-add-toggle" aria-label="Add YouTube video" aria-expanded="false">+</button>
+            <button type="button" class="btn btn-primary audio-add-toggle" id="audio-mp3-add-toggle" aria-label="Add MP3 item" aria-expanded="false">+</button>
+            <button type="button" class="btn btn-secondary" id="audio-refresh" aria-label="Refresh available MP3 files">Refresh MP3s</button>
             <button type="button" class="btn btn-secondary" id="audio-close-btn" aria-label="Close music">Close</button>
           </div>
         </div>
-        <form id="audio-add-form" class="audio-add-row" hidden>
+        <audio id="audio-player" class="audio-player" controls preload="none" hidden></audio>
+        <div id="audio-script-display" class="audio-script-display" hidden></div>
+        <form id="audio-mp3-add-form" class="audio-mp3-form" hidden>
+          <label>Title
+            <input id="audio-mp3-title" type="text" maxlength="160" required placeholder="MP3 title" />
+          </label>
+          <label>Audio file
+            <select id="audio-mp3-file">
+              <option value="">Select an audio file</option>
+            </select>
+          </label>
+          <label class="audio-mp3-script-field">Script
+            <textarea id="audio-mp3-script" placeholder="Optional script text"></textarea>
+          </label>
+          <div class="audio-mp3-form-actions">
+            <button type="button" class="btn btn-secondary" id="audio-mp3-cancel">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="audio-mp3-save">Save MP3</button>
+          </div>
+        </form>
+        <div id="audio-mp3-items" class="audio-mp3-items" aria-live="polite"></div>
+        <p id="audio-mp3-status" class="audio-mp3-status" role="status"></p>
+        <section class="audio-section" aria-labelledby="youtube-section-title">
+          <div class="audio-section-heading">
+            <h3 id="youtube-section-title">YouTube videos</h3>
+            <button type="button" class="btn btn-primary audio-add-toggle" id="audio-add-toggle" aria-label="Add YouTube video" aria-expanded="false">+</button>
+          </div>
+          <form id="audio-add-form" class="audio-add-row" hidden>
           <input type="url" id="audio-link-input" autocomplete="url" aria-label="YouTube video link" placeholder="Paste a YouTube video link" required />
           <button type="submit" class="btn btn-primary" id="audio-add-btn">Add</button>
+          </form>
+          <div id="audio-items" class="audio-items" aria-live="polite"></div>
+          <p id="audio-status" class="audio-status" role="status"></p>
+        </section>
+      </section>
+    </div>
+    <div id="audio-edit-overlay" class="audio-edit-overlay" aria-hidden="true">
+      <section class="audio-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="audio-edit-heading">
+        <h2 id="audio-edit-heading">Edit MP3 item</h2>
+        <form id="audio-edit-form" class="audio-edit-form">
+          <label>Title
+            <input id="audio-edit-title" type="text" maxlength="160" required />
+          </label>
+          <label>Audio file (optional)
+            <select id="audio-edit-file">
+              <option value="">No audio file</option>
+            </select>
+          </label>
+          <label>Script
+            <div class="audio-script-editor">
+              <div id="audio-edit-script" class="audio-script-original-edit" contenteditable="true" role="textbox" aria-label="Edit script" aria-multiline="true"></div>
+            </div>
+          </label>
+          <div class="audio-edit-actions">
+            <button class="btn btn-secondary" id="audio-edit-cancel" type="button">Cancel</button>
+            <button class="btn btn-primary" id="audio-edit-save" type="submit">Save changes</button>
+          </div>
         </form>
-        <div id="audio-items" class="audio-items" aria-live="polite"></div>
-        <p id="audio-status" class="audio-status" role="status"></p>
       </section>
     </div>
   </div>
@@ -641,7 +728,33 @@
     const audioAddBtn = document.getElementById("audio-add-btn");
     const audioItemsDiv = document.getElementById("audio-items");
     const audioStatus = document.getElementById("audio-status");
+    const audioMp3AddToggleBtn = document.getElementById("audio-mp3-add-toggle");
+    const audioRefreshBtn = document.getElementById("audio-refresh");
+    const audioMp3AddForm = document.getElementById("audio-mp3-add-form");
+    const audioMp3Title = document.getElementById("audio-mp3-title");
+    const audioMp3File = document.getElementById("audio-mp3-file");
+    const audioMp3Script = document.getElementById("audio-mp3-script");
+    const audioMp3CancelBtn = document.getElementById("audio-mp3-cancel");
+    const audioMp3SaveBtn = document.getElementById("audio-mp3-save");
+    const audioMp3ItemsDiv = document.getElementById("audio-mp3-items");
+    const audioMp3Status = document.getElementById("audio-mp3-status");
+    const audioPlayer = document.getElementById("audio-player");
+    const audioScriptDisplay = document.getElementById("audio-script-display");
+    const audioEditOverlay = document.getElementById("audio-edit-overlay");
+    const audioEditForm = document.getElementById("audio-edit-form");
+    const audioEditTitle = document.getElementById("audio-edit-title");
+    const audioEditFile = document.getElementById("audio-edit-file");
+    const audioEditScript = document.getElementById("audio-edit-script");
+    const audioEditCancelBtn = document.getElementById("audio-edit-cancel");
+    const audioEditSaveBtn = document.getElementById("audio-edit-save");
     let cachedAudioItems = null;
+    let availableAudioFiles = [];
+    let audioFilesError = "";
+    let audioTracks = [];
+    let selectedAudioId = null;
+    let editingAudioTrack = null;
+    let audioEditSegments = [];
+    let audioEditText = "";
     const addPageBtn = document.getElementById("add-page-btn");
     const pageNotesBtn = document.getElementById("page-notes-btn");
     const resetNowBtn = document.getElementById("reset-now-btn");
@@ -990,6 +1103,337 @@
       });
     }
 
+    function populateAudioFileSelect(select, selectedFile = "") {
+      select.replaceChildren(new Option("No audio file", ""));
+      if (selectedFile && !availableAudioFiles.includes(selectedFile)) {
+        select.appendChild(new Option(`${selectedFile} (not currently available)`, selectedFile));
+      }
+      availableAudioFiles.forEach((fileName) => {
+        select.appendChild(new Option(fileName, fileName));
+      });
+      select.value = selectedFile || "";
+    }
+
+    async function refreshAvailableAudioFiles() {
+      try {
+        const response = await fetch(new URL("audio/index.json", window.location.href), { cache: "no-store" });
+        if (!response.ok) throw new Error(`Audio inventory request returned ${response.status}.`);
+        const files = await response.json();
+        if (!Array.isArray(files) || files.some((name) =>
+          typeof name !== "string" ||
+          name !== name.split(/[\\/]/).pop() ||
+          !/\.(mp3|ogg|wav|m4a|aac)$/i.test(name)
+        )) {
+          throw new Error("Audio inventory must be a list of supported audio filenames.");
+        }
+        availableAudioFiles = [...new Set(files)];
+        audioFilesError = "";
+      } catch (error) {
+        audioFilesError = "Couldn't load available MP3 files. Check audio/index.json and refresh.";
+        console.error("Unable to load available MP3 files:", error);
+      }
+      populateAudioFileSelect(audioMp3File, audioMp3File.value);
+      populateAudioFileSelect(audioEditFile, audioEditFile.value);
+    }
+
+    function audioFileUrl(fileName) {
+      const encodedName = fileName.split("/").map(encodeURIComponent).join("/");
+      return new URL(`audio/${encodedName}`, window.location.href).href;
+    }
+
+    function mergeAudioScriptSegments(segments) {
+      return segments.reduce((merged, segment) => {
+        if (!segment.text) return merged;
+        const last = merged[merged.length - 1];
+        if (last && last.edited === segment.edited) last.text += segment.text;
+        else merged.push({ text: segment.text, edited: segment.edited });
+        return merged;
+      }, []);
+    }
+
+    function getAudioScriptSegments(track) {
+      if (Array.isArray(track.scriptContent)) {
+        return mergeAudioScriptSegments(track.scriptContent.filter((segment) =>
+          segment && typeof segment.text === "string" && typeof segment.edited === "boolean"
+        ));
+      }
+      const segments = [];
+      if (typeof track.script === "string" && track.script) {
+        segments.push({ text: track.script, edited: false });
+      }
+      const additions = Array.isArray(track.scriptAdditions)
+        ? track.scriptAdditions.filter((addition) => typeof addition === "string" && addition.trim())
+        : typeof track.scriptAdditions === "string" && track.scriptAdditions.trim()
+          ? [track.scriptAdditions]
+          : [];
+      additions.forEach((addition) => {
+        segments.push({ text: `${segments.length ? "\n" : ""}${addition}`, edited: true });
+      });
+      return mergeAudioScriptSegments(segments);
+    }
+
+    function renderAudioScriptSegments(container, segments) {
+      container.replaceChildren();
+      mergeAudioScriptSegments(segments).forEach((segment) => {
+        if (!segment.edited) {
+          container.appendChild(document.createTextNode(segment.text));
+          return;
+        }
+        const edited = document.createElement("span");
+        edited.className = "audio-script-edited";
+        edited.textContent = segment.text;
+        container.appendChild(edited);
+      });
+      if (!container.hasChildNodes()) container.appendChild(document.createTextNode(""));
+    }
+
+    function renderAudioScript(track) {
+      const segments = getAudioScriptSegments(track);
+      audioScriptDisplay.replaceChildren();
+      if (segments.length) {
+        const body = document.createElement("div");
+        body.className = "audio-script-body";
+        renderAudioScriptSegments(body, segments);
+        audioScriptDisplay.appendChild(body);
+      }
+      audioScriptDisplay.hidden = segments.length === 0;
+    }
+
+    function renderAudioTracks() {
+      audioMp3ItemsDiv.replaceChildren();
+      if (!audioTracks.length) {
+        const emptyMessage = document.createElement("p");
+        emptyMessage.className = "audio-mp3-empty";
+        emptyMessage.textContent = "No MP3 items yet. Use + to add one.";
+        audioMp3ItemsDiv.appendChild(emptyMessage);
+        return;
+      }
+
+      audioTracks.forEach((track) => {
+        const item = document.createElement("div");
+        item.className = "audio-mp3-item" + (track.id === selectedAudioId ? " selected" : "");
+        item.dataset.id = track.id;
+        const playButton = document.createElement("button");
+        playButton.type = "button";
+        playButton.className = "audio-mp3-item-play";
+        playButton.textContent = track.title || "Untitled audio";
+        playButton.setAttribute("aria-pressed", String(track.id === selectedAudioId));
+        playButton.setAttribute("aria-label", `Play ${track.title || "audio item"}`);
+        playButton.title = "Play audio; right-click to edit";
+        playButton.addEventListener("click", () => playAudioTrack(track));
+        playButton.addEventListener("contextmenu", (event) => {
+          event.preventDefault();
+          openAudioEdit(track);
+        });
+
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.className = "audio-mp3-item-action";
+        deleteButton.textContent = "×";
+        deleteButton.title = "Delete MP3 item";
+        deleteButton.setAttribute("aria-label", `Delete ${track.title || "audio item"}`);
+        deleteButton.addEventListener("click", async () => {
+          if (window.confirm(`Delete "${track.title || "Untitled audio"}"?`)) {
+            await deleteAudioTrack(track);
+          }
+        });
+        item.append(playButton, deleteButton);
+        audioMp3ItemsDiv.appendChild(item);
+      });
+    }
+
+    async function loadAudioTracks() {
+      audioMp3Status.textContent = "Loading MP3 items and available files...";
+      try {
+        const [, snapshot] = await Promise.all([
+          refreshAvailableAudioFiles(),
+          getDocs(collection(db, AUDIO_COLLECTION))
+        ]);
+        audioTracks = snapshot.docs
+          .map((audioDoc) => ({ id: audioDoc.id, ...audioDoc.data() }))
+          .filter((item) => item.kind === "audio-track")
+          .sort((a, b) => Number(a.createdAt || 0) - Number(b.createdAt || 0));
+        renderAudioTracks();
+        audioMp3Status.textContent = audioFilesError;
+      } catch (error) {
+        renderAudioTracks();
+        audioMp3Status.textContent = "Couldn't load saved MP3 items. Check the Firestore permissions.";
+        console.error("Unable to load saved MP3 items:", error);
+      }
+      audioPlayer.hidden = !audioPlayer.src;
+    }
+
+    function playAudioTrack(track) {
+      const wasSelected = selectedAudioId === track.id;
+      selectedAudioId = track.id;
+      audioMp3ItemsDiv.querySelectorAll(".audio-mp3-item").forEach((item) => {
+        const selected = item.dataset.id === track.id;
+        item.classList.toggle("selected", selected);
+        item.querySelector(".audio-mp3-item-play").setAttribute("aria-pressed", String(selected));
+      });
+      renderAudioScript(track);
+      if (!track.audioFile) {
+        audioPlayer.pause();
+        audioPlayer.removeAttribute("src");
+        audioPlayer.load();
+        audioPlayer.hidden = true;
+        audioMp3Status.textContent = track.script || track.scriptContent || track.scriptAdditions
+          ? "This item has no audio file. Its script is shown above."
+          : "This item has no audio file attached. Right-click it to edit.";
+        return;
+      }
+      const source = audioFileUrl(track.audioFile);
+      if (wasSelected && audioPlayer.src === source && !audioPlayer.paused) {
+        audioPlayer.pause();
+        audioMp3Status.textContent = `Paused: ${track.title}`;
+        return;
+      }
+      if (audioPlayer.src !== source) audioPlayer.src = source;
+      audioPlayer.hidden = false;
+      audioMp3Status.textContent = `Loading: ${track.title}`;
+      audioPlayer.play().catch((error) => {
+        if (selectedAudioId !== track.id) return;
+        audioMp3Status.textContent = `Couldn't play "${track.title}". Check that the audio file is available.`;
+        console.error("Unable to play MP3 item:", error);
+      });
+    }
+
+    function closeAudioEdit() {
+      audioEditOverlay.style.display = "none";
+      audioEditOverlay.setAttribute("aria-hidden", "true");
+      editingAudioTrack = null;
+    }
+
+    function openAudioEdit(track) {
+      editingAudioTrack = track;
+      audioEditTitle.value = track.title || "";
+      populateAudioFileSelect(audioEditFile, track.audioFile || "");
+      audioEditSegments = getAudioScriptSegments(track);
+      audioEditText = audioEditSegments.map((segment) => segment.text).join("");
+      renderAudioScriptSegments(audioEditScript, audioEditSegments);
+      audioEditOverlay.style.display = "flex";
+      audioEditOverlay.setAttribute("aria-hidden", "false");
+      audioEditTitle.focus();
+    }
+
+    async function deleteAudioTrack(track) {
+      try {
+        await deleteDoc(doc(db, AUDIO_COLLECTION, track.id));
+        if (selectedAudioId === track.id) {
+          audioPlayer.pause();
+          audioPlayer.removeAttribute("src");
+          audioPlayer.load();
+          audioPlayer.hidden = true;
+          selectedAudioId = null;
+          audioScriptDisplay.replaceChildren();
+          audioScriptDisplay.hidden = true;
+        }
+        if (editingAudioTrack?.id === track.id) closeAudioEdit();
+        audioTracks = audioTracks.filter((item) => item.id !== track.id);
+        renderAudioTracks();
+        audioMp3Status.textContent = `Deleted "${track.title || "Untitled audio"}".`;
+      } catch (error) {
+        audioMp3Status.textContent = "Couldn't delete the MP3 item. Check the Firestore permissions.";
+        console.error("Unable to delete MP3 item:", error);
+      }
+    }
+
+    function getAudioEditCaretOffset() {
+      const selection = window.getSelection();
+      if (!selection || !selection.focusNode || !audioEditScript.contains(selection.focusNode)) return audioEditText.length;
+      const range = document.createRange();
+      range.selectNodeContents(audioEditScript);
+      range.setEnd(selection.focusNode, selection.focusOffset);
+      return range.toString().length;
+    }
+
+    function setAudioEditCaretOffset(offset) {
+      const walker = document.createTreeWalker(audioEditScript, NodeFilter.SHOW_TEXT);
+      let node = walker.nextNode();
+      let remaining = offset;
+      let lastNode = null;
+      while (node) {
+        lastNode = node;
+        if (remaining <= node.textContent.length) {
+          const range = document.createRange();
+          range.setStart(node, remaining);
+          range.collapse(true);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          return;
+        }
+        remaining -= node.textContent.length;
+        node = walker.nextNode();
+      }
+      if (!lastNode) {
+        lastNode = document.createTextNode("");
+        audioEditScript.appendChild(lastNode);
+      }
+      const range = document.createRange();
+      range.setStart(lastNode, lastNode.textContent.length);
+      range.collapse(true);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    function sliceAudioScriptSegments(segments, start, end) {
+      let offset = 0;
+      const sliced = [];
+      segments.forEach((segment) => {
+        const segmentStart = offset;
+        const segmentEnd = offset + segment.text.length;
+        const sliceStart = Math.max(start, segmentStart);
+        const sliceEnd = Math.min(end, segmentEnd);
+        if (sliceStart < sliceEnd) {
+          sliced.push({
+            text: segment.text.slice(sliceStart - segmentStart, sliceEnd - segmentStart),
+            edited: segment.edited
+          });
+        }
+        offset = segmentEnd;
+      });
+      return sliced;
+    }
+
+    function updateAudioEditSegments() {
+      const caretOffset = getAudioEditCaretOffset();
+      const newText = audioEditScript.textContent.replace(/\r\n?/g, "\n");
+      let prefixLength = 0;
+      while (prefixLength < audioEditText.length && prefixLength < newText.length &&
+          audioEditText[prefixLength] === newText[prefixLength]) prefixLength += 1;
+      let suffixLength = 0;
+      while (suffixLength < audioEditText.length - prefixLength &&
+          suffixLength < newText.length - prefixLength &&
+          audioEditText[audioEditText.length - suffixLength - 1] === newText[newText.length - suffixLength - 1]) {
+        suffixLength += 1;
+      }
+      const changedText = newText.slice(prefixLength, newText.length - suffixLength);
+      audioEditSegments = mergeAudioScriptSegments([
+        ...sliceAudioScriptSegments(audioEditSegments, 0, prefixLength),
+        ...(changedText ? [{ text: changedText, edited: true }] : []),
+        ...sliceAudioScriptSegments(audioEditSegments, audioEditText.length - suffixLength, audioEditText.length)
+      ]);
+      audioEditText = newText;
+      renderAudioScriptSegments(audioEditScript, audioEditSegments);
+      setAudioEditCaretOffset(caretOffset);
+    }
+
+    function insertAudioEditText(text) {
+      const selection = window.getSelection();
+      if (!selection.rangeCount) return;
+      const range = selection.getRangeAt(0);
+      range.deleteContents();
+      const textNode = document.createTextNode(text);
+      range.insertNode(textNode);
+      range.setStartAfter(textNode);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      updateAudioEditSegments();
+    }
+
     async function loadAudioItems() {
       if (cachedAudioItems === null) {
         const cachedValue = safeLocalStorageGet(AUDIO_VIDEO_CACHE_KEY);
@@ -1016,6 +1460,7 @@
         const snapshot = await getDocs(collection(db, AUDIO_COLLECTION));
         const items = snapshot.docs.map((audioDoc) => {
           const data = audioDoc.data();
+          if (data.kind === "audio-track") return null;
           const videoId = data.videoId || extractYouTubeID(data.url || data.link || "");
           return typeof videoId === "string" && /^[\w-]{11}$/.test(videoId)
             ? { id: audioDoc.id, videoId, url: `https://www.youtube.com/watch?v=${videoId}` }
@@ -1039,7 +1484,7 @@
     async function openAudioOverlay() {
       audioOverlay.style.display = "flex";
       audioOverlay.setAttribute("aria-hidden", "false");
-      await loadAudioItems();
+      await Promise.all([loadAudioItems(), loadAudioTracks()]);
     }
 
     function closeAudioOverlay() {
@@ -1047,6 +1492,8 @@
       audioOverlay.setAttribute("aria-hidden", "true");
       audioAddForm.hidden = true;
       audioAddToggleBtn.setAttribute("aria-expanded", "false");
+      audioMp3AddForm.hidden = true;
+      audioMp3AddToggleBtn.setAttribute("aria-expanded", "false");
       audioLinkInput.value = "";
       audioStatus.textContent = "";
     }
@@ -1091,6 +1538,130 @@
         console.error("Unable to add YouTube video:", error);
       } finally {
         audioAddBtn.disabled = false;
+      }
+    });
+
+    audioMp3AddToggleBtn.addEventListener("click", () => {
+      audioMp3AddForm.hidden = !audioMp3AddForm.hidden;
+      audioMp3AddToggleBtn.setAttribute("aria-expanded", String(!audioMp3AddForm.hidden));
+      if (!audioMp3AddForm.hidden) audioMp3Title.focus();
+    });
+    audioMp3File.addEventListener("change", () => {
+      if (!audioMp3Title.value.trim() && audioMp3File.value) {
+        audioMp3Title.value = audioMp3File.value.replace(/\.[^.]+$/, "");
+      }
+    });
+    audioMp3CancelBtn.addEventListener("click", () => {
+      audioMp3AddForm.reset();
+      audioMp3AddForm.hidden = true;
+      audioMp3AddToggleBtn.setAttribute("aria-expanded", "false");
+      audioMp3Status.textContent = "";
+    });
+    audioMp3AddForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const title = audioMp3Title.value.trim();
+      if (!title) {
+        audioMp3Title.focus();
+        return;
+      }
+      audioMp3SaveBtn.disabled = true;
+      try {
+        const id = `track_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        const track = {
+          kind: "audio-track",
+          title,
+          audioFile: audioMp3File.value,
+          script: audioMp3Script.value,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        };
+        await setDoc(doc(db, AUDIO_COLLECTION, id), track);
+        audioTracks.push({ id, ...track });
+        audioTracks.sort((a, b) => Number(a.createdAt || 0) - Number(b.createdAt || 0));
+        renderAudioTracks();
+        audioMp3AddForm.reset();
+        audioMp3AddForm.hidden = true;
+        audioMp3AddToggleBtn.setAttribute("aria-expanded", "false");
+        audioMp3Status.textContent = `Saved "${title}".`;
+      } catch (error) {
+        audioMp3Status.textContent = "Couldn't save the MP3 item. Check the Firestore permissions.";
+        console.error("Unable to save MP3 item:", error);
+      } finally {
+        audioMp3SaveBtn.disabled = false;
+      }
+    });
+    audioRefreshBtn.addEventListener("click", async () => {
+      audioRefreshBtn.disabled = true;
+      audioMp3Status.textContent = "Refreshing available MP3 files...";
+      await refreshAvailableAudioFiles();
+      audioMp3Status.textContent = audioFilesError ||
+        `Found ${availableAudioFiles.length} available audio file${availableAudioFiles.length === 1 ? "" : "s"}.`;
+      audioRefreshBtn.disabled = false;
+    });
+    audioEditCancelBtn.addEventListener("click", closeAudioEdit);
+    audioEditScript.addEventListener("input", updateAudioEditSegments);
+    audioEditScript.addEventListener("beforeinput", (event) => {
+      if (event.inputType !== "insertParagraph" && event.inputType !== "insertLineBreak") return;
+      event.preventDefault();
+      insertAudioEditText("\n");
+    });
+    audioEditScript.addEventListener("paste", (event) => {
+      event.preventDefault();
+      insertAudioEditText(event.clipboardData.getData("text/plain").replace(/\r\n?/g, "\n"));
+    });
+    audioEditOverlay.addEventListener("click", (event) => {
+      if (event.target === audioEditOverlay) closeAudioEdit();
+    });
+    audioEditForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!editingAudioTrack) return;
+      audioEditSaveBtn.disabled = true;
+      const title = audioEditTitle.value.trim();
+      const update = {
+        kind: "audio-track",
+        title,
+        audioFile: audioEditFile.value,
+        script: audioEditText,
+        scriptAdditions: [],
+        scriptContent: audioEditSegments,
+        updatedAt: Date.now()
+      };
+      try {
+        await setDoc(doc(db, AUDIO_COLLECTION, editingAudioTrack.id), update, { merge: true });
+        audioTracks = audioTracks.map((track) =>
+          track.id === editingAudioTrack.id ? { ...track, ...update } : track
+        );
+        if (selectedAudioId === editingAudioTrack.id) {
+          const updatedTrack = audioTracks.find((track) => track.id === editingAudioTrack.id);
+          renderAudioScript(updatedTrack);
+        }
+        if (selectedAudioId === editingAudioTrack.id && audioPlayer.src &&
+            audioEditFile.value && audioPlayer.src !== audioFileUrl(audioEditFile.value)) {
+          audioPlayer.pause();
+          audioPlayer.src = audioFileUrl(audioEditFile.value);
+        } else if (selectedAudioId === editingAudioTrack.id && !audioEditFile.value) {
+          audioPlayer.pause();
+          audioPlayer.removeAttribute("src");
+          audioPlayer.load();
+          audioPlayer.hidden = true;
+        }
+        closeAudioEdit();
+        renderAudioTracks();
+        audioMp3Status.textContent = `Saved changes to "${title}".`;
+      } catch (error) {
+        audioMp3Status.textContent = "Couldn't update the MP3 item. Check the Firestore permissions.";
+        console.error("Unable to update MP3 item:", error);
+      } finally {
+        audioEditSaveBtn.disabled = false;
+      }
+    });
+    audioPlayer.addEventListener("error", () => {
+      audioMp3Status.textContent = "Couldn't load this audio file. Refresh the available files and try again.";
+    });
+    audioPlayer.addEventListener("ended", () => {
+      if (selectedAudioId) {
+        const track = audioTracks.find((item) => item.id === selectedAudioId);
+        if (track) audioMp3Status.textContent = `Finished: ${track.title}`;
       }
     });
 
@@ -3187,7 +3758,7 @@
     });
 
     document.addEventListener('click', (e) => {
-      if (e.target.closest('#modal') || e.target.closest('#lists-overlay') || e.target.closest('#video-modal') || e.target.closest('#audio-overlay')) return;
+      if (e.target.closest('#modal') || e.target.closest('#lists-overlay') || e.target.closest('#video-modal') || e.target.closest('#audio-overlay') || e.target.closest('#audio-edit-overlay')) return;
       if (e.target.closest('#delete-mode-btn') || e.target.closest('#confirm-delete-btn')) return;
       if (e.target.closest('.arrow-btn')) return;
       const clickedItem = e.target.closest('.item');
@@ -3259,6 +3830,10 @@
 
     document.addEventListener('keydown', async (e) => {
       if (e.key !== 'Escape') return;
+      if (audioEditOverlay.style.display === 'flex') {
+        closeAudioEdit();
+        return;
+      }
       if (audioOverlay.style.display === 'flex') {
         closeAudioOverlay();
         return;
