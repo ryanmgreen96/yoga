@@ -408,8 +408,6 @@
     .audio-mp3-script-field, .audio-mp3-form-actions { grid-column:1 / -1; }
     .audio-mp3-form-actions { display:flex; justify-content:flex-end; gap:8px; }
     .audio-player { width:100%; height:40px; margin-top:10px; }
-    .audio-script-display { margin-top:10px; padding:10px 12px; border-left:3px solid var(--gold); border-radius:4px; background:#292929; line-height:1.5; overflow-wrap:anywhere; }
-    .audio-script-body { white-space:pre-wrap; }
     .audio-script-edited { color:var(--gold); }
     .audio-mp3-items { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px; margin-top:12px; }
     .audio-mp3-item { display:flex; align-items:center; gap:3px; padding:3px; border:1px solid transparent; border-radius:8px; background:#303030; }
@@ -560,7 +558,6 @@
           </div>
         </div>
         <audio id="audio-player" class="audio-player" controls preload="none" hidden></audio>
-        <div id="audio-script-display" class="audio-script-display" hidden></div>
         <form id="audio-mp3-add-form" class="audio-mp3-form" hidden>
           <label>Title
             <input id="audio-mp3-title" type="text" maxlength="160" required placeholder="MP3 title" />
@@ -739,7 +736,6 @@
     const audioMp3ItemsDiv = document.getElementById("audio-mp3-items");
     const audioMp3Status = document.getElementById("audio-mp3-status");
     const audioPlayer = document.getElementById("audio-player");
-    const audioScriptDisplay = document.getElementById("audio-script-display");
     const audioEditOverlay = document.getElementById("audio-edit-overlay");
     const audioEditForm = document.getElementById("audio-edit-form");
     const audioEditTitle = document.getElementById("audio-edit-title");
@@ -1187,18 +1183,6 @@
       if (!container.hasChildNodes()) container.appendChild(document.createTextNode(""));
     }
 
-    function renderAudioScript(track) {
-      const segments = getAudioScriptSegments(track);
-      audioScriptDisplay.replaceChildren();
-      if (segments.length) {
-        const body = document.createElement("div");
-        body.className = "audio-script-body";
-        renderAudioScriptSegments(body, segments);
-        audioScriptDisplay.appendChild(body);
-      }
-      audioScriptDisplay.hidden = segments.length === 0;
-    }
-
     function renderAudioTracks() {
       audioMp3ItemsDiv.replaceChildren();
       if (!audioTracks.length) {
@@ -1271,15 +1255,12 @@
         item.classList.toggle("selected", selected);
         item.querySelector(".audio-mp3-item-play").setAttribute("aria-pressed", String(selected));
       });
-      renderAudioScript(track);
       if (!track.audioFile) {
         audioPlayer.pause();
         audioPlayer.removeAttribute("src");
         audioPlayer.load();
         audioPlayer.hidden = true;
-        audioMp3Status.textContent = track.script || track.scriptContent || track.scriptAdditions
-          ? "This item has no audio file. Its script is shown above."
-          : "This item has no audio file attached. Right-click it to edit.";
+        audioMp3Status.textContent = "This item has no audio file attached. Right-click it to edit.";
         return;
       }
       const source = audioFileUrl(track.audioFile);
@@ -1325,8 +1306,6 @@
           audioPlayer.load();
           audioPlayer.hidden = true;
           selectedAudioId = null;
-          audioScriptDisplay.replaceChildren();
-          audioScriptDisplay.hidden = true;
         }
         if (editingAudioTrack?.id === track.id) closeAudioEdit();
         audioTracks = audioTracks.filter((item) => item.id !== track.id);
@@ -1631,10 +1610,6 @@
         audioTracks = audioTracks.map((track) =>
           track.id === editingAudioTrack.id ? { ...track, ...update } : track
         );
-        if (selectedAudioId === editingAudioTrack.id) {
-          const updatedTrack = audioTracks.find((track) => track.id === editingAudioTrack.id);
-          renderAudioScript(updatedTrack);
-        }
         if (selectedAudioId === editingAudioTrack.id && audioPlayer.src &&
             audioEditFile.value && audioPlayer.src !== audioFileUrl(audioEditFile.value)) {
           audioPlayer.pause();
